@@ -32,7 +32,7 @@ export const getAllOrganizations = async (req: Request, res: Response): Promise<
     const now = new Date();
 
     // Récupérer le nombre d'employés et calculer les jours restants
-    const organizationsWithCounts = await Promise.all(organizations.map(async (org) => {
+    const organizationsWithCounts = await Promise.all(organizations.map(async (org: any) => {
       let employeeCount = 0;
       try {
         const result = await prisma.$queryRawUnsafe<{ count: bigint }[]>(

@@ -292,7 +292,7 @@ export const getPaymentHistory = async (req: Request, res: Response): Promise<vo
     });
 
     res.json(
-      payments.map((p) => ({
+      payments.map((p: any) => ({
         ...p,
         amount: Number(p.amount),
       }))

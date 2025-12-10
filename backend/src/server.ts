@@ -13,21 +13,12 @@ import { logger } from './config/logger.js';
 // Routes
 import authRoutes from './routes/authRoutes.js';
 import employeeRoutes from './routes/employeeRoutes.js';
-import attendanceRoutes from './routes/attendanceRoutes.js';
-import statsRoutes from './routes/statsRoutes.js';
-import chartsRoutes from './routes/chartsRoutes.js';
 import posteRoutes from './routes/posteRoutes.js';
-import departementRoutes from './routes/departementRoutes.js';
-import configurationHoraireRoutes from './routes/configurationHoraireRoutes.js';
-import bilanPresenceRoutes from './routes/bilanPresenceRoutes.js';
-import maintenanceRoutes from './routes/maintenanceRoutes.js';
 import tenantUserRoutes from './routes/tenantUserRoutes.js';
 import pdfRoutes from './routes/pdfRoutes.js';
-import badgeCustomizationRoutes from './routes/badgeCustomizationRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
-import congeRoutes from './routes/congeRoutes.js';
-import typeCongeRoutes from './routes/typeCongeRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import companyRoutes from './routes/companyRoutes.js';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -38,7 +29,7 @@ import { debugMiddleware, cookieErrorHandler } from './middleware/debugMiddlewar
 // Charger les variables d'environnement
 // dotenv.config(); // Loaded via import 'dotenv/config' at the top
 
-const app = express();
+const app: express.Express = express();
 const PORT = process.env.PORT || 3001;
 
 // Configuration pour Render (behind proxy)
@@ -150,30 +141,19 @@ app.get('/health', (req, res) => {
 // Routes API
 // Routes publiques (pas de tenant requis)
 app.use('/api/auth', authRoutes);
-app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/organizations', organizationRoutes); // Super admin only
 app.use('/api/subscriptions', subscriptionRoutes); // Super admin only
 
 // Route publique de scan QR (avant les middlewares tenant)
-import { createAttendanceByQrCode } from './controllers/attendanceController.js';
-app.post('/api/attendance/scan', createAttendanceByQrCode);
 
-import companyRoutes from './routes/companyRoutes.js';
+
+
 
 // Routes tenant (nécessitent une organisation)
 app.use('/api/employees', identifyTenant, requireTenant, employeeRoutes);
-app.use('/api/attendance', identifyTenant, requireTenant, attendanceRoutes);
-app.use('/api/stats', identifyTenant, requireTenant, statsRoutes);
-app.use('/api/charts', identifyTenant, requireTenant, chartsRoutes);
 app.use('/api/postes', identifyTenant, requireTenant, posteRoutes);
-app.use('/api/departements', identifyTenant, requireTenant, departementRoutes);
-app.use('/api/configurations-horaire', identifyTenant, requireTenant, configurationHoraireRoutes);
-app.use('/api/bilans', identifyTenant, requireTenant, bilanPresenceRoutes);
 app.use('/api/tenant-users', identifyTenant, requireTenant, tenantUserRoutes);
 app.use('/api/companies', identifyTenant, requireTenant, companyRoutes);
-app.use('/api/badge-customization', identifyTenant, requireTenant, badgeCustomizationRoutes);
-app.use('/api/conges', identifyTenant, requireTenant, congeRoutes);
-app.use('/api/types-conge', identifyTenant, requireTenant, typeCongeRoutes);
 app.use('/api/pdf', pdfRoutes); // Routes PDF avec middleware inclus dans pdfRoutes
 
 // Route de base

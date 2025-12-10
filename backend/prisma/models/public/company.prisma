@@ -33,9 +33,8 @@ model Company {
   notes              String? // Notes du Super Admin
 
   // Relations
-  users              User[]
-  badgeCustomization BadgeCustomization?
-  paymentHistory     PaymentHistory[]
+  users          User[]
+  paymentHistory PaymentHistory[]
 
   @@map("companies")
 }

@@ -9,7 +9,7 @@ import { validateRequest } from '../middleware/validateRequest.js';
 import { registerSchema, loginSchema, tenantLoginSchema } from '../validators/authValidator.js';
 import { DateHelpers } from '../utils/dateHelpers.js';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * POST /api/auth/register
@@ -362,7 +362,7 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
           include: {
             employee: {
               include: {
-                department: true,
+                // department: true,
                 position: true,
               },
             },
@@ -446,7 +446,7 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
                     id: tenantUser.employee.id,
                     matricule: tenantUser.employee.matricule,
                     fullName: tenantUser.employee.fullName,
-                    department: tenantUser.employee.department?.name || null,
+                    // department: tenantUser.employee.department?.name || null,
                     position: tenantUser.employee.position?.name || null,
                   },
                   company: {
@@ -524,7 +524,7 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
       include: {
         employee: {
           include: {
-            department: true,
+            // department: true,
             position: true,
           },
         },
@@ -620,7 +620,7 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
             id: tenantUser.employee.id,
             matricule: tenantUser.employee.matricule,
             fullName: tenantUser.employee.fullName,
-            department: tenantUser.employee.department?.name || null,
+            // department: tenantUser.employee.department?.name || null,
             position: tenantUser.employee.position?.name || null,
           },
           company: {
@@ -731,7 +731,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
           include: {
             employee: {
               include: {
-                department: true,
+                // department: true,
                 position: true,
               },
             },
@@ -887,7 +887,7 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
         include: {
           employee: {
             include: {
-              department: true,
+              // department: true,
               position: true,
             },
           },
@@ -939,7 +939,7 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
               id: tenantUser.employee.id,
               matricule: tenantUser.employee.matricule,
               fullName: tenantUser.employee.fullName,
-              department: tenantUser.employee.department?.name || null,
+              // department: tenantUser.employee.department?.name || null,
               position: tenantUser.employee.position?.name || null,
             },
             createdAt: tenantUser.createdAt,

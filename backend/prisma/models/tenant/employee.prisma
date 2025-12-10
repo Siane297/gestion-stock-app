@@ -27,12 +27,9 @@ model Employee {
   qrCode        String?   @unique
 
   // Relations
-  position    Poste?          @relation(fields: [positionId], references: [id])
-  department  Departement?    @relation(fields: [departmentId], references: [id])
-  attendances Attendance[]
-  bilans      BilanPresence[]
-  conges      Conge[]
-  tenantUser  TenantUser?
+  position   Poste?       @relation(fields: [positionId], references: [id])
+  // department Departement? @relation(fields: [departmentId], references: [id])
+  tenantUser TenantUser?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
