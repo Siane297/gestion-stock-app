@@ -1,0 +1,32 @@
+// ⚠️ MODÈLE TENANT - Créé dynamiquement par tenantService.ts
+// Compte utilisateur lié à un employé, dans le schéma de l'organisation
+
+// Rôle d'un utilisateur tenant
+enum TenantUserRole {
+  ADMIN // Administrateur/Propriétaire de l'organisation
+  MANAGER // Gestion d'équipe et paramètres
+  USER // Utilisateur standard (accès limité)
+  RH // Ressources humaines
+}
+
+model TenantUser {
+  id         String         @id @default(uuid())
+  employeeId String         @unique
+  email      String         @unique
+  password   String
+  role       TenantUserRole @default(USER)
+  isBlocked  Boolean        @default(false)
+  isOwner    Boolean        @default(false)
+
+  // Permissions d'accès aux pages (JSON array des slugs de pages autorisées)
+  permissions Json @default("[]")
+
+  // Relations
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+
+  @@map("tenant_users")
+}

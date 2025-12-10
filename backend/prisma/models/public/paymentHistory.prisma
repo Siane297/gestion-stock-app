@@ -1,0 +1,28 @@
+// Modèle PaymentHistory - Historique des paiements d'abonnement
+// Stocke l'historique de tous les paiements/activations d'abonnement
+
+model PaymentHistory {
+    id String @id @default(uuid())
+
+    // Relation avec Company
+    companyId String
+    company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+    // Détails du paiement
+    amount       Decimal @db.Decimal(10, 2) // Montant payé
+    durationDays Int // Durée de l'abonnement en jours (ex: 30 pour 1 mois)
+
+    // Dates
+    paymentDate           DateTime @default(now()) // Date du paiement/activation
+    subscriptionStartDate DateTime // Début de la période d'abonnement
+    subscriptionEndDate   DateTime // Fin de la période d'abonnement
+
+    // Métadonnées
+    notes     String? // Notes optionnelles
+    createdBy String // ID du Super Admin qui a enregistré
+
+    createdAt DateTime @default(now())
+
+    @@index([companyId])
+    @@map("payment_history")
+}

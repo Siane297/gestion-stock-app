@@ -1,0 +1,18 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json",
+  "ignore": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "node_modules/**",
+    ".prisma/**"
+  ],
+  "exec": "tsx src/server.ts",
+  "signal": "SIGTERM",
+  "delay": 1000,
+  "env": {
+    "NODE_ENV": "development",
+    "PRISMA_CLIENT_CACHE_ENABLED": "false",
+    "PRISMA_CLIENT_QUERY_CACHE_ENABLED": "false"
+  }
+}

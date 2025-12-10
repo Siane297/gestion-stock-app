@@ -1,0 +1,20 @@
+// Prisma Schema - Fichier Principal
+// Architecture Multi-Tenant
+//
+// ⚠️ IMPORTANT: 
+// - Modèles Public (Company, User, BadgeCustomization)
+//   → Créés par migrations Prisma dans le schéma 'public'
+//
+// - Modèles Tenant (Employee, Attendance, etc.)
+//   → Définis ici pour types TypeScript UNIQUEMENT
+//   → Tables réelles créées par tenantService.ts
+//   → Dans schémas dynamiques: sirhame_tech, acme_corp, etc.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

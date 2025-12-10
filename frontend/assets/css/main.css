@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+/* Custom styles */
+body {
+  @apply antialiased;
+}
+
+/* PrimeVue customizations */
+.p-button {
+  @apply transition-all duration-200;
+}
+
+.p-card {
+  @apply shadow-md hover:shadow-lg transition-shadow duration-300;
+}
+*{
+  font-family: 'Montserrat', sans-serif;
+}
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}

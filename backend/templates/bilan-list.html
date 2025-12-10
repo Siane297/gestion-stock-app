@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilan de Présence - {{company.name}}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- En-tête du document -->
+    {{#if company.pdfHeader}}
+        <div class="custom-header">
+            <img src="{{company.pdfHeader}}" alt="En-tête" class="header-image">
+        </div>
+        <div class="table-title-section">
+            <h2 class="table-title">Bilan de Présence</h2>
+        </div>
+    {{else}}
+        <!-- En-tête par défaut -->
+        <header class="document-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <!-- Logo Placeholder - Sera remplacé par le vrai logo -->
+                    <div class="logo-placeholder">
+                        {{#if company.logo}}
+                            <img src="{{company.logo}}" alt="Logo" class="logo-img">
+                        {{/if}}
+                    </div>
+
+                </div>
+                <div class="header-right">
+                    <p class="company-name">{{company.name}}</p>
+                    {{#if company.phone}}
+                    <p>{{company.phone}}</p>
+                    {{/if}}
+                    {{#if company.email}}
+                    <p>{{company.email}}</p>
+                    {{/if}}
+                    {{#if company.address}}
+                    <p>{{company.address}}</p>
+                    {{/if}}
+                </div>
+            </div>
+        </header>
+        <div class="table-title-section">
+            <h2 class="table-title">Bilan de Présence</h2>
+        </div>
+    {{/if}}
+
+
+
+    <!-- Liste du bilan -->
+    <section class="table-container">   
+        <div class="table-scroll">
+            <table class="employees-table">
+                <thead class="table-header">
+                    <tr>
+                        <th class="center">
+                            N°
+                        </th>
+                        <th>
+                            Matricule
+                        </th>
+                        <th>
+                            Employé
+                        </th>
+                        <th class="center">
+                            Date
+                        </th>
+                        <th class="center">
+                            Statut
+                        </th>
+                        <th class="center">
+                            Heure Entrée
+                        </th>
+                        <th class="center">
+                            Heure Sortie
+                        </th>
+                        <th class="center">
+                            Durée
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="table-body">
+                    {{#each bilans}}
+                    <tr class="table-row">
+                        <td class="table-cell center nowrap">
+                            <div class="cell-content medium primary">{{inc @index}}</div>
+                        </td>
+                        <td class="table-cell nowrap">
+                            <div class="cell-content medium primary">{{matricule}}</div>
+                        </td>
+                        <td class="table-cell nowrap">
+                            <div class="cell-content medium primary">{{employe}}</div>
+                        </td>
+                        <td class="table-cell center nowrap">
+                            <div class="cell-content primary">{{date}}</div>
+                        </td>
+                        <td class="table-cell center nowrap">
+                            {{#if (eq statut "A_L_HEURE")}}
+                                <span class="badge badge-green">
+                                    À l'heure
+                                </span>
+                            {{else if (eq statut "EN_RETARD")}}
+                                <span class="badge badge-orange">
+                                    En retard
+                                </span>
+                            {{else if (eq statut "ABSENT")}}
+                                <span class="badge badge-red">
+                                    Absent
+                                </span>
+                            {{else if (eq statut "INCOMPLET")}}
+                                <span class="badge badge-yellow">
+                                    Incomplet
+                                </span>
+                            {{else}}
+                                <span class="badge badge-gray">
+                                    {{statut}}
+                                </span>
+                            {{/if}}
+                        </td>
+                        <td class="table-cell center nowrap">
+                            <div class="cell-content medium primary">
+                                {{#if heureEntree}}
+                                    {{heureEntree}}
+                                {{else}}
+                                    N/A
+                                {{/if}}
+                            </div>
+                        </td>
+                        <td class="table-cell center nowrap">
+                            <div class="cell-content medium primary">
+                                {{#if heureSortie}}
+                                    {{heureSortie}}
+                                {{else}}
+                                    N/A
+                                {{/if}}
+                            </div>
+                        </td>
+                        <td class="table-cell center nowrap">
+                            <div class="cell-content medium primary">{{duree}}</div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Pied de page -->
+    <footer class="document-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p class="company-name">{{company.name}}</p>
+                {{#if company.address}}
+                    <p>{{company.address}}</p>
+                {{/if}}
+            </div>
+            <div class="footer-right">
+                {{#if company.phone}}
+                    <p>Tél: {{company.phone}}</p>
+                {{/if}}
+                {{#if company.email}}
+                    <p>Email: {{company.email}}</p>
+                {{/if}}
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>
+                Pointage App - Système de gestion des bilans - Confidentiel
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

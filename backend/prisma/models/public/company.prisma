@@ -1,0 +1,41 @@
+// Modèle Company (Organisation)
+// Chaque company correspond à un schéma PostgreSQL dédié pour isolation des données
+
+// Statut d'abonnement
+enum SubscriptionStatus {
+  TRIAL // En période d'essai (14 jours)
+  ACTIVE // Abonnement actif payé
+  EXPIRED // Période d'essai ou abonnement expiré
+  BLOCKED // Bloqué manuellement par le Super Admin
+}
+
+model Company {
+  id                    String  @id @default(uuid())
+  name                  String  @unique
+  schemaName            String  @unique
+  email                 String  @unique
+  emailOrganisation     String
+  telephoneOrganisation String
+  country               String
+  address               String?
+  logo                  String?
+  pdfHeader             String?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Champs Abonnement
+  trialEndsAt        DateTime? // Date de fin de période d'essai
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  subscriptionEndsAt DateTime? // Date de fin d'abonnement actuel
+  monthlyPrice       Decimal?           @db.Decimal(10, 2) // Prix mensuel négocié
+  notes              String? // Notes du Super Admin
+
+  // Relations
+  users              User[]
+  badgeCustomization BadgeCustomization?
+  paymentHistory     PaymentHistory[]
+
+  @@map("companies")
+}

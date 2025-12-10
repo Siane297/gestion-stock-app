@@ -1,0 +1,15 @@
+// Modèle Poste - Postes/Fonctions au sein de l'organisation
+
+model Poste {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  isActive Boolean @default(true)
+
+  // Relations
+  employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("postes")
+}

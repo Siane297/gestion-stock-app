@@ -1,0 +1,30 @@
+// Modèle User - Authentification et gestion des comptes
+// Utilisateurs du schéma public (SUPER_ADMIN et ADMIN)
+
+// Rôle d'un utilisateur du schéma public
+enum UserRole {
+  SUPER_ADMIN // Super administrateur (schéma public)
+  ADMIN // Administrateur d'organisation
+  MANAGER // Manager
+  USER // Utilisateur standard
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password      String
+  emailVerified Boolean  @default(false)
+  image         String?
+  role          UserRole @default(ADMIN)
+  isActive      Boolean  @default(true)
+
+  // Relation avec Company (null pour SUPER_ADMIN)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}

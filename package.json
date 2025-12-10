@@ -1,0 +1,9 @@
+{
+  "name": "gestion-stock-monorepo",
+  "private": true,
+  "scripts": {
+    "dev:back": "cd backend && npm run dev",
+    "dev:front": "cd frontend && pnpm run dev",
+    "install:all": "pnpm install -r"
+  }
+}

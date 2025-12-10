@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Employés - {{company.name}}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- En-tête du document -->
+    <!-- En-tête du document -->
+    {{#if company.pdfHeader}}
+        <div class="custom-header">
+            <img src="{{company.pdfHeader}}" alt="En-tête" class="header-image">
+        </div>
+        <div class="table-title-section">
+            <h2 class="table-title">Liste des Employés</h2>
+        </div>
+    {{else}}
+        <header class="document-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <!-- Logo Placeholder - Sera remplacé par le vrai logo -->
+                    <div class="logo-placeholder">
+                        {{#if company.logo}}
+                            <img src="{{company.logo}}" alt="Logo" class="logo-img">
+                        {{/if}}
+                    </div>
+
+                </div>
+                <div class="header-right">
+                    <p class="company-name">{{company.name}}</p>
+                    {{#if company.phone}}
+                        <p>{{company.phone}}</p>
+                    {{/if}}
+                    {{#if company.email}}
+                        <p>{{company.email}}</p>
+                    {{/if}}
+                    {{#if company.address}}
+                        <p>{{company.address}}</p>
+                    {{/if}}
+                </div>
+            </div>
+        </header>
+        <div class="table-title-section">
+            <h2 class="table-title">Liste des Employés</h2>
+        </div>
+    {{/if}}
+
+
+
+    <!-- Liste des employés -->
+    <section class="table-container">   
+        <div class="table-scroll">
+            <table class="employees-table">
+                <thead class="table-header">
+                    <tr>
+                        <th class="center">
+                            N°
+                        </th>
+                        <th>
+                            Matricule
+                        </th>
+                        <th>
+                            Nom Complet
+                        </th>
+                        <th>
+                            Email
+                        </th>
+                        <th>
+                            Téléphone
+                        </th>
+                        <th>
+                            Département
+                        </th>
+                        <th>
+                            Poste
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="table-body">
+                    {{#each employees}}
+                    <tr class="table-row">
+                        <td class="table-cell nowrap">
+                            <div class="cell-content medium primary">{{inc @index}}</div>
+                        </td>
+                        <td class="table-cell nowrap">
+                            <div class="cell-content medium primary">{{matricule}}</div>
+                        </td>
+                        <td class="table-cell nowrap">
+                            <div class="cell-content medium primary">{{fullName}}</div>
+                        </td>
+                        <td class="table-cell nowrap">
+                            <div class="cell-content secondary">{{email}}</div>
+                        </td>
+                        <td class="table-cell nowrap">
+                            <div class="cell-content primary">
+                                {{#if phoneNumber}}
+                                    {{phoneNumber}}
+                                {{else}}
+                                    -
+                                {{/if}}
+                            </div>
+                        </td>
+                        <td class="table-cell wrap">
+                            <div class="cell-content primary">
+                                {{#if department.name}}
+                                    {{department.name}}
+                                {{else}}
+                                    {{department}}
+                                {{/if}}
+                            </div>
+                        </td>
+                        <td class="table-cell wrap">
+                            <div class="cell-content primary">
+                                {{#if position.name}}
+                                    {{position.name}}
+                                {{else}}
+                                    {{position}}
+                                {{/if}}
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Pied de page -->
+    <footer class="document-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p class="company-name">{{company.name}}</p>
+                {{#if company.address}}
+                    <p>{{company.address}}</p>
+                {{/if}}
+            </div>
+            <div class="footer-right">
+                {{#if company.phone}}
+                    <p>Tél: {{company.phone}}</p>
+                {{/if}}
+                {{#if company.email}}
+                    <p>Email: {{company.email}}</p>
+                {{/if}}
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>
+                Pointage App - Système de gestion des employés - Confidentiel
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

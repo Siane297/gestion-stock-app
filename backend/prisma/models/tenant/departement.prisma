@@ -1,0 +1,15 @@
+// Modèle Departement - Départements de l'organisation
+
+model Departement {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  isActive Boolean @default(true)
+
+  // Relations
+  employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("departements")
+}

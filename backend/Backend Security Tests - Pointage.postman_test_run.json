@@ -1,0 +1,603 @@
+{
+	"id": "12b6f550-f603-4a54-a052-99fd4a517ef9",
+	"name": "Backend Security Tests - Pointage",
+	"timestamp": "2025-11-27T07:51:50.733Z",
+	"collection_id": "50400308-88cb8a09-ab92-4368-8e6e-0f5b46789c87",
+	"folder_id": 0,
+	"environment_id": "0",
+	"totalPass": 22,
+	"delay": 0,
+	"persist": true,
+	"status": "finished",
+	"startedAt": "2025-11-27T07:51:36.132Z",
+	"totalFail": 4,
+	"results": [
+		{
+			"id": "e1ac9744-b939-4686-8027-839590b8ef2d",
+			"name": "✅ Inscription Valide",
+			"url": "https://pointage-back.onrender.com/api/auth/register",
+			"time": 2702,
+			"responseCode": {
+				"code": 201,
+				"name": "Created"
+			},
+			"tests": {
+				"Status code is 201 or 200": true,
+				"Response has accessToken": false
+			},
+			"testPassFailCounts": {
+				"Status code is 201 or 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response has accessToken": {
+					"pass": 0,
+					"fail": 1
+				}
+			},
+			"times": [
+				2702
+			],
+			"allTests": [
+				{
+					"Status code is 201 or 200": true,
+					"Response has accessToken": false
+				}
+			]
+		},
+		{
+			"id": "cfbb884f-aaa8-465c-9806-5647a7e4f002",
+			"name": "✅ Connexion Valide",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 947,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response has accessToken": false
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response has accessToken": {
+					"pass": 0,
+					"fail": 1
+				}
+			},
+			"times": [
+				947
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response has accessToken": false
+				}
+			]
+		},
+		{
+			"id": "c1e43058-2d46-4005-8335-ad9437da9b54",
+			"name": "❌ Connexion - Mauvais mot de passe",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 2408,
+			"responseCode": {
+				"code": 401,
+				"name": "Unauthorized"
+			},
+			"tests": {
+				"Status code is 401 or 400": true,
+				"Response has error message": true
+			},
+			"testPassFailCounts": {
+				"Status code is 401 or 400": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response has error message": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				2408
+			],
+			"allTests": [
+				{
+					"Status code is 401 or 400": true,
+					"Response has error message": true
+				}
+			]
+		},
+		{
+			"id": "3ceb2ed4-8894-4283-a399-950d5adc2292",
+			"name": "❌ Connexion - Email inexistant",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 311,
+			"responseCode": {
+				"code": 401,
+				"name": "Unauthorized"
+			},
+			"tests": {
+				"Status code is 401 or 404": true
+			},
+			"testPassFailCounts": {
+				"Status code is 401 or 404": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				311
+			],
+			"allTests": [
+				{
+					"Status code is 401 or 404": true
+				}
+			]
+		},
+		{
+			"id": "6af9f112-1b51-4f2d-9a24-c466cb890a28",
+			"name": "❌ SQL Injection - OR 1=1",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 305,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {
+				"SQL Injection blocked (not 200)": true,
+				"No token in response": true
+			},
+			"testPassFailCounts": {
+				"SQL Injection blocked (not 200)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"No token in response": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				305
+			],
+			"allTests": [
+				{
+					"SQL Injection blocked (not 200)": true,
+					"No token in response": true
+				}
+			]
+		},
+		{
+			"id": "c4a5d2f6-ea9a-4754-9b44-83af8b9092f2",
+			"name": "❌ SQL Injection - UNION SELECT",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 326,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {
+				"SQL Injection blocked": true
+			},
+			"testPassFailCounts": {
+				"SQL Injection blocked": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				326
+			],
+			"allTests": [
+				{
+					"SQL Injection blocked": true
+				}
+			]
+		},
+		{
+			"id": "c989cf0a-433f-4870-af62-8207e7008419",
+			"name": "❌ SQL Injection - Comment",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 304,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {
+				"SQL Injection blocked": true
+			},
+			"testPassFailCounts": {
+				"SQL Injection blocked": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				304
+			],
+			"allTests": [
+				{
+					"SQL Injection blocked": true
+				}
+			]
+		},
+		{
+			"id": "2ef0cb63-986c-4d00-b73e-a4d6bda13bd3",
+			"name": "❌ XSS dans le nom",
+			"url": "https://pointage-back.onrender.com/api/auth/register",
+			"time": 313,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {
+				"Request handled (may sanitize or reject)": true
+			},
+			"testPassFailCounts": {
+				"Request handled (may sanitize or reject)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				313
+			],
+			"allTests": [
+				{
+					"Request handled (may sanitize or reject)": true
+				}
+			]
+		},
+		{
+			"id": "55aff848-b071-4317-885c-280e9c3079b8",
+			"name": "❌ XSS avec img tag",
+			"url": "https://pointage-back.onrender.com/api/auth/register",
+			"time": 1743,
+			"responseCode": {
+				"code": 201,
+				"name": "Created"
+			},
+			"tests": {
+				"Request handled": true
+			},
+			"testPassFailCounts": {
+				"Request handled": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				1743
+			],
+			"allTests": [
+				{
+					"Request handled": true
+				}
+			]
+		},
+		{
+			"id": "0a072991-7ad1-46c5-b758-25ffd277ad01",
+			"name": "❌ Accès sans token",
+			"url": "https://pointage-back.onrender.com/api/employees",
+			"time": 291,
+			"responseCode": {
+				"code": 401,
+				"name": "Unauthorized"
+			},
+			"tests": {
+				"Status code is 401": true,
+				"Response has error message": true
+			},
+			"testPassFailCounts": {
+				"Status code is 401": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response has error message": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				291
+			],
+			"allTests": [
+				{
+					"Status code is 401": true,
+					"Response has error message": true
+				}
+			]
+		},
+		{
+			"id": "31565cce-00c9-4aac-8168-500f9a993eea",
+			"name": "❌ Accès avec token invalide",
+			"url": "https://pointage-back.onrender.com/api/employees",
+			"time": 276,
+			"responseCode": {
+				"code": 401,
+				"name": "Unauthorized"
+			},
+			"tests": {
+				"Status code is 401 or 403": true
+			},
+			"testPassFailCounts": {
+				"Status code is 401 or 403": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				276
+			],
+			"allTests": [
+				{
+					"Status code is 401 or 403": true
+				}
+			]
+		},
+		{
+			"id": "1d31a408-966e-402f-bdfc-411fe062125f",
+			"name": "✅ Accès avec token valide",
+			"url": "https://pointage-back.onrender.com/api/employees",
+			"time": 686,
+			"responseCode": {
+				"code": 401,
+				"name": "Unauthorized"
+			},
+			"tests": {
+				"Status code is 200": false,
+				"Response is array or object": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Response is array or object": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				686
+			],
+			"allTests": [
+				{
+					"Status code is 200": false,
+					"Response is array or object": true
+				}
+			]
+		},
+		{
+			"id": "458f46dd-6483-4968-aae9-ed12774a53da",
+			"name": "✅ Vérifier Headers de Sécurité",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 328,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {
+				"Has security headers": true,
+				"Has X-Frame-Options": true,
+				"X-Powered-By header should be hidden": true,
+				"Has Strict-Transport-Security (if HTTPS)": true
+			},
+			"testPassFailCounts": {
+				"Has security headers": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Has X-Frame-Options": {
+					"pass": 1,
+					"fail": 0
+				},
+				"X-Powered-By header should be hidden": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Has Strict-Transport-Security (if HTTPS)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				328
+			],
+			"allTests": [
+				{
+					"Has security headers": true,
+					"Has X-Frame-Options": true,
+					"X-Powered-By header should be hidden": true,
+					"Has Strict-Transport-Security (if HTTPS)": true
+				}
+			]
+		},
+		{
+			"id": "5fdff2b8-0cd5-4298-84b0-e545cbf010e9",
+			"name": "❌ CORS - Origine non autorisée",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 337,
+			"responseCode": {
+				"code": 500,
+				"name": "Internal Server Error"
+			},
+			"tests": {
+				"CORS should block unauthorized origin": true
+			},
+			"testPassFailCounts": {
+				"CORS should block unauthorized origin": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				337
+			],
+			"allTests": [
+				{
+					"CORS should block unauthorized origin": true
+				}
+			]
+		},
+		{
+			"id": "2e028641-1b0b-455d-a3d1-141400306085",
+			"name": "✅ CORS - Origine autorisée",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 285,
+			"responseCode": {
+				"code": 204,
+				"name": "No Content"
+			},
+			"tests": {
+				"CORS should allow authorized origin": true
+			},
+			"testPassFailCounts": {
+				"CORS should allow authorized origin": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				285
+			],
+			"allTests": [
+				{
+					"CORS should allow authorized origin": true
+				}
+			]
+		},
+		{
+			"id": "802811f5-2b31-46ee-85a9-6c43d7147f69",
+			"name": "❌ Changement de tenant non autorisé",
+			"url": "https://pointage-back.onrender.com/api/employees",
+			"time": 311,
+			"responseCode": {
+				"code": 401,
+				"name": "Unauthorized"
+			},
+			"tests": {
+				"Status code is 403 or tenant unchanged": false
+			},
+			"testPassFailCounts": {
+				"Status code is 403 or tenant unchanged": {
+					"pass": 0,
+					"fail": 1
+				}
+			},
+			"times": [
+				311
+			],
+			"allTests": [
+				{
+					"Status code is 403 or tenant unchanged": false
+				}
+			]
+		},
+		{
+			"id": "911205fa-9ea2-4045-9f38-9178dcf063f9",
+			"name": "⚠️ Rate Limiting Test (Lancer 10x)",
+			"url": "https://pointage-back.onrender.com/api/auth/login",
+			"time": 320,
+			"responseCode": {
+				"code": 401,
+				"name": "Unauthorized"
+			},
+			"tests": {
+				"Eventually should return 429 Too Many Requests": true
+			},
+			"testPassFailCounts": {
+				"Eventually should return 429 Too Many Requests": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				320
+			],
+			"allTests": [
+				{
+					"Eventually should return 429 Too Many Requests": true
+				}
+			]
+		}
+	],
+	"count": 1,
+	"totalTime": 12193,
+	"collection": {
+		"requests": [
+			{
+				"id": "e1ac9744-b939-4686-8027-839590b8ef2d",
+				"method": "POST"
+			},
+			{
+				"id": "cfbb884f-aaa8-465c-9806-5647a7e4f002",
+				"method": "POST"
+			},
+			{
+				"id": "c1e43058-2d46-4005-8335-ad9437da9b54",
+				"method": "POST"
+			},
+			{
+				"id": "3ceb2ed4-8894-4283-a399-950d5adc2292",
+				"method": "POST"
+			},
+			{
+				"id": "6af9f112-1b51-4f2d-9a24-c466cb890a28",
+				"method": "POST"
+			},
+			{
+				"id": "c4a5d2f6-ea9a-4754-9b44-83af8b9092f2",
+				"method": "POST"
+			},
+			{
+				"id": "c989cf0a-433f-4870-af62-8207e7008419",
+				"method": "POST"
+			},
+			{
+				"id": "2ef0cb63-986c-4d00-b73e-a4d6bda13bd3",
+				"method": "POST"
+			},
+			{
+				"id": "55aff848-b071-4317-885c-280e9c3079b8",
+				"method": "POST"
+			},
+			{
+				"id": "0a072991-7ad1-46c5-b758-25ffd277ad01",
+				"method": "GET"
+			},
+			{
+				"id": "31565cce-00c9-4aac-8168-500f9a993eea",
+				"method": "GET"
+			},
+			{
+				"id": "1d31a408-966e-402f-bdfc-411fe062125f",
+				"method": "GET"
+			},
+			{
+				"id": "458f46dd-6483-4968-aae9-ed12774a53da",
+				"method": "GET"
+			},
+			{
+				"id": "5fdff2b8-0cd5-4298-84b0-e545cbf010e9",
+				"method": "OPTIONS"
+			},
+			{
+				"id": "2e028641-1b0b-455d-a3d1-141400306085",
+				"method": "OPTIONS"
+			},
+			{
+				"id": "802811f5-2b31-46ee-85a9-6c43d7147f69",
+				"method": "GET"
+			},
+			{
+				"id": "911205fa-9ea2-4045-9f38-9178dcf063f9",
+				"method": "POST"
+			}
+		]
+	}
+}
