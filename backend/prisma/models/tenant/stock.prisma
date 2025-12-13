@@ -1,0 +1,51 @@
+enum TypeMouvementStock {
+    ENTREE_ACHAT
+    ENTREE_RETOUR
+    SORTIE_VENTE
+    SORTIE_PERISSABLE
+    AJUSTEMENT
+    TRANSFERT
+}
+
+model stock_magasin {
+    id                String   @id @default(uuid())
+    magasin_id        String
+    produit_id        String
+    quantite          Int      @default(0)
+    quantite_minimum  Int      @default(0)
+    quantite_maximum  Int?
+    date_creation     DateTime @default(now())
+    date_modification DateTime @updatedAt
+
+    magasin magasin @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    produit produit @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+
+    @@unique([magasin_id, produit_id])
+    @@index([magasin_id])
+    @@index([produit_id])
+    @@map("stocks_magasin")
+}
+
+model mouvements_stock {
+    id             String             @id @default(uuid())
+    magasin_id     String
+    produit_id     String
+    utilisateur_id String?
+    type           TypeMouvementStock
+    quantite       Int
+    vente_id       String?
+    achat_id       String?
+    raison         String?
+    date_creation  DateTime           @default(now())
+
+    magasin     magasin     @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    produit     produit     @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+    utilisateur TenantUser? @relation(fields: [utilisateur_id], references: [id])
+    // Relations optionnelles vers vente et achat si nécessaire, mais non définies strictement ici pour éviter les dépendances circulaires complexes si les fichiers ne sont pas tous là, mais Prisma gère ça. 
+    // Je vais ajouter les relations inverses dans vente et achat, et je peux les référencer ici si je veux, mais le schéma original n'avait pas de relation explicite @relation ici pour vente_id/achat_id, juste les champs. Je laisse comme ça pour l'instant pour respecter le schéma original, sauf si une relation est requise.
+    // Le schéma original: vente_id String? ... pas de @relation. Je respecte.
+
+    @@index([magasin_id, produit_id])
+    @@index([date_creation])
+    @@map("mouvements_stock")
+}

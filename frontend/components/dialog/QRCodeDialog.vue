@@ -26,9 +26,7 @@
       :employee-photo="employeePhoto"
       :company-name="companyName"
       :company-logo="companyLogo"
-      :background-color="customization?.backgroundColor"
-      :text-color="customization?.textColor"
-      :border-color="customization?.borderColor"
+     
     />
 
     <template #footer>
@@ -51,7 +49,7 @@ import { ref, onMounted, computed, watch } from "vue";
 import Dialog from "primevue/dialog";
 import QRCodeDisplay from "~/components/qrcode/QRCodeDisplay.vue";
 import AppButton from "~/components/button/AppButton.vue";
-import { useBadgeCustomizationApi, type BadgeCustomization } from "~/composables/api/useBadgeCustomizationApi";
+//import { useBadgeCustomizationApi, type BadgeCustomization } from "~/composables/api/useBadgeCustomizationApi";
 import { useCompanyApi } from "~/composables/api/useCompanyApi";
 // @ts-ignore - html2canvas types
 import html2canvas from 'html2canvas';
@@ -76,10 +74,10 @@ const emit = defineEmits<{
   download: [];
 }>();
 
-const { getBadgeCustomization } = useBadgeCustomizationApi();
+//const { getBadgeCustomization } = useBadgeCustomizationApi();
 const { getCurrentCompany } = useCompanyApi();
 
-const customization = ref<BadgeCustomization | null>(null);
+//const customization = ref<BadgeCustomization | null>(null);
 const companyName = ref('');
 const companyLogo = ref('');
 const isLoading = ref(true);
@@ -90,12 +88,12 @@ const loadData = async () => {
   isLoading.value = true;
   try {
     // 1. Charger la personnalisation
-    const customData = await getBadgeCustomization();
-    if (customData && customData.isActive) {
-      customization.value = customData;
-    } else {
-      customization.value = null;
-    }
+    // const customData = await getBadgeCustomization();
+    // if (customData && customData.isActive) {
+    //   customization.value = customData;
+    // } else {
+    //   customization.value = null;
+    // }
 
     // 2. Charger les infos de la compagnie (nom et logo)
     console.log('QRCodeDialog - Chargement données compagnie...');

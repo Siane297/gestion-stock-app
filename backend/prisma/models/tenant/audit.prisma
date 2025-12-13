@@ -1,0 +1,19 @@
+model audit_log {
+    id                String   @id @default(uuid())
+    utilisateur_id    String
+    action            String // CREATE, UPDATE, DELETE
+    table_cible       String
+    enregistrement_id String
+    ancienne_valeur   String?
+    nouvelle_valeur   String?
+    ip_adresse        String?
+    user_agent        String?
+    date_action       DateTime @default(now())
+
+    utilisateur TenantUser @relation(fields: [utilisateur_id], references: [id], onDelete: Restrict)
+
+    @@index([utilisateur_id])
+    @@index([table_cible])
+    @@index([date_action])
+    @@map("audit_logs")
+}

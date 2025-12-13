@@ -1,0 +1,77 @@
+enum StatutVente {
+    BROUILLON
+    EN_ATTENTE
+    PAYEE
+    ANNULEE
+    REMBOURSEE
+}
+
+enum MethodePaiement {
+    ESPECES
+    MOBILE_MONEY
+    CARTE
+    CHEQUE
+    VIREMENT
+    AUTRE
+}
+
+model vente {
+    id                String          @id @default(uuid())
+    magasin_id        String
+    utilisateur_id    String
+    client_id         String?
+    montant_total     Float
+    montant_remise    Float           @default(0)
+    montant_tva       Float           @default(0)
+    statut            StatutVente
+    methode_paiement  MethodePaiement
+    notes             String?
+    date_creation     DateTime        @default(now())
+    date_modification DateTime        @updatedAt
+
+    magasin     magasin        @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    utilisateur TenantUser     @relation(fields: [utilisateur_id], references: [id], onDelete: Restrict)
+    client      client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
+    details     vente_detail[]
+    facture     facture?
+
+    @@index([magasin_id])
+    @@index([utilisateur_id])
+    @@index([client_id])
+    @@index([date_creation])
+    @@map("ventes")
+}
+
+model vente_detail {
+    id            String @id @default(uuid())
+    vente_id      String
+    produit_id    String
+    quantite      Int
+    prix_unitaire Float
+    remise        Float  @default(0)
+    prix_total    Float
+
+    vente   vente   @relation(fields: [vente_id], references: [id], onDelete: Cascade)
+    produit produit @relation(fields: [produit_id], references: [id], onDelete: Restrict)
+
+    @@map("ventes_details")
+}
+
+model facture {
+    id             String    @id @default(uuid())
+    vente_id       String    @unique
+    numero_facture String    @unique
+    montant_ht     Float
+    montant_tva    Float     @default(0)
+    montant_ttc    Float
+    statut         String    @default("VALIDEE") // BROUILLON, VALIDEE, PAYEE, ANNULEE
+    date_emission  DateTime  @default(now())
+    date_echeance  DateTime?
+    pdf_url        String?
+    notes          String?
+
+    vente vente @relation(fields: [vente_id], references: [id], onDelete: Cascade)
+
+    @@index([numero_facture])
+    @@map("factures")
+}

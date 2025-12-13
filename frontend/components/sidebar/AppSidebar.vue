@@ -12,7 +12,7 @@
   <Transition name="slide">
     <aside
       v-show="isOpen || isDesktop"
-      class="fixed left-0 top-0 h-screen w-64 bg-[#061141]  flex flex-col shadow-sm z-50 lg:z-40"
+      class="fixed left-0 top-0 h-screen w-64 bg-side border-r border-gris/50  flex flex-col shadow-sm z-50 lg:z-40"
     >
     <!-- Logo -->
     <div class="p-4 border-b border-gris/50">
@@ -27,17 +27,19 @@
 
     <!-- Navigation -->
     <nav class="flex-1 mt-2 overflow-y-auto p-4">
-      <p class="text-white/60 tracking-wide text-[12px] mb-5 font-medium uppercase">Menu principal</p>
       <ClientOnly>
-        <ul class="space-y-1">
-          <li v-for="item in menuItems" :key="item.link || item.name">
-            <SidebarMenuItem
-              :item="item"
-              :is-open="openMenus.includes(item.name)"
-              @toggle-submenu="toggleSubmenu"
-            />
-          </li>
-        </ul>
+        <div v-for="(category, index) in filteredMenuCategories" :key="index" class="mb-6 last:mb-0">
+          <p class="text-white/60 tracking-wide text-[11px] mb-3 font-bold uppercase px-2">{{ category.title }}</p>
+          <ul class="space-y-1">
+            <li v-for="item in category.items" :key="item.link || item.name">
+              <SidebarMenuItem
+                :item="item"
+                :is-open="openMenus.includes(item.name)"
+                @toggle-submenu="toggleSubmenu"
+              />
+            </li>
+          </ul>
+        </div>
         <template #fallback>
           <!-- Skeleton pendant le chargement -->
           <ul class="space-y-1">
@@ -117,101 +119,180 @@ const toggleSubmenu = (menuName: string) => {
 
 
 // Configuration complète du menu avec permissions requises
-const allMenuItems = [
+// Configuration des catégories de menu
+const menuCategories = [
   {
-    name: 'Tableau de bord',
-    icon: 'lucide:blocks',
-    link: '/accueil',
-    permission: 'accueil',
+    title: 'Menu principal',
+    items: [
+      {
+        name: 'Tableau de bord',
+        icon: 'tabler:home',
+        link: '/accueil',
+        permission: 'accueil',
+      },
+    ]
+  },
+    {
+    title: 'Gestion de Stock',
+    items: [
+      {
+        name: 'Produits',
+        icon: 'tabler:box',
+        link: '/produits',
+        permission: 'produits',
+      },
+      {
+        name: 'Stock',
+        icon: 'tabler:archive',
+        link: '/stock',
+        permission: 'stock',
+      },
+      {
+        name: 'Boutique/Magasin',
+        icon: 'tabler:building-store',
+        link: '/boutique',
+        permission: 'boutique',
+      },
+    ]
   },
   {
-    name: 'Employés',
-    icon: 'lucide:users',
-    link: '/employees',
-    permission: 'employees',
+    title: 'Ressources Humaines',
+    items: [
+      {
+        name: 'Personnel',
+        icon: 'tabler:users',
+        link: '/employees',
+        permission: 'employees',
+      },
+       {
+        name: 'Client',
+        icon: 'tabler:user-check',
+        link: '/client',
+        permission: 'client',
+      },
+      {
+        name: 'Fournisseur',
+        icon: 'tabler:user-star',
+        link: '/fournisseur',
+        permission: 'fournisseur',
+      },
+     
+    ]
+  },
+
+  {
+    title: 'Gestion Commerciale',
+    items: [
+      {
+        name: 'Point de vente',
+        icon: 'tabler:device-laptop',
+        link: '/point-de-vente',
+        permission: 'point-de-vente',
+      },
+      {
+        name: 'Ventes',
+        icon: 'tabler:coins',
+        link: '/ventes',
+        permission: 'ventes',
+      },
+      {
+        name: 'Achat',
+        icon: 'tabler:shopping-cart',
+        link: '/achat',
+        permission: 'achat',
+      },
+      {
+        name: 'Comptabilité',
+        icon: 'tabler:calculator',
+        link: '/comptabilite',
+        permission: 'comptabilite',
+      },
+      {
+        name: 'Facture',
+        icon: 'tabler:receipt',
+        link: '/facture',
+        permission: 'facture',
+      },
+    ]
   },
   {
-    name: 'Pointage',
-    icon: 'lucide:clock-plus',
-    link: '/pointage',
-    permission: 'pointage',
-  },
-  {
-    name: 'Historique',
-    icon: 'lucide:history',
-    link: '/historique',
-    permission: 'historique',
-  },
-  {
-    name: 'Congés',
-    icon: 'lucide:calendar-days',
-    link: '/conge',
-    permission: 'conge',
-  },
-  {
-    name: 'Organisation',
-    icon: 'lucide:building-2',
-    link: '/organisation',
-    permission: 'SUPER_ADMIN', // Seul le SUPER_ADMIN peut accéder à cette page
-  },
-  {
-    name: 'Utilisateurs',
-    icon: 'lucide:user-cog',
-    link: '/utilisateur',
-    permission: 'utilisateur',
-  },
-  {
-    name: 'Paramètres',
-    icon: 'lucide:settings',
-    link: '/parametre',
-    permission: 'parametre',
+    title: 'Administration',
+    items: [
+      {
+        name: 'Organisation',
+        icon: 'tabler:building-2',
+        link: '/organisation',
+        permission: 'SUPER_ADMIN',
+      },
+       {
+        name: 'Utilisateurs',
+        icon: 'tabler:user-cog',
+        link: '/utilisateur',
+        permission: 'utilisateur',
+      },
+      {
+        name: 'Paramètres',
+        icon: 'tabler:settings',
+        link: '/parametre',
+        permission: 'parametre',
+      }
+    ]
   }
 ];
 
-// Filtrer les menus selon les permissions
-const menuItems = computed(() => {
-  // Si pas d'utilisateur connecté, retourner menu vide
+// Filtrer les catégories et leurs items selon les permissions
+const filteredMenuCategories = computed(() => {
   if (!user.value) {
     return [];
   }
 
-  return allMenuItems.filter(item => {
-    // Cas spécial pour la permission SUPER_ADMIN
-    if (item.permission === 'SUPER_ADMIN') {
-      return user.value.role === 'SUPER_ADMIN';
-    }
+  return menuCategories.map(category => {
+    // Filtrer les items de la catégorie
+    const filteredItems = category.items.filter(item => {
+      // Cas spécial SUPER_ADMIN
+      if (item.permission === 'SUPER_ADMIN') {
+        return user.value.role === 'SUPER_ADMIN';
+      }
 
-    // Si c'est un Admin/SUPER_ADMIN, afficher tous les autres menus
-    const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
-    if (adminRoles.includes(user.value.role)) {
-      return true;
-    }
+      // Admin a accès à tout (sauf SUPER_ADMIN explicit)
+      const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
+      if (adminRoles.includes(user.value.role)) {
+        return true;
+      }
 
-    // Pour les TenantUsers (MANAGER, USER, RH), filtrer selon permissions
-    const userPermissions = user.value.permissions || [];
-    
-    // Si pas de permission requise, accessible à tous
-    if (!item.permission) return true;
-    
-    // Vérifier si l'utilisateur a la permission
-    return userPermissions.includes(item.permission);
-  });
+      const userPermissions = user.value.permissions || [];
+      if (!item.permission) return true;
+      return userPermissions.includes(item.permission);
+    });
+
+    // Retourner la catégorie seulement si elle a des items visibles
+    if (filteredItems.length > 0) {
+      return {
+        ...category,
+        items: filteredItems
+      };
+    }
+    return null;
+  }).filter(category => category !== null); // Enlever les catégories vides
 });
 
 const route = useRoute();
 
 // Ouvrir automatiquement le menu parent si un enfant est actif
+// Ouvrir automatiquement le menu parent si un enfant est actif
 watch(() => route.path, (newPath) => {
-  allMenuItems.forEach(item => {
-    if ('children' in item && item.children && Array.isArray(item.children)) {
-      const hasActiveChild = (item.children as any[]).some((child: any) => {
-        if (!child.link) return false;
-        return route.path === child.link || route.path.startsWith(child.link + '/');
-      });
-      if (hasActiveChild && !openMenus.value.includes(item.name)) {
-        openMenus.value.push(item.name);
+  menuCategories.forEach(category => {
+    category.items.forEach(item => {
+      if ('children' in item && item.children && Array.isArray(item.children)) {
+        const hasActiveChild = (item.children as any[]).some((child: any) => {
+          if (!child.link) return false;
+          return route.path === child.link || route.path.startsWith(child.link + '/');
+        });
+        if (hasActiveChild && !openMenus.value.includes(item.name)) {
+          openMenus.value.push(item.name);
+        }
       }
-    }
+    });
   });
 }, { immediate: true });
 </script>

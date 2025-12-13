@@ -1,0 +1,4 @@
+'vue-tsc' n'est pas reconnu en tant que commande interne
+ou externe, un programme ex�cutable ou un fichier de commandes.
+undefined
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "vue-tsc" not found

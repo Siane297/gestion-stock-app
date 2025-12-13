@@ -141,7 +141,7 @@ export const seedTenantData = async (schemaName: string): Promise<void> => {
     await tenantPrisma.$disconnect();
     
     if (process.env.NODE_ENV !== 'production') {
-      logger.info(`✅ Seed terminé pour ${schemaName}: ${departements.length} départements, ${postes.length} postes et ${typesConges.length} types de congés créés`);
+      logger.info(`✅ Seed terminé pour ${schemaName}: ${departements.length} départements et ${postes.length} postes créés`);
     }
 
   } catch (error) {

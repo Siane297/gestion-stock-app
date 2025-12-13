@@ -75,10 +75,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Icon } from '@iconify/vue';
-import ParametreHoraire from '~/components/parametre/content/ParametreHoraire.vue';
+
 import ParametreAdministrateur from '~/components/parametre/content/ParametreAdministrateur.vue';
 import ParametreOrganisation from '~/components/parametre/content/ParametreOrganisation.vue';
-import ParametreBadge from '~/components/parametre/content/ParametreBadge.vue';
 
 // Onglet actif
 const activeTab = ref<'horaire' | 'administrateur' | 'organisation' | 'badge'>('horaire');

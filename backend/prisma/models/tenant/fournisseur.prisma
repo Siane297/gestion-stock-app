@@ -1,0 +1,16 @@
+model fournisseur {
+    id                String   @id @default(uuid())
+    nom               String
+    telephone         String?
+    email             String?
+    adresse           String?
+    responsable       String?
+    delai_livraison   Int? // jours
+    est_actif         Boolean  @default(true)
+    date_creation     DateTime @default(now())
+    date_modification DateTime @updatedAt
+
+    achats achat[]
+
+    @@map("fournisseurs")
+}

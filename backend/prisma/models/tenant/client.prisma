@@ -1,0 +1,18 @@
+model client {
+    id                String   @id @default(uuid())
+    nom               String
+    telephone         String?
+    email             String?  @unique
+    adresse           String?
+    solde_credit      Float    @default(0)
+    limite_credit     Float?
+    est_actif         Boolean  @default(true)
+    date_creation     DateTime @default(now())
+    date_modification DateTime @updatedAt
+
+    ventes vente[]
+
+    @@index([telephone])
+    @@index([email])
+    @@map("clients")
+}

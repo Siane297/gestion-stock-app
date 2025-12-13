@@ -1,0 +1,151 @@
+import type { Request, Response } from 'express';
+import { AchatService } from '../services/achatService.js';
+import { logger } from '../config/logger.js';
+
+/**
+ * Récupère tous les achats
+ */
+export const getAllAchats = async (req: Request, res: Response) => {
+  try {
+    const achatService = new AchatService(req.tenantPrisma);
+    const achats = await achatService.getAll();
+
+    res.json({
+      success: true,
+      data: achats,
+    });
+  } catch (error: any) {
+    logger.error('Erreur lors de la récupération des achats:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Erreur lors de la récupération des achats',
+    });
+  }
+};
+
+/**
+ * Récupère un achat par ID
+ */
+export const getAchatById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'ID requis' });
+    }
+    const achatService = new AchatService(req.tenantPrisma);
+    const achat = await achatService.getById(id);
+
+    res.json({
+      success: true,
+      data: achat,
+    });
+  } catch (error: any) {
+    logger.error('Erreur lors de la récupération de l\'achat:', error);
+    const status = error.message === 'Achat non trouvé' ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message || 'Erreur lors de la récupération de l\'achat',
+    });
+  }
+};
+
+/**
+ * Crée un nouvel achat
+ */
+export const createAchat = async (req: Request, res: Response) => {
+  try {
+    const achatService = new AchatService(req.tenantPrisma);
+    const achat = await achatService.create(req.body);
+
+    res.status(201).json({
+      success: true,
+      message: 'Achat créé avec succès',
+      data: achat,
+    });
+  } catch (error: any) {
+    logger.error('Erreur lors de la création de l\'achat:', error);
+    const status = error.message.includes('obligatoire') || 
+                   error.message.includes('incomplètes') ? 400 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message || 'Erreur lors de la création de l\'achat',
+    });
+  }
+};
+
+/**
+ * Met à jour le statut d'un achat (réception)
+ */
+export const updateAchatStatut = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'ID requis' });
+    }
+    const achatService = new AchatService(req.tenantPrisma);
+    const userId = (req as any).user?.userId;
+
+    const result = await achatService.updateStatut(id, {
+      statut: req.body.statut,
+      utilisateur_id: userId
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    logger.error('Erreur lors de la mise à jour du statut achat:', error);
+    const status = error.message === 'Achat non trouvé' ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message || 'Erreur lors de la mise à jour du statut',
+    });
+  }
+};
+
+/**
+ * Supprime un achat
+ */
+export const deleteAchat = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'ID requis' });
+    }
+    const achatService = new AchatService(req.tenantPrisma);
+    const result = await achatService.delete(id);
+
+    res.json(result);
+  } catch (error: any) {
+    logger.error('Erreur suppression achat:', error);
+    const status = error.message === 'Achat non trouvé' ? 404 : 
+                   error.message.includes('déjà reçue') ? 400 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message || 'Erreur suppression achat',
+    });
+  }
+};
+
+/**
+ * Annule un achat
+ */
+export const cancelAchat = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'ID requis' });
+    }
+    const achatService = new AchatService(req.tenantPrisma);
+    const userId = (req as any).user?.userId;
+
+    const result = await achatService.cancel(id, userId);
+
+    res.json(result);
+  } catch (error: any) {
+    logger.error('Erreur annulation achat:', error);
+    const status = error.message === 'Achat non trouvé' ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message || 'Erreur annulation achat',
+    });
+  }
+};

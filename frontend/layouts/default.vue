@@ -10,6 +10,7 @@
 
       <!-- Page Content (scrollable) -->
       <main class="flex-1 overflow-y-auto mt-24 p-4  lg:p-6">
+        <AppBreadcrumb v-if="!isAccueilPage" />
         <slot />
       </main>
     </div>
@@ -19,6 +20,7 @@
 <script setup lang="ts">
 import AppSidebar from '~/components/sidebar/AppSidebar.vue';
 import AppHeader from '~/components/header/AppHeader.vue';
+import AppBreadcrumb from '~/components/common/AppBreadcrumb.vue'; // Import Breadcrumb
 
 // Gérer l'état du sidebar pour mobile
 const isSidebarOpen = ref(false);
@@ -37,5 +39,10 @@ watch(() => route.path, () => {
   if (typeof window !== 'undefined' && window.innerWidth < 1024) {
     closeSidebar();
   }
+});
+
+// Check if current page is 'accueil' to hide breadcrumb
+const isAccueilPage = computed(() => {
+  return route.path === '/accueil' || route.path === '/';
 });
 </script>

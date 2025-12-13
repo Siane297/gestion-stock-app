@@ -1,0 +1,38 @@
+model role {
+    id                String   @id @default(uuid())
+    nom               String   @unique
+    description       String?
+    est_actif         Boolean  @default(true)
+    date_creation     DateTime @default(now())
+    date_modification DateTime @updatedAt
+
+    utilisateurs TenantUser[]
+    permissions  permission_role[]
+
+    @@map("roles")
+}
+
+model permission {
+    id          String  @id @default(uuid())
+    code        String  @unique
+    nom         String
+    description String?
+    groupe      String? // VENTES, STOCK, ADMIN
+
+    roles permission_role[]
+
+    @@index([groupe])
+    @@map("permissions")
+}
+
+model permission_role {
+    id            String @id @default(uuid())
+    role_id       String
+    permission_id String
+
+    role       role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+    permission permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+    @@unique([role_id, permission_id])
+    @@map("permission_roles")
+}

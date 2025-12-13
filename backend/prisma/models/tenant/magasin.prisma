@@ -1,0 +1,21 @@
+model magasin {
+    id                String   @id @default(uuid())
+    nom               String
+    localisation      String?
+    telephone         String?
+    email             String?
+    gerant_id         String?
+    heure_ouverture   String? // "09:00"
+    heure_fermeture   String? // "18:00"
+    est_actif         Boolean  @default(true)
+    date_creation     DateTime @default(now())
+    date_modification DateTime @updatedAt
+
+    gerant           TenantUser?        @relation(fields: [gerant_id], references: [id], onDelete: SetNull)
+    stocks           stock_magasin[]
+    mouvements_stock mouvements_stock[]
+    ventes           vente[]
+    achats           achat[]
+
+    @@map("magasins")
+}

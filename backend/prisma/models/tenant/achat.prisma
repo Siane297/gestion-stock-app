@@ -1,0 +1,45 @@
+enum StatutAchat {
+    COMMANDE
+    RECU_PARTIELLEMENT
+    RECU_COMPLET
+    FACTURE_RECU
+    PAYE
+    ANNULE
+}
+
+model achat {
+    id                    String      @id @default(uuid())
+    magasin_id            String
+    fournisseur_id        String
+    numero_commande       String?     @unique
+    montant_total         Float
+    montant_tva           Float       @default(0)
+    statut                StatutAchat
+    date_commande         DateTime    @default(now())
+    date_livraison_prevue DateTime?
+    date_livraison_reelle DateTime?
+    notes                 String?
+    date_modification     DateTime    @updatedAt
+
+    magasin     magasin        @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    fournisseur fournisseur    @relation(fields: [fournisseur_id], references: [id], onDelete: Restrict)
+    details     achat_detail[]
+
+    @@index([fournisseur_id])
+    @@index([date_commande])
+    @@map("achats")
+}
+
+model achat_detail {
+    id            String @id @default(uuid())
+    achat_id      String
+    produit_id    String
+    quantite      Int
+    prix_unitaire Float
+    prix_total    Float
+
+    achat   achat   @relation(fields: [achat_id], references: [id], onDelete: Cascade)
+    produit produit @relation(fields: [produit_id], references: [id], onDelete: Restrict)
+
+    @@map("achats_details")
+}

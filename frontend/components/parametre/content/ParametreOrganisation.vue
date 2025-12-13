@@ -65,35 +65,9 @@
         />
       </div>
 
-      <!-- Onglet Départements -->
-      <div v-if="activeTab === 'departements'" class="py-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Gestion des Départements</h2>
-        
-        <TableGestion
-          :data="departements"
-          :loading="loadingDepartements"
-          entity-label="département"
-          empty-icon="lucide:users"
-          @add="openAddDepartement"
-          @edit="openEditDepartement"
-          @delete="handleDeleteDepartement"
-        />
-      </div>
 
-      <!-- Onglet Types de Congé -->
-      <div v-if="activeTab === 'typesConge'" class="py-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Gestion des Types de Congé</h2>
-        
-        <TableGestion
-          :data="typesCongeForTable"
-          :loading="loadingTypesConge"
-          entity-label="type de congé"
-          empty-icon="lucide:calendar-off"
-          @add="openAddTypeConge"
-          @edit="openEditTypeConge"
-          @delete="handleDeleteTypeConge"
-        />
-      </div>
+
+
     </div>
 
     <!-- Popup Ajout/Modification Poste -->
@@ -106,25 +80,9 @@
       @submit="handlePosteSubmit"
     />
 
-    <!-- Popup Ajout/Modification Département -->
-    <FormPopupDynamique
-      v-model:visible="showDepartementPopup"
-      :title="editingDepartement ? 'Modifier le département' : 'Ajouter un département'"
-      description=""
-      :fields="departementFields"
-      :loading="submittingDepartement"
-      @submit="handleDepartementSubmit"
-    />
 
-    <!-- Popup Ajout/Modification Type de Congé -->
-    <FormPopupDynamique
-      v-model:visible="showTypeCongePopup"
-      :title="editingTypeConge ? 'Modifier le type de congé' : 'Ajouter un type de congé'"
-      description=""
-      :fields="typeCongeFields"
-      :loading="submittingTypeConge"
-      @submit="handleTypeCongeSubmit"
-    />
+
+
   </div>
 </template>
 
@@ -141,8 +99,7 @@ import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
 
 import { useCompanyApi } from '~/composables/api/useCompanyApi';
 import { usePosteApi } from '~/composables/api/usePosteApi';
-import { useDepartementApi } from '~/composables/api/useDepartementApi';
-import { useTypeCongeApi } from '~/composables/api/useTypeCongeApi';
+
 import { useCompanyImageApi } from '~/composables/api/useCompanyImageApi';
 
 const toast = useToast();
@@ -152,15 +109,12 @@ const activeTab = ref('organisation');
 const tabOptions = computed(() => [
   { label: 'Organisation', value: 'organisation', icon: 'lucide:building' },
   { label: `Postes (${postes.value.length})`, value: 'postes', icon: 'lucide:briefcase' },
-  { label: `Départements (${departements.value.length})`, value: 'departements', icon: 'lucide:users' },
-  { label: `Types de Congé (${typesConge.value.length})`, value: 'typesConge', icon: 'lucide:calendar-off' }
 ]);
 
 // APIs
 const { getCurrentCompany, updateCompany } = useCompanyApi();
 const { getPostes, createPoste, updatePoste, deletePoste } = usePosteApi();
-const { getDepartements, createDepartement, updateDepartement, deleteDepartement } = useDepartementApi();
-const { getTypesConge, createTypeConge, updateTypeConge, deleteTypeConge } = useTypeCongeApi();
+
 const { uploadCompanyLogo, deleteCompanyLogo, uploadCompanyPdfHeader, deleteCompanyPdfHeader } = useCompanyImageApi();
 
 // État Organisation
@@ -461,19 +415,7 @@ const postes = ref<any[]>([]);
 const showPostePopup = ref(false);
 const editingPoste = ref<any>(null);
 
-// État Départements
-const loadingDepartements = ref(true);
-const submittingDepartement = ref(false);
-const departements = ref<any[]>([]);
-const showDepartementPopup = ref(false);
-const editingDepartement = ref<any>(null);
 
-// État Types de Congé
-const loadingTypesConge = ref(true);
-const submittingTypeConge = ref(false);
-const typesConge = ref<any[]>([]);
-const showTypeCongePopup = ref(false);
-const editingTypeConge = ref<any>(null);
 
 // Configuration des champs Poste
 const posteFields = computed(() => [
@@ -487,44 +429,7 @@ const posteFields = computed(() => [
   }
 ]);
 
-// Configuration des champs Département
-const departementFields = computed(() => [
-  {
-    name: 'name',
-    label: 'Nom du département',
-    type: 'text' as const,
-    required: true,
-    placeholder: 'Ex: Service Informatique',
-    value: editingDepartement.value?.name
-  }
-]);
 
-// Configuration des champs Type de Congé
-const typeCongeFields = computed(() => [
-  {
-    name: 'nom',
-    label: 'Nom du type',
-    type: 'text' as const,
-    placeholder: 'Ex: Congé annuel, Maladie, etc.',
-    required: true,
-    value: editingTypeConge.value?.nom
-  },
-  {
-    name: 'couleur',
-    label: 'Couleur',
-    type: 'color' as const,
-    required: true,
-    value: editingTypeConge.value?.couleur || '#3B82F6'
-  }
-]);
-
-// Mapper les types de congé pour la table (nom -> name)
-const typesCongeForTable = computed(() => 
-  typesConge.value.map(t => ({
-    ...t,
-    name: t.nom // TableGestion utilise 'name' pour afficher le nom
-  }))
-);
 
 // Chargement initial
 onMounted(async () => {
@@ -548,25 +453,7 @@ onMounted(async () => {
     loadingPostes.value = false;
   }
 
-  // Charger départements
-  try {
-    departements.value = await getDepartements();
-  } catch (error) {
-    console.error('Erreur chargement départements:', error);
-    toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les départements', life: 3000 });
-  } finally {
-    loadingDepartements.value = false;
-  }
 
-  // Charger types de congé
-  try {
-    typesConge.value = await getTypesConge();
-  } catch (error) {
-    console.error('Erreur chargement types de congé:', error);
-    toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les types de congé', life: 3000 });
-  } finally {
-    loadingTypesConge.value = false;
-  }
 });
 
 // Soumission formulaire Organisation
@@ -637,99 +524,11 @@ const handleDeletePoste = async (id: string) => {
   }
 };
 
-// === Gestion Départements ===
-const openAddDepartement = () => {
-  editingDepartement.value = null;
-  showDepartementPopup.value = true;
-};
 
-const openEditDepartement = (departement: any) => {
-  editingDepartement.value = departement;
-  showDepartementPopup.value = true;
-};
 
-const handleDepartementSubmit = async (data: any) => {
-  submittingDepartement.value = true;
-  try {
-    if (editingDepartement.value) {
-      // Mise à jour
-      await updateDepartement(editingDepartement.value.id, data);
-      const index = departements.value.findIndex(d => d.id === editingDepartement.value.id);
-      if (index !== -1) {
-        departements.value[index] = { ...departements.value[index], ...data };
-      }
-      toast.add({ severity: 'success', summary: 'Succès', detail: 'Département modifié', life: 3000 });
-    } else {
-      // Création
-      const newDepartement = await createDepartement(data);
-      departements.value.push(newDepartement);
-      toast.add({ severity: 'success', summary: 'Succès', detail: 'Département créé', life: 3000 });
-    }
-    showDepartementPopup.value = false;
-    editingDepartement.value = null;
-  } catch (error) {
-    toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'opération', life: 3000 });
-  } finally {
-    submittingDepartement.value = false;
-  }
-};
 
-const handleDeleteDepartement = async (id: string) => {
-  try {
-    await deleteDepartement(id);
-    departements.value = departements.value.filter(d => d.id !== id);
-    toast.add({ severity: 'success', summary: 'Succès', detail: 'Département supprimé', life: 3000 });
-  } catch (error) {
-    toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de la suppression', life: 3000 });
-  }
-};
 
-// === Gestion Types de Congé ===
-const openAddTypeConge = () => {
-  editingTypeConge.value = null;
-  showTypeCongePopup.value = true;
-};
 
-const openEditTypeConge = (typeConge: any) => {
-  editingTypeConge.value = typeConge;
-  showTypeCongePopup.value = true;
-};
 
-const handleTypeCongeSubmit = async (data: any) => {
-  submittingTypeConge.value = true;
-  try {
-    if (editingTypeConge.value) {
-      // Mise à jour
-      await updateTypeConge(editingTypeConge.value.id, data);
-      const index = typesConge.value.findIndex(t => t.id === editingTypeConge.value.id);
-      if (index !== -1) {
-        typesConge.value[index] = { ...typesConge.value[index], ...data };
-      }
-      toast.add({ severity: 'success', summary: 'Succès', detail: 'Type de congé modifié', life: 3000 });
-    } else {
-      // Création
-      const newTypeConge = await createTypeConge(data);
-      if (newTypeConge) {
-        typesConge.value.push(newTypeConge);
-      }
-      toast.add({ severity: 'success', summary: 'Succès', detail: 'Type de congé créé', life: 3000 });
-    }
-    showTypeCongePopup.value = false;
-    editingTypeConge.value = null;
-  } catch (error) {
-    toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'opération', life: 3000 });
-  } finally {
-    submittingTypeConge.value = false;
-  }
-};
 
-const handleDeleteTypeConge = async (id: string) => {
-  try {
-    await deleteTypeConge(id);
-    typesConge.value = typesConge.value.filter(t => t.id !== id);
-    toast.add({ severity: 'success', summary: 'Succès', detail: 'Type de congé supprimé', life: 3000 });
-  } catch (error) {
-    toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de la suppression', life: 3000 });
-  }
-};
 </script>

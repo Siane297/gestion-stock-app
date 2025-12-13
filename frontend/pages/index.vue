@@ -49,10 +49,19 @@ const isChecking = ref(true);
 const routePermissions = [
   { path: '/accueil', permission: 'accueil' },
   { path: '/employees', permission: 'employees' },
-  { path: '/pointage', permission: 'pointage' },
-  { path: '/historique', permission: 'historique' },
-  { path: '/parametre', permission: 'parametre' },
+  { path: '/produits', permission: 'produits' },
+  { path: '/stock', permission: 'stock' },
+  { path: '/point-de-vente', permission: 'point-de-vente' },
+  { path: '/achat', permission: 'achat' },
+  { path: '/client', permission: 'client' },
+  { path: '/fournisseur', permission: 'fournisseur' },
+  { path: '/facture', permission: 'facture' },
+  { path: '/comptabilite', permission: 'comptabilite' },
+  { path: '/boutique', permission: 'boutique' },
+  { path: '/ventes', permission: 'ventes' },
+  { path: '/organisation', permission: 'organisation' },
   { path: '/utilisateur', permission: 'utilisateur' },
+  { path: '/parametre', permission: 'parametre' },
 ];
 
 // Trouver la première page accessible pour l'utilisateur

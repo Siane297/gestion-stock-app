@@ -1,0 +1,56 @@
+enum UniteProduit {
+    UNITE
+    KG
+    LITRE
+    METRE
+    PAQUET
+    AUTRE
+}
+
+model categorie_produit {
+    id            String   @id @default(uuid())
+    nom           String   @unique
+    description   String?
+    date_creation DateTime @default(now())
+
+    produits produit[]
+
+    @@map("categories_produit")
+}
+
+model produit {
+    id                 String       @id @default(uuid())
+    code_barre         String?      @unique
+    categorie_id       String?
+    nom                String
+    description        String?
+    prix_achat         Float?
+    prix_vente         Float
+    unite              UniteProduit @default(UNITE)
+    marge_min_pourcent Float? // Alerte marge
+    est_actif          Boolean      @default(true)
+    date_creation      DateTime     @default(now())
+    date_modification  DateTime     @updatedAt
+
+    categorie        categorie_produit? @relation(fields: [categorie_id], references: [id], onDelete: SetNull)
+    prix_historiques historique_prix[]
+    stocks           stock_magasin[]
+    mouvements_stock mouvements_stock[]
+    ventes_details   vente_detail[]
+    achats_details   achat_detail[]
+
+    @@map("produits")
+}
+
+model historique_prix {
+    id           String   @id @default(uuid())
+    produit_id   String
+    ancien_prix  Float
+    nouveau_prix Float
+    raison       String?
+    date_change  DateTime @default(now())
+
+    produit produit @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+
+    @@map("historique_prix")
+}

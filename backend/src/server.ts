@@ -20,6 +20,17 @@ import organizationRoutes from './routes/organizationRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import companyRoutes from './routes/companyRoutes.js';
 
+// Routes Stock
+import clientRoutes from './routes/clientRoutes.js';
+import fournisseurRoutes from './routes/fournisseurRoutes.js';
+import magasinRoutes from './routes/magasinRoutes.js';
+import categorieProduitRoutes from './routes/categorieProduitRoutes.js';
+import produitRoutes from './routes/produitRoutes.js';
+import stockRoutes from './routes/stockRoutes.js';
+import achatRoutes from './routes/achatRoutes.js';
+import venteRoutes from './routes/venteRoutes.js';
+import auditRoutes from './routes/auditRoutes.js';
+
 // Middleware
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
@@ -155,6 +166,17 @@ app.use('/api/postes', identifyTenant, requireTenant, posteRoutes);
 app.use('/api/tenant-users', identifyTenant, requireTenant, tenantUserRoutes);
 app.use('/api/companies', identifyTenant, requireTenant, companyRoutes);
 app.use('/api/pdf', pdfRoutes); // Routes PDF avec middleware inclus dans pdfRoutes
+
+// Routes gestion stock
+app.use('/api/clients', identifyTenant, requireTenant, clientRoutes);
+app.use('/api/fournisseurs', identifyTenant, requireTenant, fournisseurRoutes);
+app.use('/api/magasins', identifyTenant, requireTenant, magasinRoutes);
+app.use('/api/categories-produits', identifyTenant, requireTenant, categorieProduitRoutes);
+app.use('/api/produits', identifyTenant, requireTenant, produitRoutes);
+app.use('/api/stock', identifyTenant, requireTenant, stockRoutes);
+app.use('/api/achats', identifyTenant, requireTenant, achatRoutes);
+app.use('/api/ventes', identifyTenant, requireTenant, venteRoutes);
+app.use('/api/audit', identifyTenant, requireTenant, auditRoutes);
 
 // Route de base
 app.get('/', (req, res) => {

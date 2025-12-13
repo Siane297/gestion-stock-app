@@ -2,9 +2,9 @@
   <!-- Formulaire -->
   <div class="flex flex-col gap-4">
     <!-- Bannière -->
-    <div v-if="showHeader" class="bg-header shadow-sm rounded-xl py-8 px-8">
+    <div v-if="showHeader" class="bg-[#064654] shadow-sm rounded-xl py-5 px-8">
       <div class="container mx-auto">
-        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">
+        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">
           {{ title }}
         </h1>
         <p class="text-white/50">

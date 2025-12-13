@@ -174,7 +174,29 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
 
     // console.log('[REGISTER] TenantUser créé avec ID:', ownerTenantUser.id);
 
+    // console.log('[REGISTER] TenantUser créé avec ID:', ownerTenantUser.id);
+
+    // Créer automatiquement la boutique principale
     if (process.env.NODE_ENV !== 'production') {
+      console.log('[REGISTER] Création de la Boutique Principale...');
+    }
+
+    const boutiquePrincipale = await tenantPrisma.magasin.create({
+      data: {
+        nom: companyName,
+        localisation: address || null,
+        telephone: telephoneOrganisation || null,
+        email: emailOrganisation || null,
+        gerant_id: ownerTenantUser.id,
+        est_actif: true,
+        // Horaires par défaut
+        heure_ouverture: '08:00',
+        heure_fermeture: '18:00',
+      },
+    });
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[REGISTER] Boutique Principale créée avec ID:', boutiquePrincipale.id);
       console.log('[REGISTER] Génération des tokens JWT...');
     }
     
