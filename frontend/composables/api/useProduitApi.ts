@@ -24,6 +24,7 @@ export interface Produit {
   prix_vente: number;
   marge_min_pourcent?: number;
   tva_pourcentage?: number;
+  gere_peremption?: boolean;
   est_actif: boolean;
   date_creation: string;
   conditionnements?: Conditionnement[];
@@ -50,6 +51,7 @@ export interface CreateProduitDto {
   prix_vente: number;
   marge_min_pourcent?: number;
   tva_pourcentage?: number;
+  gere_peremption?: boolean;
   conditionnements?: Array<{
     nom: string;
     quantite_base: number;
@@ -68,6 +70,7 @@ export interface UpdateProduitDto {
   prix_vente?: number;
   marge_min_pourcent?: number;
   tva_pourcentage?: number;
+  gere_peremption?: boolean;
   est_actif?: boolean;
   conditionnements?: Array<{
     id?: string;

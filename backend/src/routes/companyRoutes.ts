@@ -1,9 +1,9 @@
-import express from 'express';
+import express, { Router } from 'express';
 import { getCurrentCompany, updateCompany, uploadCompanyLogo, deleteCompanyLogo, uploadCompanyPdfHeader, deleteCompanyPdfHeader } from '../controllers/companyController.js';
 import { uploadLogo, uploadPdfHeader } from '../config/uploadConfig.js';
 import { attachCompanyName } from '../middleware/uploadMiddleware.js';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // Routes pour l'organisation
 // Préfixe: /api/companies

@@ -21,6 +21,8 @@ import { ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
+// Global state for page title override (can be set by pages)
+const pageTitleOverride = useState<string | null>('pageTitleOverride', () => null);
 
 const home = ref({
     icon: 'pi pi-home',
@@ -44,23 +46,26 @@ const generateBreadcrumbs = () => {
 
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
-        if (part) { // Validate part is not empty
+        if (part) { 
              currentPath += `/${part}`;
-             
-             // Simple capitalization for label
-             // You might want a better mapping logic for complex route names
-             const label = part.charAt(0).toUpperCase() + part.slice(1);
-
-             // Don't make the last item clickable if you prefer, or do.
-             // Here we make all clickable. 
-             // Logic: If it's the last item, maybe no route? 
-             // Usually breadcrumbs link to parent levels. The current page is just label.
              
              const isLast = i === parts.length - 1;
              
+             let label = part.charAt(0).toUpperCase() + part.slice(1);
+             
+             // If it's the last item and we have an override, use it!
+             if (isLast && pageTitleOverride.value) {
+                 label = pageTitleOverride.value;
+             } else if (part.length > 20) {
+                 // Simple heuristic: if it looks like a UUID/long ID, shorten it or show generic
+                 // But since we can't guess the name easily without context, we rely on override.
+                 // Fallback if no override but looks like ID:
+                 label = 'Détails'; 
+             }
+
              breadcrumbs.push({
                  label: label,
-                 route: isLast ? null : currentPath // Last item usually not a link or links to self (which is fine)
+                 route: isLast ? null : currentPath 
              });
         }
     }
@@ -68,8 +73,8 @@ const generateBreadcrumbs = () => {
     items.value = breadcrumbs;
 };
 
-// Update breadcrumbs on route change
-watch(() => route.path, () => {
+// Update breadcrumbs on route or override change
+watch([() => route.path, pageTitleOverride], () => {
     generateBreadcrumbs();
 }, { immediate: true });
 

@@ -8,10 +8,10 @@
     @hide="handleClose"
   >
     <!-- En-tête personnalisé -->
-    <BannerHeader3D
+    <SimplePageHeader
       :title="title"
       :description="description"
-      title-class="text-lg md:text-3xl"
+      class="mb-4"
     />
 
     <!-- Formulaire dynamique -->
@@ -33,13 +33,13 @@
 
 <script setup lang="ts">
 import Dialog from 'primevue/dialog';
-import BannerHeader3D from '~/components/banner/BannerHeader3D.vue';
+import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import FormulaireDynamique from '~/components/form/FormulaireDynamique.vue';
 
 interface FormField {
   name: string;
   label: string;
-  type: "text" | "email" | "select" | "select-with-add" | "number" | "date" | "time" | "textarea" | "image" | "color";
+  type: "text" | "email" | "select" | "select-with-add" | "number" | "date" | "time" | "textarea" | "image" | "color" | "conditionnement" | "checkbox" | "achat-lines";
   placeholder?: string;
   required?: boolean;
   options?: string[] | any[];
@@ -49,7 +49,7 @@ interface FormField {
   max?: number;
   showIcon?: boolean;
   disabled?: boolean;
-  value?: string | number;
+  value?: string | number | boolean | Date;
   onAdd?: () => void;
   onImageUpload?: (file: File) => Promise<string>;
   onImageRemove?: () => Promise<void>;
@@ -57,6 +57,8 @@ interface FormField {
   showFlag?: boolean;
   showLabel?: boolean;
   fixedWidth?: boolean;
+  helpText?: string;
+  fullWidth?: boolean;
 }
 
 interface Props {

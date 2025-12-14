@@ -150,7 +150,7 @@ const menuCategories = [
       {
         name: 'Boutique/Magasin',
         icon: 'tabler:building-store',
-        link: '/boutique',
+        link: '/store',
         permission: 'boutique',
       },
     ]
@@ -186,8 +186,8 @@ const menuCategories = [
       {
         name: 'Point de vente',
         icon: 'tabler:device-laptop',
-        link: '/point-de-vente',
-        permission: 'point-de-vente',
+        link: '/point-vente',
+        permission: 'point-vente',
       },
       {
         name: 'Ventes',

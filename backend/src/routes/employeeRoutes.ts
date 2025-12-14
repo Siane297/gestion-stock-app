@@ -5,7 +5,6 @@ import {
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  getEmployeeByQrCode,
   uploadEmployeePhoto,
   deleteEmployeePhoto,
 } from '../controllers/employeeController.js';
@@ -13,10 +12,10 @@ import { authenticate, requireAdmin } from '../middleware/authMiddleware.js';
 import { uploadEmployeePhoto as uploadEmployeePhotoMiddleware } from '../config/uploadConfig.js';
 import { attachCompanyName } from '../middleware/uploadMiddleware.js';
 
-const router = Router();
+const router: Router = Router();
 
 // Routes publiques (pour le scan QR)
-router.get('/qr/:qrCode', getEmployeeByQrCode);
+// route QR supprimée
 
 // TODO: Activer l'authentification plus tard
 // Routes protégées

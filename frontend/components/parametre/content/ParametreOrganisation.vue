@@ -94,7 +94,7 @@ import { useToast } from 'primevue/usetoast';
 
 import BannerHeader from '~/components/banner/BannerHeader.vue';
 import FormulaireDynamique from '~/components/form/FormulaireDynamique.vue';
-import TableGestion from '~/components/table/TableGestion.vue';
+
 import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
 
 import { useCompanyApi } from '~/composables/api/useCompanyApi';

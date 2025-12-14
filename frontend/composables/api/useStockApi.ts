@@ -85,8 +85,15 @@ export const useStockApi = () => {
     return response.data || null;
   };
 
+  const getStockById = async (id: string): Promise<StockMagasin | null> => {
+      // Temporaire: On récupère tout et on filtre (Idéalement endpoint dédié)
+      const stocks = await getStocks(); 
+      return stocks.find(s => s.id === id) || null;
+  };
+
   return {
     getStocks,
+    getStockById,
     getMouvements,
     getTotalStock,
     createMouvement,

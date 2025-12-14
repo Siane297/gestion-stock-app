@@ -24,10 +24,9 @@ model Employee {
   hireDate      DateTime  @default(now())
   isActive      Boolean   @default(true)
   isOwner       Boolean   @default(false)
-  qrCode        String?   @unique
 
   // Relations
-  position   Poste?       @relation(fields: [positionId], references: [id])
+  position   Poste?      @relation(fields: [positionId], references: [id])
   // department Departement? @relation(fields: [departmentId], references: [id])
   tenantUser TenantUser?
 

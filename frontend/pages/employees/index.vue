@@ -1,203 +1,108 @@
 <template>
   <div>
-    <TablePersonnel 
-      title="Liste des Employés" 
-      description="Gérez les employés de votre entreprise" 
-      :columns="columns"
-      :data="employees" 
-      :loading="loading"
-      :pdf-loading="pdfLoading"
-      :pdf-progress="pdfProgress"
-      :search-fields="['matricule', 'fullName', 'position', 'department', 'email']" 
-      :action-button="{
-        label: 'Nouveau employé',
-        icon: 'pi pi-plus',
-        variant: 'primary',
-        link: '/employees/ajouter'
-      }"
-      @action:view-qr="handleViewQR"
-      @action:edit="handleEdit"
-      @action:delete="handleDelete"
-      @action:download-pdf="handleDownloadPdf"
-    >
-      <!-- Slot personnalisé pour la colonne Nom complet avec Avatar et Matricule -->
-      <template #column-fullName="{ data }">
-        <AvatarInitials
-          :name="data.fullName"
-          :subtitle="data.matricule"
-          :photo="data.photo"
-          size="sm"
-          :show-name="true"
-        />
-      </template>
-
-      <!-- Slot personnalisé pour la colonne département -->
-      <template #column-department.name="{ data }">
-        <Tag :value="typeof data.department === 'object' ? data.department?.name : data.department" severity="info" />
-      </template>
-    </TablePersonnel>
-
-    <!-- Dialog QR Code avec Badge -->
-    <QRCodeDialog
-      v-model:visible="qrDialog"
-      :qr-code="generatedQRCode"
-      :employee-name="selectedEmployee?.fullName || ''"
-      :employee-matricule="selectedEmployee?.matricule || ''"
-      :employee-position="selectedEmployee?.position?.name || ''"
-      :employee-department="typeof selectedEmployee?.department === 'object' ? selectedEmployee?.department?.name || '' : selectedEmployee?.department || ''"
-      :employee-photo="selectedEmployee?.photo || ''"
+    <SimplePageHeader
+      title="Gestion des Employés"
+      description="Gérez votre personnel et leurs droits d'accès"
     />
 
-    <!-- Toast -->
+    <div class="mt-6">
+        <TableGeneric
+            :columns="columns"
+            :data="employees"
+            :loading="loading"
+            :global-action="{
+                label: 'Nouvel Employé',
+                icon: 'pi pi-plus',
+                variant: 'primary',
+                link: '/employees/ajouter'
+            }"
+            :search-fields="['fullName', 'matricule', 'email', 'phoneNumber']"
+            delete-label-field="fullName"
+            @action:edit="handleEdit"
+            @action:delete="handleDelete"
+        >
+             <template #column-fullName="{ data }: { data: any }">
+                 <div class="flex items-center gap-3">
+                     <Avatar 
+                        :image="data.photo" 
+                        :label="data.fullName ? data.fullName.charAt(0).toUpperCase() : 'U'"
+                        class="mr-2" 
+                        shape="circle"
+                        size="normal"
+                     />
+                     <div class="flex flex-col">
+                         <span class="font-medium text-gray-900">{{ data.fullName }}</span>
+                         <span class="text-xs text-gray-500">{{ data.matricule }}</span>
+                     </div>
+                 </div>
+             </template>
+
+             <template #column-position="{ data }: { data: any }">
+                 <Tag :value="data.position?.name || 'Non défini'" severity="info" />
+             </template>
+
+             <template #column-isActive="{ data }: { data: any }">
+                 <Tag :severity="data.isActive ? 'success' : 'danger'" :value="data.isActive ? 'Actif' : 'Inactif'" />
+             </template>
+        </TableGeneric>
+    </div>
+
     <Toast />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import QRCode from 'qrcode';
+import { useToast } from 'primevue/usetoast';
+import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
+import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
+import { useEmployeeApi } from '~/composables/api/useEmployeeApi';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
-import { useToast } from 'primevue/usetoast';
-import TablePersonnel from '~/components/table/TablePersonnel.vue';
-import QRCodeDialog from '~/components/dialog/QRCodeDialog.vue';
-import AvatarInitials from '~/components/avatar/AvatarInitials.vue';
-import { useEmployeeApi, type Employee } from '~/composables/api/useEmployeeApi';
-import { useSecurePdf } from '~/composables/useSecurePdf';
-
-// Protection de la page
-definePageMeta({
-  middleware: ['auth', 'permissions'],
-});
+import Avatar from 'primevue/avatar';
 
 const { getEmployees, deleteEmployee } = useEmployeeApi();
-const { generateEmployeesPdf } = useSecurePdf();
 const toast = useToast();
+const router = useRouter();
 
-// État
-const employees = ref<Employee[]>([]);
+const employees = ref<any[]>([]);
 const loading = ref(false);
-const pdfLoading = ref(false); // État de chargement PDF
-const pdfProgress = ref(0); // Progression du téléchargement
-const qrDialog = ref(false);
-const selectedEmployee = ref<Employee | null>(null);
-const generatedQRCode = ref('');
 
-// Configuration des colonnes de la table
-const columns = [
-  { field: 'fullName', header: 'Nom complet', sortable: true, customRender: true },
-  { field: 'position.name', header: 'Poste', sortable: true },
-  { field: 'department.name', header: 'Département', sortable: true, customRender: true },
-  { field: 'email', header: 'Email', sortable: true },
-  { field: 'phoneNumber', header: 'Téléphone', sortable: false },
+const columns: TableColumn[] = [
+    { field: 'fullName', header: 'Employé', sortable: true, customRender: true },
+    { field: 'position', header: 'Poste', sortable: true, customRender: true },
+    { field: 'email', header: 'Email', sortable: true },
+    { field: 'phoneNumber', header: 'Téléphone', sortable: true },
+    { field: 'isActive', header: 'Statut', sortable: true, customRender: true },
 ];
 
-// Charger les employés
-const loadEmployees = async () => {
-  loading.value = true;
-  try {
-    const response = await getEmployees();
-    employees.value = response;
-  } catch (error: any) {
-    console.error('Erreur lors du chargement des employés:', error);
-    toast.add({
-      severity: 'error',
-      summary: 'Erreur',
-      detail: error.message || 'Erreur lors du chargement des employés',
-      life: 5000
-    });
-  } finally {
-    loading.value = false;
-  }
+const loadData = async () => {
+    loading.value = true;
+    try {
+        employees.value = await getEmployees();
+    } catch (e: any) {
+        console.error("Erreur chargement employés", e);
+        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les employés', life: 3000 });
+    } finally {
+        loading.value = false;
+    }
 };
 
-// Générer le QR Code
-const generateQRCode = async (employee: Employee) => {
-  try {
-    const qrData = JSON.stringify({
-      matricule: employee.matricule,
-      fullName: employee.fullName,
-      position: employee.position?.name || '',
-      department: typeof employee.department === 'object' ? employee.department?.name || '' : employee.department || '',
-      qrCode: employee.qrCode
-    });
-
-    const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-      width: 400,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      }
-    });
-
-    generatedQRCode.value = qrCodeDataUrl;
-  } catch (error) {
-    console.error('Erreur génération QR Code:', error);
-  }
+const handleEdit = (emp: any) => {
+    router.push(`/employees/modifier/${emp.id}`);
 };
 
-// Handlers pour les actions
-const handleViewQR = async (employee: Employee) => {
-  selectedEmployee.value = employee;
-  await generateQRCode(employee);
-  qrDialog.value = true;
+const handleDelete = async (emp: any) => {
+    try {
+        await deleteEmployee(emp.id);
+        toast.add({ severity: 'success', summary: 'Succès', detail: 'Employé supprimé', life: 3000 });
+        await loadData();
+    } catch (e: any) {
+         toast.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Impossible de supprimer', life: 5000 });
+    }
 };
 
-const handleEdit = (employee: Employee) => {
-  navigateTo(`/employees/modifier/${employee.id}`);
-};
-
-const handleDelete = async (employee: Employee) => {
-  try {
-    await deleteEmployee(employee.id);
-    await loadEmployees();
-    toast.add({
-      severity: 'success',
-      summary: 'Succès',
-      detail: 'Employé supprimé avec succès',
-      life: 3000
-    });
-  } catch (error: any) {
-    toast.add({
-      severity: 'error',
-      summary: 'Erreur',
-      detail: error.message || 'Erreur lors de la suppression',
-      life: 5000
-    });
-  }
-};
-
-// Gestion du téléchargement PDF
-const handleDownloadPdf = async () => {
-  try {
-    pdfLoading.value = true; // Activer l'état de chargement
-    pdfProgress.value = 0;
-    
-    // Simulation de progression
-    const interval = setInterval(() => {
-      if (pdfProgress.value < 90) {
-        pdfProgress.value += Math.random() * 10;
-      }
-    }, 200);
-
-    await generateEmployeesPdf();
-    
-    clearInterval(interval);
-    pdfProgress.value = 100;
-  } catch (error) {
-    console.error('Erreur lors du téléchargement PDF:', error);
-    // L'erreur est déjà gérée par useSecurePdf avec des toasts
-  } finally {
-    setTimeout(() => {
-      pdfLoading.value = false; // Désactiver l'état de chargement
-      pdfProgress.value = 0;
-    }, 500); // Petit délai pour voir la barre à 100%
-  }
-};
-
-// Charger au montage
 onMounted(() => {
-  loadEmployees();
+    loadData();
 });
 </script>

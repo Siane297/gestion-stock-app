@@ -6,7 +6,7 @@
       </label>
       <button
         type="button"
-        @click="openPopup"
+        @click="openPopup()"
         class="text-sm px-3 py-1.5 bg-[#064654] text-white rounded-lg hover:bg-[#064654]/90 transition-colors flex items-center gap-2"
       >
         <i class="pi pi-plus"></i>
@@ -19,12 +19,13 @@
       <div
         v-for="(item, index) in items"
         :key="index"
-        class="bg-white border rounded-xl p-4 relative group hover:shadow-md transition-shadow"
+        @click="openPopup(index)"
+        class="bg-white border rounded-xl p-4 relative group hover:shadow-md transition-shadow cursor-pointer hover:border-primary/50"
       >
         <button
           type="button"
-          @click="removeItem(index)"
-          class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors"
+          @click.stop="removeItem(index)"
+          class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors z-10"
         >
           <i class="pi pi-times"></i>
         </button>
@@ -56,7 +57,7 @@
         <p class="text-sm">Aucun conditionnement ajouté</p>
         <button
           type="button"
-          @click="openPopup"
+          @click="openPopup()"
           class="mt-2 text-primary font-medium hover:underline text-sm"
         >
           Ajouter un nouveau
@@ -67,20 +68,23 @@
     <!-- Popup Form -->
     <FormPopupDynamique
       v-model:visible="showPopup"
-      title="Nouveau Conditionnement"
-      description="Ajouter un format de vente (ex: Pack de 6, Carton...)"
-      headerTitle="Ajouter Conditionnement"
+      :title="editingIndex !== null ? 'Modifier Conditionnement' : 'Nouveau Conditionnement'"
+      :description="editingIndex !== null ? 'Modifier les détails du conditionnement' : 'Ajouter un format de vente (ex: Pack de 6, Carton...)'"
+      :headerTitle="editingIndex !== null ? 'Modifier' : 'Ajouter'"
       :fields="popupFields"
-      submit-label="Ajouter"
+      :submit-label="editingIndex !== null ? 'Mettre à jour' : 'Ajouter'"
       @submit="handlePopupSubmit"
+      @cancel="resetPopup"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue';
 import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
 
-interface ConditionnementItem {
+export interface ConditionnementItem {
+  id?: string;
   nom: string;
   quantite_base: number;
   prix_vente: number;
@@ -103,22 +107,22 @@ const emit = defineEmits<{
 }>();
 
 const showPopup = ref(false);
+const editingIndex = ref<number | null>(null);
+
 const items = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
 });
 
-const openPopup = () => {
-  showPopup.value = true;
-};
-
-const popupFields = [
+// Champs de base
+const baseFields = [
   {
     name: 'nom',
     label: 'Nom',
     type: 'text' as const,
     placeholder: 'Ex: Pack de 6, Carton',
-    required: true
+    required: true,
+    value: ''
   },
   {
     name: 'quantite_base',
@@ -126,36 +130,89 @@ const popupFields = [
     type: 'number' as const,
     placeholder: 'Ex: 6, 24...',
     required: true,
-    min: 1
+    min: 1,
+    value: ''
   },
   {
     name: 'prix_vente',
     label: 'Prix de Vente',
     type: 'number' as const,
     placeholder: '0.00',
-    required: true
+    required: true,
+    value: ''
   },
   {
     name: 'code_barre',
     label: 'Code Barre',
     type: 'text' as const,
     placeholder: 'Scanner ou saisir...',
-    required: false
+    required: false,
+    value: ''
   }
 ];
 
+// Champs calculés dynamiquement pour inclure les valeurs en mode édition
+const popupFields = computed(() => {
+    if (editingIndex.value === null) {
+        // Mode Ajout: Champs vides (ou valeurs par défaut)
+        return baseFields.map(f => ({ ...f, value: undefined }));
+    } else {
+        // Mode Édition: Pré-remplir avec les valeurs de l'item sélectionné
+        const item = items.value[editingIndex.value];
+        if (!item) return baseFields; // Sécurité
+
+        return baseFields.map(field => {
+            // Safety access
+            const val = item[field.name as keyof ConditionnementItem];
+            const newVal = (field.name === 'quantite_base' || field.name === 'prix_vente')
+                ? Number(val) 
+                : val;
+            return {
+                ...field,
+                value: newVal
+            };
+        });
+    }
+});
+
+const openPopup = (index: number | null = null) => {
+  editingIndex.value = index;
+  showPopup.value = true;
+};
+
+const resetPopup = () => {
+    editingIndex.value = null;
+    showPopup.value = false;
+};
+
 const handlePopupSubmit = (data: any) => {
+    // Sécurité: Récupérer l'item existant
+    const currentItem = (editingIndex.value !== null && items.value && items.value[editingIndex.value])
+        ? items.value[editingIndex.value]
+        : undefined;
+
   const newItem: ConditionnementItem = {
+    id: currentItem?.id,
     nom: data.nom,
     quantite_base: Number(data.quantite_base),
     prix_vente: Number(data.prix_vente),
     code_barre: data.code_barre,
-    action: 'create' // Marquer comme créé
+    // Si ID existe -> update, sinon create
+    action: currentItem?.id ? 'update' : 'create'
   };
 
-  const newItems = [...items.value, newItem];
+  const newItems = [...items.value];
+  
+  if (editingIndex.value !== null && editingIndex.value < newItems.length) {
+      // Mise à jour
+      newItems[editingIndex.value] = newItem;
+  } else {
+      // Création
+      newItems.push(newItem);
+  }
+
   emit('update:modelValue', newItems);
-  showPopup.value = false;
+  resetPopup();
 };
 
 const removeItem = (index: number) => {

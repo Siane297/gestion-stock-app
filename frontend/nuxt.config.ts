@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   
-  modules: ['@nuxtjs/tailwindcss', '@primevue/nuxt-module', 'nuxt-security'],
+  modules: ['@nuxtjs/tailwindcss', '@primevue/nuxt-module', 'nuxt-security', '@pinia/nuxt'],
   
   // Configuration du serveur de développement
   // devServer: {

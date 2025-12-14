@@ -16,7 +16,7 @@ export interface Employee {
   address?: string;
   sexe?: 'MASCULIN' | 'FEMININ';
   dateNaissance?: string;
-  qrCode?: string;
+
   isActive?: boolean;
   hireDate?: string;
   deletedAt?: string;
@@ -29,7 +29,7 @@ export interface CreateEmployeeDto {
   fullName: string;
   email?: string;
   positionId: string;
-  departmentId: string;
+  departmentId?: string;
   phoneNumber?: string;
   address?: string;
   sexe?: 'MASCULIN' | 'FEMININ';
@@ -79,16 +79,7 @@ export const useEmployeeApi = () => {
     }
   };
 
-  // Rechercher un employé par QR code
-  const getEmployeeByQrCode = async (qrCode: string): Promise<Employee | null> => {
-    try {
-      const response = await get<ApiResponse<Employee>>(`/api/employees/qr/${qrCode}`);
-      return response.data || null;
-    } catch (error) {
-      console.error('Erreur lors de la récupération de l\'employé par QR code:', error);
-      throw error;
-    }
-  };
+
 
   // Créer un nouvel employé
   const createEmployee = async (data: CreateEmployeeDto): Promise<Employee | null> => {
@@ -126,7 +117,7 @@ export const useEmployeeApi = () => {
   return {
     getEmployees,
     getEmployeeById,
-    getEmployeeByQrCode,
+
     createEmployee,
     updateEmployee,
     deleteEmployee,

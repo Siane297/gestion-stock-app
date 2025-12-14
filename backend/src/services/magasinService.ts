@@ -114,7 +114,16 @@ export class MagasinService {
         stocks: {
           take: 10,
           include: {
-            produit: { select: { nom: true, code_barre: true } }
+            produit: { 
+                select: { 
+                    nom: true,
+                    conditionnements: {
+                         where: { quantite_base: 1 },
+                         select: { code_barre: true },
+                         take: 1
+                    }
+                } 
+            }
           }
         }
       }
@@ -237,9 +246,13 @@ export class MagasinService {
           select: {
             id: true,
             nom: true,
-            code_barre: true,
             unite: true,
-            prix_vente: true
+            prix_vente: true,
+            conditionnements: {
+                 where: { quantite_base: 1 },
+                 select: { code_barre: true },
+                 take: 1
+            }
           }
         }
       },
@@ -259,7 +272,8 @@ export class MagasinService {
       const searchLower = filters.search.toLowerCase();
       result = result.filter(s => 
         s.produit.nom.toLowerCase().includes(searchLower) ||
-        s.produit.code_barre?.toLowerCase().includes(searchLower)
+        // @ts-ignore
+        s.produit.conditionnements?.[0]?.code_barre?.toLowerCase().includes(searchLower)
       );
     }
 
