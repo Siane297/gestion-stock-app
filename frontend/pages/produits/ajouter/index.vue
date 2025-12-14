@@ -101,6 +101,24 @@ const productFields = computed(() => [
     placeholder: 'Scanner ou saisir le code',
     required: false
   },
+    {
+    name: 'unite',
+    label: 'Unité de base',
+    type: 'select' as const,
+    placeholder: 'Sélectionnez l\'unité',
+    required: true,
+    value: 'UNITE', // Valeur par défaut
+    options: [
+      { label: 'Unité (pièce)', value: 'UNITE' },
+      { label: 'Kilogramme (kg)', value: 'KG' },
+      { label: 'Litre (L)', value: 'LITRE' },
+      { label: 'Mètre (m)', value: 'METRE' },
+      { label: 'Paquet', value: 'PAQUET' },
+      { label: 'Autre', value: 'AUTRE' }
+    ],
+    optionLabel: 'label',
+    optionValue: 'value'
+  },
   {
     name: 'categorie_id',
     label: 'Catégorie',
@@ -126,38 +144,34 @@ const productFields = computed(() => [
     required: true
   },
   {
-    name: 'unite',
-    label: 'Unité',
-    type: 'select' as const,
-    placeholder: 'Sélectionnez l\'unité',
-    required: true,
-    value: 'UNITE', // Valeur par défaut
-    options: [
-      { label: 'Unité (pièce)', value: 'UNITE' },
-      { label: 'Kilogramme (kg)', value: 'KG' },
-      { label: 'Litre (L)', value: 'LITRE' },
-      { label: 'Mètre (m)', value: 'METRE' },
-      { label: 'Paquet', value: 'PAQUET' },
-      { label: 'Autre', value: 'AUTRE' }
-    ],
-    optionLabel: 'label',
-    optionValue: 'value'
-  },
-  {
-    name: 'marge_min_pourcent',
-    label: 'Alerte marge (%)',
-    type: 'number' as const,
-    placeholder: 'Ex: 20',
+    name: 'gere_peremption',
+    label: 'Gère la péremption (Produit médical/alimentaire)',
+    type: 'checkbox' as const,
     required: false,
-    helpText: 'Pourcentage de marge minimum souhaité'
+    helpText: 'Cochez cette case pour activer le suivi des lots et dates de péremption.'
   },
+
+  // {
+  //   name: 'marge_min_pourcent',
+  //   label: 'Alerte marge (%)',
+  //   type: 'number' as const,
+  //   placeholder: 'Ex: 20',
+  //   required: false,
+  //   helpText: 'Pourcentage de marge minimum souhaité'
+  // },
   {
-    name: 'description',
-    label: 'Description',
-    type: 'textarea' as const,
-    placeholder: 'Description détaillée du produit...',
+    name: 'conditionnements',
+    label: 'Conditionnements',
+    type: 'conditionnement' as const,
     required: false
-  }
+  },
+  // {
+  //   name: 'description',
+  //   label: 'Description',
+  //   type: 'textarea' as const,
+  //   placeholder: 'Description détaillée du produit...',
+  //   required: false
+  // }
 ]);
 
 // Gestion de la soumission
@@ -174,8 +188,15 @@ const handleSubmit = async (data: Record<string, any>) => {
       prix_vente: Number(data.prix_vente),
       unite: data.unite || 'UNITE',
       marge_min_pourcent: data.marge_min_pourcent ? Number(data.marge_min_pourcent) : undefined,
+      gere_peremption: data.gere_peremption || false,
       description: data.description || undefined,
-      est_actif: true
+      est_actif: true,
+      conditionnements: data.conditionnements ? data.conditionnements.map((c: any) => ({
+        nom: c.nom,
+        quantite_base: Number(c.quantite_base),
+        prix_vente: Number(c.prix_vente),
+        code_barre: c.code_barre || undefined
+      })) : undefined
     };
 
     const produit = await createProduit(produitPayload);

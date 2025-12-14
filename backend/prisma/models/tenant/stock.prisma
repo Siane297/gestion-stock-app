@@ -31,6 +31,7 @@ model mouvements_stock {
     magasin_id     String
     produit_id     String
     utilisateur_id String?
+    lot_id         String? // Optionnel
     type           TypeMouvementStock
     quantite       Int
     vente_id       String?
@@ -38,14 +39,25 @@ model mouvements_stock {
     raison         String?
     date_creation  DateTime           @default(now())
 
-    magasin     magasin     @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
-    produit     produit     @relation(fields: [produit_id], references: [id], onDelete: Cascade)
-    utilisateur TenantUser? @relation(fields: [utilisateur_id], references: [id])
-    // Relations optionnelles vers vente et achat si nécessaire, mais non définies strictement ici pour éviter les dépendances circulaires complexes si les fichiers ne sont pas tous là, mais Prisma gère ça. 
-    // Je vais ajouter les relations inverses dans vente et achat, et je peux les référencer ici si je veux, mais le schéma original n'avait pas de relation explicite @relation ici pour vente_id/achat_id, juste les champs. Je laisse comme ça pour l'instant pour respecter le schéma original, sauf si une relation est requise.
-    // Le schéma original: vente_id String? ... pas de @relation. Je respecte.
+    magasin     magasin      @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    produit     produit      @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+    utilisateur TenantUser?  @relation(fields: [utilisateur_id], references: [id])
+    lot         lot_produit? @relation(fields: [lot_id], references: [id])
 
     @@index([magasin_id, produit_id])
     @@index([date_creation])
     @@map("mouvements_stock")
+}
+
+model stock_lot {
+    id         String @id @default(uuid())
+    magasin_id String
+    lot_id     String
+    quantite   Float  @default(0) // Float pour gérer les décimales si besoin, même si stock_magasin est Int (on devrait peut-être aligner)
+
+    magasin magasin     @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    lot     lot_produit @relation(fields: [lot_id], references: [id], onDelete: Cascade)
+
+    @@unique([magasin_id, lot_id])
+    @@map("stocks_lot")
 }

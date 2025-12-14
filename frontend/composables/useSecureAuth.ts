@@ -43,6 +43,9 @@ export interface AuthResponse {
 /**
  * Composable pour l'authentification sécurisée
  */
+// Promise partagée pour éviter les appels concurrents au refresh token
+let refreshPromise: Promise<boolean> | null = null;
+
 export const useSecureAuth = () => {
   const config = useRuntimeConfig();
   const baseURL = config.public.apiBase || 'http://localhost:3001';
@@ -56,42 +59,49 @@ export const useSecureAuth = () => {
   /**
    * Rafraîchir l'access token en utilisant le refresh token (HttpOnly cookie)
    */
+
+
+  /**
+   * Rafraîchir l'access token en utilisant le refresh token (HttpOnly cookie)
+   */
   const refreshAccessToken = async (shouldLogoutOnError: boolean = true): Promise<boolean> => {
-    try {
-      const response = await $fetch<AuthResponse>(`${baseURL}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include', // Inclut automatiquement les HttpOnly cookies
-      });
+    // Si un refresh est déjà en cours, retourner la promesse existante
+    if (refreshPromise) {
+      return refreshPromise;
+    }
 
-      if (response.success && response.data?.accessToken) {
-        accessToken.value = response.data.accessToken;
-        isAuthenticated.value = true;
+    refreshPromise = (async () => {
+      try {
+        const response = await $fetch<AuthResponse>(`${baseURL}/api/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include', // Inclut automatiquement les HttpOnly cookies
+        });
 
-        // Utiliser les données utilisateur retournées directement par /refresh
-        // Cela évite un second appel API à /me (optimisation performance)
-        if (response.data.user) {
-          user.value = response.data.user;
+        if (response.success && response.data?.accessToken) {
+          accessToken.value = response.data.accessToken;
+          isAuthenticated.value = true;
+
+          // Utiliser les données utilisateur retournées directement par /refresh
+          if (response.data.user) {
+            user.value = response.data.user;
+          }
           return true;
         }
 
-        // Fallback si user non retourné (ne devrait pas arriver)
         console.warn('[refreshAccessToken] User data manquant dans la réponse refresh');
         if (shouldLogoutOnError) await logout();
         return false;
+      } catch (error) {
+        if (shouldLogoutOnError) {
+          await logout();
+        }
+        return false;
+      } finally {
+        refreshPromise = null;
       }
+    })();
 
-      // Si le refresh échoue, déconnecter l'utilisateur seulement si demandé
-      if (shouldLogoutOnError) {
-        await logout();
-      }
-      return false;
-    } catch (error) {
-      // On garde l'erreur silencieuse pour ne pas spammer la console si l'utilisateur n'est juste pas connecté
-      if (shouldLogoutOnError) {
-        await logout();
-      }
-      return false;
-    }
+    return refreshPromise;
   };
 
 

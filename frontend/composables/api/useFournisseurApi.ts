@@ -3,7 +3,7 @@ import type { ApiResponse } from './config';
 
 export interface Fournisseur {
   id: string;
-  nom: string;
+  nom_entreprise: string;
   email?: string;
   telephone?: string;
   adresse?: string;
@@ -21,7 +21,7 @@ export interface FournisseurStats {
 }
 
 export interface CreateFournisseurDto {
-  nom: string;
+  nom_entreprise: string;
   email?: string;
   telephone?: string;
   adresse?: string;
@@ -30,7 +30,7 @@ export interface CreateFournisseurDto {
 }
 
 export interface UpdateFournisseurDto {
-  nom?: string;
+  nom_entreprise?: string;
   email?: string;
   telephone?: string;
   adresse?: string;

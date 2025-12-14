@@ -31,15 +31,20 @@ model achat {
 }
 
 model achat_detail {
-    id            String @id @default(uuid())
-    achat_id      String
-    produit_id    String
-    quantite      Int
-    prix_unitaire Float
-    prix_total    Float
+    id                       String    @id @default(uuid())
+    achat_id                 String
+    produit_id               String
+    quantite                 Int
+    prix_unitaire            Float
+    prix_total               Float
+    numero_lot               String? // Saisi à la réception
+    date_peremption          DateTime? // Saisi à la réception
+    conditionnement_id       String?
+    quantite_conditionnement Float?
 
-    achat   achat   @relation(fields: [achat_id], references: [id], onDelete: Cascade)
-    produit produit @relation(fields: [produit_id], references: [id], onDelete: Restrict)
+    achat           achat                    @relation(fields: [achat_id], references: [id], onDelete: Cascade)
+    produit         produit                  @relation(fields: [produit_id], references: [id], onDelete: Restrict)
+    conditionnement conditionnement_produit? @relation(fields: [conditionnement_id], references: [id])
 
     @@map("achats_details")
 }

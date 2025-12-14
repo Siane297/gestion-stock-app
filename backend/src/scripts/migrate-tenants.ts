@@ -4,7 +4,7 @@ import { logger } from '../config/logger.js';
 
 /**
  * Script pour appliquer les migrations Prisma sur tous les tenants existants
- * Exécute: npm run migrate:tenants
+ * Exécute: pnpm run migrate:tenants
  */
 async function migrateAllTenants() {
   try {

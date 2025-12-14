@@ -20,26 +20,47 @@ model categorie_produit {
 
 model produit {
     id                 String       @id @default(uuid())
-    code_barre         String?      @unique
+    // prix_achat et prix_vente déplacés vers conditionnement_produit
+    // code_barre déplacé vers conditionnement_produit
     categorie_id       String?
     nom                String
     description        String?
-    prix_achat         Float?
-    prix_vente         Float
     unite              UniteProduit @default(UNITE)
     marge_min_pourcent Float? // Alerte marge
+    gere_peremption    Boolean      @default(false)
     est_actif          Boolean      @default(true)
     date_creation      DateTime     @default(now())
     date_modification  DateTime     @updatedAt
 
-    categorie        categorie_produit? @relation(fields: [categorie_id], references: [id], onDelete: SetNull)
+    categorie        categorie_produit?        @relation(fields: [categorie_id], references: [id], onDelete: SetNull)
     prix_historiques historique_prix[]
     stocks           stock_magasin[]
     mouvements_stock mouvements_stock[]
     ventes_details   vente_detail[]
     achats_details   achat_detail[]
+    conditionnements conditionnement_produit[]
+    lots             lot_produit[]
 
     @@map("produits")
+}
+
+model conditionnement_produit {
+    id            String   @id @default(uuid())
+    produit_id    String
+    nom           String // Ex: "Cajot", "Pack de 6", "Unité"
+    quantite_base Float // Ex: 24, 1
+    prix_vente    Float // Prix de vente
+    prix_achat    Float? // Prix d'achat
+    code_barre    String? // Code barre spécifique (unique si défini)  @unique
+    est_actif     Boolean  @default(true)
+    date_creation DateTime @default(now())
+
+    produit        produit        @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+    ventes_details vente_detail[]
+    achats_details achat_detail[]
+
+    @@unique([produit_id, nom])
+    @@map("conditionnements_produit")
 }
 
 model historique_prix {
@@ -53,4 +74,20 @@ model historique_prix {
     produit produit @relation(fields: [produit_id], references: [id], onDelete: Cascade)
 
     @@map("historique_prix")
+}
+
+model lot_produit {
+    id               String    @id @default(uuid())
+    produit_id       String
+    numero_lot       String // Ex: "BATCH-2024-001"
+    date_peremption  DateTime
+    date_fabrication DateTime?
+    date_creation    DateTime  @default(now())
+
+    produit    produit            @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+    stocks_lot stock_lot[]
+    mouvements mouvements_stock[]
+
+    @@unique([produit_id, numero_lot])
+    @@map("lots_produit")
 }

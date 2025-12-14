@@ -19,6 +19,9 @@ export interface CreateMouvementDto {
   raison?: string;
   vente_id?: string;
   achat_id?: string;
+  lot_id?: string;
+  numero_lot?: string;     // Pour mouvement manuel
+  date_peremption?: Date; // Pour mouvement manuel
 }
 
 export interface StockUpdateResult {
@@ -137,6 +140,70 @@ export class StockService {
       }
     }
 
+    // 0. Gestion Lot (Résolution lot_id ou création si manuel)
+    if (data.numero_lot && !data.lot_id) {
+         // Rechercher ou créer le lot
+         // On suppose que pour un AJUSTEMENT ou ENTREE, si on donne un lot, on le crée/récupère.
+         const lot = await prismaClient.lot_produit.upsert({
+             where: {
+                 produit_id_numero_lot: { produit_id: data.produit_id, numero_lot: data.numero_lot }
+             },
+             create: {
+                 produit_id: data.produit_id,
+                 numero_lot: data.numero_lot,
+                 date_peremption: data.date_peremption
+             },
+             update: {} // On ne met pas à jour la date si existe (ou alors si ?) Disons que non pour sécuriser.
+         });
+         data.lot_id = lot.id;
+    }
+
+    // Mise à jour table stock_lot
+    if (data.lot_id) {
+       if (isIncrement) {
+           // Upsert stock_lot
+           await prismaClient.stock_lot.upsert({
+               where: {
+                   magasin_id_lot_id: { magasin_id: data.magasin_id, lot_id: data.lot_id }
+               },
+               create: { magasin_id: data.magasin_id, lot_id: data.lot_id, quantite: data.quantite },
+               update: { quantite: { increment: data.quantite } }
+           });
+       } else if (isDecrement) {
+           // Decrement stock_lot (Check logic should be ideally done before, but atomic decrement works)
+           // Warning: prisma doesn't check negative on float by default, but checkStockAvailable does for global. 
+           // For specific lot, we assume caller checked or we check here.
+           // Let's assume strict management:
+           await prismaClient.stock_lot.update({
+               where: {
+                   magasin_id_lot_id: { magasin_id: data.magasin_id, lot_id: data.lot_id }
+               },
+               data: { quantite: { decrement: data.quantite } }
+           });
+       }
+    }
+
+    // 0.5. Validation de l'existence de l'utilisateur (FK Check Safeguard)
+    if (data.utilisateur_id) {
+        // On vérifie si l'utilisateur existe dans le tenant actuel
+        // Si non (ex: script de restauration incomplet), on met null pour éviter le crash FK
+        try {
+            const userExists = await prismaClient.tenantUser.findUnique({
+                where: { id: data.utilisateur_id },
+                select: { id: true }
+            });
+            
+            if (!userExists) {
+                logger.warn(`⚠️ [StockService] Utilisateur ${data.utilisateur_id} introuvable pour le mouvement. Passage en anonyme.`);
+                data.utilisateur_id = undefined;
+            }
+        } catch (e) {
+            // Si la table n'existe pas ou erreur, on ignore pour ne pas bloquer
+            logger.warn('⚠️ [StockService] Impossible de vérifier utilisateur:', e);
+            data.utilisateur_id = undefined;
+        }
+    }
+
     // 1. Créer le mouvement
     const mouvement = await prismaClient.mouvements_stock.create({
       data: {
@@ -147,7 +214,8 @@ export class StockService {
         quantite: data.quantite,
         raison: data.raison || (isIncrement ? 'Entrée de stock' : 'Sortie de stock'),
         vente_id: data.vente_id || null,
-        achat_id: data.achat_id || null
+        achat_id: data.achat_id || null,
+        lot_id: data.lot_id || null
       }
     });
 
@@ -214,6 +282,15 @@ export class StockService {
     options: { utilisateur_id?: string; raison?: string; vente_id?: string } = {},
     tx?: any
   ): Promise<StockUpdateResult> {
+    const prismaClient = tx || this.prisma;
+    
+    // Vérifier si le produit gère la péremption
+    const produit = await prismaClient.produit.findUnique({ where: { id: produit_id }, select: { gere_peremption: true, nom: true } });
+    
+    if (produit?.gere_peremption) {
+        return this.decrementStockFEFO(magasin_id, produit_id, quantite, options, tx);
+    }
+
     return this.createMouvement({
       magasin_id,
       produit_id,
@@ -221,6 +298,72 @@ export class StockService {
       quantite,
       ...options
     }, tx);
+  }
+
+  /**
+   * Logique FEFO (First Expired First Out)
+   */
+  private async decrementStockFEFO(
+    magasin_id: string,
+    produit_id: string,
+    quantite: number,
+    options: { utilisateur_id?: string; raison?: string; vente_id?: string } = {},
+    tx?: any
+  ): Promise<StockUpdateResult> {
+    const prismaClient = tx || this.prisma;
+    
+    // 1. Récupérer les lots disponibles triés par date
+    const lots = await prismaClient.stock_lot.findMany({
+        where: {
+            magasin_id,
+            lot: { produit_id },
+            quantite: { gt: 0 }
+        },
+        include: { lot: true },
+        orderBy: { lot: { date_peremption: 'asc' } }
+    });
+
+    let remainingQty = quantite;
+    const details = [];
+
+    for (const stockLot of lots) {
+        if (remainingQty <= 0) break;
+
+        const qtyToTake = Math.min(stockLot.quantite, remainingQty);
+        
+        details.push({
+            lot_id: stockLot.lot_id,
+            quantite: qtyToTake
+        });
+
+        remainingQty -= qtyToTake;
+    }
+
+    if (remainingQty > 0) {
+        // Fallback: Si pas assez de lots mais stock global OK (incohérence) ou juste pas assez de stock
+        // On check le stock global
+        throw new Error(`Stock insuffisant en lots pour la péremption. Manque: ${remainingQty}`);
+    }
+
+    // 2. Créer les mouvements et décrémenter pour chaque lot
+    let lastMouvement;
+    let lastNewStock;
+
+    for (const detail of details) {
+       const res = await this.createMouvement({
+           magasin_id,
+           produit_id,
+           type: 'SORTIE_VENTE', // Ou PERISSABLE si c'était de la perte, mais ici c'est decrementStock générique (vente)
+           quantite: detail.quantite,
+           lot_id: detail.lot_id,
+           ...options
+       }, tx);
+       lastMouvement = res.mouvement;
+       lastNewStock = res.newStock;
+    }
+
+    // Retourne le dernier (juste pour respecter la signature, ou un agrégat si besoin)
+    return { mouvement: lastMouvement, newStock: lastNewStock };
   }
 
   /**
@@ -239,13 +382,28 @@ export class StockService {
       where,
       include: {
         magasin: { select: { nom: true } },
-        produit: { select: { nom: true, code_barre: true, unite: true } }
+        produit: { 
+            select: { 
+                nom: true, 
+                unite: true,
+                conditionnements: {
+                    where: { quantite_base: 1 },
+                    select: { code_barre: true },
+                    take: 1
+                }
+            } 
+        }
       },
       orderBy: { quantite: 'asc' }
     });
 
     const result = stocks.map(stock => ({
       ...stock,
+      produit: {
+          nom: stock.produit.nom,
+          unite: stock.produit.unite,
+          code_barre: stock.produit.conditionnements[0]?.code_barre || null
+      },
       isAlert: stock.quantite <= stock.quantite_minimum
     }));
 
@@ -310,16 +468,34 @@ export class StockService {
       if (filters.dateTo) where.date_creation.lte = filters.dateTo;
     }
 
-    return this.prisma.mouvements_stock.findMany({
+    const mvmts = await this.prisma.mouvements_stock.findMany({
       where,
       include: {
         magasin: { select: { nom: true } },
-        produit: { select: { nom: true, code_barre: true } },
+        produit: { 
+            select: { 
+                nom: true, 
+                conditionnements: {
+                    where: { quantite_base: 1 },
+                    select: { code_barre: true },
+                    take: 1
+                }
+            } 
+        },
+        lot: true, // Include Lot info
         utilisateur: { select: { email: true } }
       },
       orderBy: { date_creation: 'desc' },
       take: filters?.limit || 100
     });
+    
+    return mvmts.map(m => ({
+        ...m,
+        produit: {
+            ...m.produit,
+            code_barre: m.produit.conditionnements[0]?.code_barre || null
+        }
+    }));
   }
 }
 

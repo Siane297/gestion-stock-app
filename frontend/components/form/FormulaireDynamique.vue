@@ -25,7 +25,8 @@
               :class="getFieldClass(index)"
               class="flex flex-col gap-2"
             >
-              <label v-if="field.showLabel !== false" :for="field.name" class="font-semibold text-gray-700">
+            
+              <label v-if="field.showLabel !== false && field.type !== 'conditionnement'" :for="field.name" class="font-semibold text-gray-700">
                 {{ field.label }}
                 <span v-if="field.required" class="text-red-500">*</span>
               </label>
@@ -132,9 +133,9 @@
                 :invalid="submitted && field.required && !formData[field.name]"
                 :showIcon="field.showIcon !== false"
                 iconDisplay="input"
+                fluid
                 dateFormat="dd/mm/yy"
                 class="w-full"
-                fluid
               />
 
               <!-- DatePicker pour Time (HH:mm) -->
@@ -168,6 +169,36 @@
                 v-model="formData[field.name]"
                 :show-label="false"
               />
+
+              <!-- Conditionnement Field -->
+              <ConditionnementField
+                v-else-if="field.type === 'conditionnement'"
+                v-model="formData[field.name]"
+                :label="field.label"
+              />
+
+              <!-- Achat Lines -->
+              <AchatLinesField
+                v-else-if="field.type === 'achat-lines'"
+                v-model="formData[field.name]"
+                :label="field.label"
+              />
+
+              <!-- Checkbox -->
+              <div v-else-if="field.type === 'checkbox'" class="flex items-center gap-2 mt-2">
+                  <Checkbox 
+                      :inputId="field.name" 
+                      v-model="formData[field.name]" 
+                      :binary="true" 
+                      :disabled="field.disabled"
+                  />
+                  <label :for="field.name" class="cursor-pointer text-gray-700 select-none">
+                      {{ field.label || field.name }}
+                  </label>
+                  <small v-if="field.helpText" class="block text-gray-500 text-xs ml-8">
+                     {{ field.helpText }}
+                  </small>
+              </div>
 
               <!-- Image Upload -->
               <ImageUploadField
@@ -239,6 +270,9 @@ import DatePicker from "primevue/datepicker";
 import ImageUploadField from "~/components/form/ImageUploadField.vue";
 
 import ColorPickerField from "~/components/form/ColorPickerField.vue";
+import ConditionnementField from "~/components/form/ConditionnementField.vue";
+import AchatLinesField from "~/components/form/AchatLinesField.vue";
+import Checkbox from 'primevue/checkbox';
 import { useCountryFlags } from "~/composables/useCountryFlags";
 
 interface FormField {
@@ -254,7 +288,12 @@ interface FormField {
     | "time"
     | "textarea"
     | "image"
-    | "color";
+    | "image"
+    | "color"
+    | "color"
+    | "conditionnement"
+    | "checkbox"
+    | "achat-lines";
   placeholder?: string;
   required?: boolean;
   options?: string[] | any[];
@@ -264,7 +303,7 @@ interface FormField {
   max?: number;
   showIcon?: boolean;
   disabled?: boolean;
-  value?: string | number | Date;
+  value?: string | number | Date | boolean;
   onAdd?: () => void; // Callback pour le bouton +
   onImageUpload?: (file: File) => Promise<string>; // Callback pour l'upload d'image
   onImageRemove?: () => Promise<void>; // Callback pour la suppression d'image
@@ -272,6 +311,8 @@ interface FormField {
   showFlag?: boolean; // Afficher les drapeaux pour les pays
   showLabel?: boolean; // Afficher le label (par défaut true)
   fixedWidth?: boolean; // Largeur fixe de 30% au lieu de responsive
+  fullWidth?: boolean; // Force la largeur à 100%
+  helpText?: string;
 }
 
 interface Props {
@@ -336,48 +377,58 @@ watch(
   { deep: true }
 );
 
-// Déterminer la classe du champ (2 par 2, dernier impair prend 100%)
+// Déterminer la classe du champ (2 par 2, orphelin prend 100%)
 const getFieldClass = (index: number) => {
   const field = props.fields[index];
   
-  // Pour les champs image : seuls sur leur ligne avec 50% de largeur
-  // OU 2 images côte à côte si consécutives
-  if (field?.type === 'image') {
-    // Vérifier si le champ précédent ou suivant est aussi une image
-    const prevField = index > 0 ? props.fields[index - 1] : null;
-    const nextField = index < props.fields.length - 1 ? props.fields[index + 1] : null;
+  // Fonction utilitaire pour vérifier si un champ force le "Pleine Largeur"
+  const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'achat-lines');
+  
+  // 1. Si le champ actuel est explicitement Pleine Largeur, on retourne col-span-2
+  if (isFullWidthField(field)) {
+    return "md:col-span-2";
+  }
+
+  // 2. Calculer l'alignement actuel (0 = Gauche/Début, 1 = Droite/Fin)
+  // On doit simuler le placement des champs précédents pour savoir où on tombe
+  let align = 0;
+  for (let i = 0; i < index; i++) {
+    const prevField = props.fields[i];
     
-    // Si consécutif avec une autre image, les deux partagent la ligne
-    if (prevField?.type === 'image' || nextField?.type === 'image') {
-      return ""; // 50% de la ligne (1 colonne sur 2)
+    if (isFullWidthField(prevField)) {
+      align = 0; // Un champ full width force le retour à la ligne
+    } else {
+      // C'est un champ standard. A-t-il pris 1 ou 2 slots ?
+      // Il prend 2 slots s'il était à Gauche (0) ET (C'était le dernier OU le suivant était Full)
+      const nextField = props.fields[i + 1]; // Existe car i < index
+      // Note: nextField ici est props.fields[i+1], qui est le champ actuel si i == index-1
+      
+      const isOrphan = (align === 0) && (!nextField || isFullWidthField(nextField));
+      
+      if (isOrphan) {
+        align = 0; // Il a pris toute la ligne, donc le prochain (nous) commence à 0
+      } else {
+        align = (align + 1) % 2; // Il a pris 1 slot, on avance
+      }
     }
+  }
+
+  // 3. Appliquer la logique sur le champ actuel selon son alignement
+  if (align === 1) {
+    // On est à Droite (2ème sur la ligne). On prend juste notre place.
+    return "md:col-span-1";
+  } else {
+    // On est à Gauche (1er sur la ligne).
+    // On doit vérifier si on est "Orphelin" pour s'étendre
+    const nextField = props.fields[index + 1];
+    const willBeOrphan = !nextField || isFullWidthField(nextField);
     
-    // Sinon, seul sur sa ligne mais avec 50% de largeur
-    // On utilise col-span-2 pour prendre toute la ligne, mais le composant interne limite la largeur
-    return "md:col-span-2 md:max-w-[50%]";
+    if (willBeOrphan) {
+      return "md:col-span-2"; // Extension
+    } else {
+      return "md:col-span-1"; // Normal
+    }
   }
-  
-  // Ignorer les champs image pour le calcul des autres champs
-  const nonImageFields = props.fields.filter(f => f.type !== 'image');
-  const nonImageIndex = nonImageFields.findIndex(f => f.name === field?.name);
-  
-  if (nonImageIndex === -1) {
-    return ""; // Champ image, déjà traité
-  }
-  
-  const totalNonImageFields = nonImageFields.length;
-  const isLastNonImageField = nonImageIndex === totalNonImageFields - 1;
-  const isOddTotal = totalNonImageFields % 2 !== 0;
-
-  // Si exactement 2 champs non-image, chacun prend 100% de la largeur
-  if (totalNonImageFields === 2) {
-    return "md:col-span-2"; // Prend toute la largeur
-  }
-
-  if (isLastNonImageField && isOddTotal) {
-    return "md:col-span-2"; // Prend toute la largeur
-  }
-  return ""; // Prend 50% (1 colonne sur 2)
 };
 
 // Validation et soumission

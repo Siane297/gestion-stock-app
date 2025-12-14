@@ -25,7 +25,7 @@ export interface Achat {
   montant_tva: number;
   statut: StatutAchat;
   notes?: string;
-  fournisseur?: { nom: string };
+  fournisseur?: { nom_entreprise: string };
   magasin?: { nom: string };
   details?: AchatDetail[];
   _count?: { details: number };
@@ -36,7 +36,7 @@ export interface CreateAchatDto {
   fournisseur_id: string;
   numero_commande?: string;
   date_livraison_prevue?: string;
-  montant_total: number;
+  montant_total?: number;
   montant_tva?: number;
   statut?: StatutAchat;
   notes?: string;
@@ -45,6 +45,11 @@ export interface CreateAchatDto {
     quantite: number;
     prix_unitaire: number;
     prix_total: number;
+    numero_lot?: string;
+    date_peremption?: Date;
+    conditionnement_id?: string;
+    quantite_conditionnement?: number;
+    prix_unitaire_conditionnement?: number;
   }>;
 }
 

@@ -1,7 +1,16 @@
 import { useSecureApi } from '~/composables/useSecureApi';
 import type { ApiResponse } from './config';
 
-export type UniteProduit = 'PIECE' | 'KG' | 'LITRE' | 'METRE' | 'CARTON' | 'PALETTE';
+export type UniteProduit = 'PIECE' | 'KG' | 'LITRE' | 'METRE' | 'CARTON' | 'PALETTE' | 'UNITE' | 'PAQUET' | 'AUTRE';
+
+export interface Conditionnement {
+  id: string;
+  nom: string;
+  quantite_base: number;
+  prix_vente: number;
+  code_barre?: string;
+  est_actif: boolean;
+}
 
 export interface Produit {
   id: string;
@@ -17,6 +26,7 @@ export interface Produit {
   tva_pourcentage?: number;
   est_actif: boolean;
   date_creation: string;
+  conditionnements?: Conditionnement[];
 }
 
 export interface HistoriquePrix {
@@ -40,6 +50,12 @@ export interface CreateProduitDto {
   prix_vente: number;
   marge_min_pourcent?: number;
   tva_pourcentage?: number;
+  conditionnements?: Array<{
+    nom: string;
+    quantite_base: number;
+    prix_vente: number;
+    code_barre?: string;
+  }>;
 }
 
 export interface UpdateProduitDto {
@@ -53,6 +69,14 @@ export interface UpdateProduitDto {
   marge_min_pourcent?: number;
   tva_pourcentage?: number;
   est_actif?: boolean;
+  conditionnements?: Array<{
+    id?: string;
+    nom?: string;
+    quantite_base?: number;
+    prix_vente?: number;
+    code_barre?: string;
+    action?: 'create' | 'update' | 'delete';
+  }>;
 }
 
 export interface ProduitQueryParams {

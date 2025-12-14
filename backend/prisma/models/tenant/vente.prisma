@@ -43,16 +43,18 @@ model vente {
 }
 
 model vente_detail {
-    id            String @id @default(uuid())
-    vente_id      String
-    produit_id    String
-    quantite      Int
-    prix_unitaire Float
-    remise        Float  @default(0)
-    prix_total    Float
+    id                 String  @id @default(uuid())
+    vente_id           String
+    produit_id         String
+    quantite           Int
+    prix_unitaire      Float
+    remise             Float   @default(0)
+    prix_total         Float
+    conditionnement_id String?
 
-    vente   vente   @relation(fields: [vente_id], references: [id], onDelete: Cascade)
-    produit produit @relation(fields: [produit_id], references: [id], onDelete: Restrict)
+    vente           vente                    @relation(fields: [vente_id], references: [id], onDelete: Cascade)
+    produit         produit                  @relation(fields: [produit_id], references: [id], onDelete: Restrict)
+    conditionnement conditionnement_produit? @relation(fields: [conditionnement_id], references: [id])
 
     @@map("ventes_details")
 }

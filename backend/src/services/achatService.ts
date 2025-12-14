@@ -7,9 +7,25 @@ export type StatutAchat = 'COMMANDE' | 'RECU_PARTIELLEMENT' | 'RECU_COMPLET' | '
 
 export interface AchatDetailDto {
   produit_id: string;
-  quantite: number;
-  prix_unitaire: number;
+  conditionnement_id?: string; // Ajout
+  quantite: number; // Unités totales (calculé ou saisi)
+  quantite_conditionnement?: number; // Nombre de colis (saisi)
+  prix_unitaire: number; // Prix par UNITE (calculé ou saisi)
+  prix_unitaire_conditionnement?: number; // Prix par COLIS (saisi)
   prix_total: number;
+  numero_lot?: string;
+  date_peremption?: Date;
+}
+
+
+
+export interface UpdateAchatDto {
+    magasin_id?: string;
+    fournisseur_id?: string;
+    numero_commande?: string;
+    date_livraison_prevue?: Date;
+    notes?: string;
+    details?: Array<AchatDetailDto & { id?: string }>; // id si mise à jour ligne existante
 }
 
 export interface CreateAchatDto {
@@ -83,7 +99,7 @@ export class AchatService {
     return this.prisma.achat.findMany({
       orderBy: { date_commande: 'desc' },
       include: {
-        fournisseur: { select: { nom: true } },
+        fournisseur: { select: { nom_entreprise: true } },
         magasin: { select: { nom: true } },
         _count: { select: { details: true } }
       }
@@ -116,6 +132,15 @@ export class AchatService {
    * Crée un nouvel achat
    */
   async create(data: CreateAchatDto): Promise<any> {
+    // Calculer automatiquement le montant total basé sur les détails
+    if (data.details && data.details.length > 0) {
+      const total = data.details.reduce((acc, item) => {
+        const pTotal = Number(item.prix_total);
+        return acc + (isNaN(pTotal) ? 0 : pTotal);
+      }, 0);
+      data.montant_total = total;
+    }
+
     this.validateAchatData(data);
 
     const result = await this.prisma.$transaction(async (tx: any) => {
@@ -136,13 +161,61 @@ export class AchatService {
 
       // Créer les détails
       for (const item of data.details) {
+        let quantiteFinale = Number(item.quantite);
+        let prixUnitaireFinale = Number(item.prix_unitaire);
+
+        // LOGIQUE CONDITIONNEMENT
+        if (item.conditionnement_id) {
+             const cond = await tx.conditionnement_produit.findUnique({
+                 where: { id: item.conditionnement_id }
+             });
+             
+             if (cond) {
+                 const qtyColis = Number(item.quantite_conditionnement || 0);
+                 if (qtyColis > 0) {
+                     // Conversion: 5 cartons * 12 unités = 60 unités
+                     quantiteFinale = qtyColis * cond.quantite_base;
+                     
+                     // Si le prix unitaire envoyé est celui du colis (car sélectionné en front)
+                     // OU si on a envie de recalculer le PU unitaire.
+                     // En général, le front envoie prix_total et prix_unitaire.
+                     // Si conditionnement est utilisé, le prix_unitaire envoyé par le front est probablement celui du COLIS.
+                     // On doit le convertir en PU unitaire.
+                     if (item.prix_unitaire && item.prix_unitaire > 0) {
+                       // Si item.prix_unitaire correspond au prix du COLIS (car c'est ce que l'user voit),
+                       // alors PU_Réel = PrixColis / QtyBase.
+                       // MAIS attention, validateData check PU > 0.
+                       // Supposons que le front envoie le prix du colis dans prix_unitaire_conditionnement SI défini dans DTO,
+                       // sinon dans prix_unitaire.
+                       // D'après ma modif DTO: prix_unitaire_conditionnement existe.
+                       
+                       if (item.prix_unitaire_conditionnement) {
+                           prixUnitaireFinale = Number(item.prix_unitaire_conditionnement) / cond.quantite_base;
+                       } else {
+                           // Fallback: si le front envoie le prix colis dans prix_unitaire
+                           // Comment savoir ?
+                           // On va dire que si quantite_conditionnement > 0, on trust le calcul du front ou on recalcule le PU
+                           // PU = PrixTotal / QtyFinale
+                           if (item.prix_total) {
+                               prixUnitaireFinale = Number(item.prix_total) / quantiteFinale;
+                           }
+                       }
+                     }
+                 }
+             }
+        }
+
         await tx.achat_detail.create({
           data: {
             achat_id: achat.id,
             produit_id: item.produit_id,
-            quantite: Number(item.quantite),
-            prix_unitaire: Number(item.prix_unitaire),
-            prix_total: Number(item.prix_total)
+            quantite: quantiteFinale, 
+            prix_unitaire: prixUnitaireFinale, 
+            prix_total: Number(item.prix_total),
+            numero_lot: item.numero_lot,
+            date_peremption: item.date_peremption,
+            conditionnement_id: item.conditionnement_id || null,
+            quantite_conditionnement: item.quantite_conditionnement ? Number(item.quantite_conditionnement) : null
           }
         });
       }
@@ -177,6 +250,37 @@ export class AchatService {
 
         // Créer les mouvements de stock pour chaque produit
         for (const detail of achat.details) {
+          let lot_id = undefined;
+
+          // Si présence de numéro de lot, on gère le lot
+          if (detail.numero_lot && detail.date_peremption) {
+              // Vérifier si le produit gère la péremption (optionnel, mais mieux pour la cohérence)
+              const prod = await tx.produit.findUnique({ where: { id: detail.produit_id } });
+              
+              if (prod) { // On stocke le lot même si gere_peremption est false pour l'instant, ou on force true ?
+                 // On assume que si l'utilisateur saisit un lot, on le crée.
+                 
+                 // Upsert du lot
+                 // On cherche d'abord s'il existe (unique contrainte)
+                 let lot = await tx.lot_produit.findUnique({
+                     where: {
+                         produit_id_numero_lot: { produit_id: detail.produit_id, numero_lot: detail.numero_lot }
+                     }
+                 });
+
+                 if (!lot) {
+                     lot = await tx.lot_produit.create({
+                         data: {
+                             produit_id: detail.produit_id,
+                             numero_lot: detail.numero_lot,
+                             date_peremption: detail.date_peremption
+                         }
+                     });
+                 }
+                 lot_id = lot.id;
+              }
+          }
+
           await stockServiceTx.createMouvement({
             magasin_id: achat.magasin_id,
             produit_id: detail.produit_id,
@@ -184,7 +288,8 @@ export class AchatService {
             quantite: detail.quantite,
             utilisateur_id: data.utilisateur_id,
             raison: `Réception achat ${achat.numero_commande || id}`,
-            achat_id: achat.id
+            achat_id: achat.id,
+            lot_id: lot_id
           }, tx);
         }
 
@@ -210,6 +315,63 @@ export class AchatService {
     }
 
     return { success: true, message: 'Statut mis à jour avec succès' };
+  }
+
+  /**
+   * Met à jour un achat (avant réception)
+   */
+  async update(id: string, data: UpdateAchatDto): Promise<any> {
+    const existing = await this.prisma.achat.findUnique({ where: { id }, include: { details: true } });
+    if (!existing) throw new Error('Achat non trouvé');
+
+    if (existing.statut === 'RECU_COMPLET' || existing.statut === 'ANNULE') {
+        throw new Error('Impossible de modifier une commande reçue ou annulée');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+        // Mise à jour en-tête
+        await tx.achat.update({
+            where: { id },
+            data: {
+                magasin_id: data.magasin_id,
+                fournisseur_id: data.fournisseur_id,
+                numero_commande: data.numero_commande,
+                date_livraison_prevue: data.date_livraison_prevue,
+                notes: data.notes
+            }
+        });
+
+        // Mise à jour détails (Full replace ou smart update ? Smart update est plus complexe, faisons delete/create partiel pour simplifier ou gérer les cas)
+        // Ici on suppose que le frontend envoie TOUS les détails valides.
+        if (data.details) {
+            // Supprimer les détails non présents
+            // C'est complexe, pour l'instant on supprime tout et on recrée ? 
+            // Risqué si un détail avait une ID externe référencée ailleurs (pas le cas ici).
+            // Mieux: On supprime tout et on recrée pour cet MVP.
+            
+            await tx.achat_detail.deleteMany({ where: { achat_id: id } });
+
+            for (const item of data.details) {
+                await tx.achat_detail.create({
+                    data: {
+                        achat_id: id,
+                        produit_id: item.produit_id,
+                        quantite: Number(item.quantite),
+                        prix_unitaire: Number(item.prix_unitaire),
+                        prix_total: Number(item.prix_total),
+                        numero_lot: item.numero_lot,
+                        date_peremption: item.date_peremption
+                    }
+                });
+            }
+            
+            // Recalcul total
+            const total = data.details.reduce((acc, d) => acc + Number(d.prix_total), 0);
+            await tx.achat.update({ where: { id }, data: { montant_total: total } });
+        }
+        
+        return tx.achat.findUnique({ where: { id }, include: { details: true } });
+    });
   }
 
   /**

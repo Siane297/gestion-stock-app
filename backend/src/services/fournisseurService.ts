@@ -3,7 +3,7 @@ import { logger } from '../config/logger.js';
 
 // Types DTO
 export interface CreateFournisseurDto {
-  nom: string;
+  nom_entreprise: string;
   telephone?: string;
   email?: string;
   adresse?: string;
@@ -13,7 +13,7 @@ export interface CreateFournisseurDto {
 }
 
 export interface UpdateFournisseurDto {
-  nom?: string;
+  nom_entreprise?: string;
   telephone?: string;
   email?: string;
   adresse?: string;
@@ -36,10 +36,10 @@ export class FournisseurService {
    * Valide les données d'un fournisseur
    */
   private validateFournisseurData(data: CreateFournisseurDto | UpdateFournisseurDto): void {
-    if ('nom' in data && data.nom !== undefined) {
-      const nom = String(data.nom).trim();
+    if ('nom_entreprise' in data && data.nom_entreprise !== undefined) {
+      const nom = String(data.nom_entreprise).trim();
       if (!nom || nom.length < 2) {
-        throw new Error('Le nom du fournisseur doit contenir au moins 2 caractères');
+        throw new Error('Le nom de l\'entreprise doit contenir au moins 2 caractères');
       }
     }
 
@@ -77,7 +77,7 @@ export class FournisseurService {
 
     if (filters?.search) {
       where.OR = [
-        { nom: { contains: filters.search, mode: 'insensitive' } },
+        { nom_entreprise: { contains: filters.search, mode: 'insensitive' } },
         { email: { contains: filters.search, mode: 'insensitive' } },
         { responsable: { contains: filters.search, mode: 'insensitive' } }
       ];
@@ -118,7 +118,7 @@ export class FournisseurService {
 
     const fournisseur = await this.prisma.fournisseur.create({
       data: {
-        nom: String(data.nom).trim(),
+        nom_entreprise: String(data.nom_entreprise).trim(),
         telephone: data.telephone?.trim() || null,
         email: data.email?.trim() || null,
         adresse: data.adresse?.trim() || null,
@@ -128,7 +128,7 @@ export class FournisseurService {
       }
     });
 
-    logger.info(`Fournisseur créé: ${fournisseur.id} - ${fournisseur.nom}`);
+    logger.info(`Fournisseur créé: ${fournisseur.id} - ${fournisseur.nom_entreprise}`);
     return fournisseur;
   }
 
@@ -146,7 +146,7 @@ export class FournisseurService {
     const fournisseur = await this.prisma.fournisseur.update({
       where: { id },
       data: {
-        nom: data.nom?.trim(),
+        nom_entreprise: data.nom_entreprise?.trim(),
         telephone: data.telephone?.trim(),
         email: data.email?.trim(),
         adresse: data.adresse?.trim(),
@@ -156,7 +156,7 @@ export class FournisseurService {
       }
     });
 
-    logger.info(`Fournisseur mis à jour: ${fournisseur.id} - ${fournisseur.nom}`);
+    logger.info(`Fournisseur mis à jour: ${fournisseur.id} - ${fournisseur.nom_entreprise}`);
     return fournisseur;
   }
 

@@ -1,6 +1,6 @@
 model fournisseur {
     id                String   @id @default(uuid())
-    nom               String
+    nom_entreprise    String
     telephone         String?
     email             String?
     adresse           String?

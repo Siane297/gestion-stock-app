@@ -34,6 +34,8 @@ export interface CreateMouvementDto {
   type: TypeMouvementStock;
   quantite: number;
   raison?: string;
+  numero_lot?: string;
+  date_peremption?: Date;
 }
 
 export interface SetMinimumStockDto {

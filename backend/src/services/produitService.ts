@@ -2,29 +2,49 @@ import { PrismaClient } from '@prisma/client';
 import { logger } from '../config/logger.js';
 
 // Types DTO
+export type UniteProduit = 'UNITE' | 'KG' | 'LITRE' | 'METRE' | 'PAQUET' | 'AUTRE';
+
 export interface CreateProduitDto {
   nom: string;
-  code_barre?: string;
-  categorie_id?: string;
   description?: string;
-  prix_achat?: number;
-  prix_vente: number;
-  unite?: 'UNITE' | 'KG' | 'LITRE' | 'METRE' | 'PAQUET' | 'AUTRE';
+  code_barre?: string; // Sera mis sur le conditionnement par défaut
+  categorie_id?: string;
+  unite?: UniteProduit;
+  prix_achat?: number; // Sera mis sur le conditionnement par défaut
+  prix_vente: number;  // Sera mis sur le conditionnement par défaut
   marge_min_pourcent?: number;
+  tva_pourcentage?: number;
+  gere_peremption?: boolean;
   est_actif?: boolean;
+  conditionnements?: Array<{
+    nom: string;
+    quantite_base: number;
+    prix_vente: number;
+    code_barre?: string;
+  }>;
 }
 
 export interface UpdateProduitDto {
   nom?: string;
-  code_barre?: string;
-  categorie_id?: string;
   description?: string;
-  prix_achat?: number;
-  prix_vente?: number;
-  unite?: 'UNITE' | 'KG' | 'LITRE' | 'METRE' | 'PAQUET' | 'AUTRE';
+  code_barre?: string; // Sera mis sur le conditionnement par défaut
+  categorie_id?: string;
+  unite?: UniteProduit;
+  prix_achat?: number; // Sera mis sur le conditionnement par défaut
+  prix_vente?: number; // Sera mis sur le conditionnement par défaut
   marge_min_pourcent?: number;
+  tva_pourcentage?: number;
+  gere_peremption?: boolean;
   est_actif?: boolean;
   raison_changement_prix?: string;
+  conditionnements?: Array<{
+    id?: string;
+    nom?: string;
+    quantite_base?: number;
+    prix_vente?: number;
+    code_barre?: string;
+    action?: 'create' | 'update' | 'delete';
+  }>;
 }
 
 export interface ProduitFilters {
@@ -54,6 +74,7 @@ export class ProduitService {
       }
     }
 
+    // Validation pour le prix de vente du conditionnement par défaut (si présent)
     if ('prix_vente' in data && data.prix_vente !== undefined) {
       const prixVente = Number(data.prix_vente);
       if (isNaN(prixVente) || prixVente < 0) {
@@ -61,6 +82,7 @@ export class ProduitService {
       }
     }
 
+    // Validation pour le prix d'achat du conditionnement par défaut (si présent)
     if ('prix_achat' in data && data.prix_achat !== undefined) {
       const prixAchat = Number(data.prix_achat);
       if (isNaN(prixAchat) || prixAchat < 0) {
@@ -80,12 +102,12 @@ export class ProduitService {
    * Vérifie l'unicité du code-barre
    */
   private async checkCodeBarreUnique(code_barre: string, excludeId?: string): Promise<void> {
-    const existing = await this.prisma.produit.findUnique({
+    const existing = await this.prisma.conditionnement_produit.findFirst({
       where: { code_barre }
     });
 
     if (existing && existing.id !== excludeId) {
-      throw new Error('Un produit avec ce code-barre existe déjà');
+      throw new Error('Un conditionnement avec ce code-barre existe déjà');
     }
   }
 
@@ -104,7 +126,7 @@ export class ProduitService {
     if (filters?.search) {
       where.OR = [
         { nom: { contains: filters.search, mode: 'insensitive' } },
-        { code_barre: { contains: filters.search, mode: 'insensitive' } },
+        { conditionnements: { some: { code_barre: { contains: filters.search, mode: 'insensitive' } } } },
         { description: { contains: filters.search, mode: 'insensitive' } }
       ];
     }
@@ -118,6 +140,7 @@ export class ProduitService {
       orderBy: { nom: 'asc' },
       include: {
         categorie: true,
+        conditionnements: true,
         stocks: {
           include: { magasin: true }
         }
@@ -133,6 +156,7 @@ export class ProduitService {
       where: { id },
       include: {
         categorie: true,
+        conditionnements: true,
         stocks: {
           include: { magasin: true }
         },
@@ -156,72 +180,160 @@ export class ProduitService {
   async create(data: CreateProduitDto): Promise<any> {
     this.validateProduitData(data);
 
-    // Vérification code-barre unique
+    // Vérification code-barre unique pour le conditionnement par défaut
     if (data.code_barre) {
       await this.checkCodeBarreUnique(data.code_barre);
     }
 
-    const produit = await this.prisma.produit.create({
-      data: {
-        nom: String(data.nom).trim(),
-        code_barre: data.code_barre?.trim() || null,
-        categorie_id: data.categorie_id || null,
-        description: data.description?.trim() || null,
-        prix_achat: data.prix_achat !== undefined ? Number(data.prix_achat) : null,
-        prix_vente: Number(data.prix_vente),
-        unite: data.unite || 'UNITE',
-        marge_min_pourcent: data.marge_min_pourcent !== undefined ? Number(data.marge_min_pourcent) : null,
-        est_actif: data.est_actif !== undefined ? data.est_actif : true
-      }
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Création du produit (abstrait)
+      const produit = await tx.produit.create({
+        data: {
+          nom: String(data.nom).trim(),
+          description: data.description?.trim(),
+          categorie_id: data.categorie_id,
+          unite: data.unite || 'UNITE',
+          marge_min_pourcent: data.marge_min_pourcent !== undefined ? Number(data.marge_min_pourcent) : undefined,
+          gere_peremption: data.gere_peremption || false,
+          est_actif: data.est_actif !== undefined ? data.est_actif : true,
+          // 2. Création du conditionnement par défaut "Unité"
+          conditionnements: {
+            create: {
+              nom: 'Unité',
+              quantite_base: 1,
+              prix_vente: Number(data.prix_vente),
+              // Si prix_achat est fourni, on le met sur le conditionnement
+              prix_achat: data.prix_achat !== undefined ? Number(data.prix_achat) : undefined,
+              code_barre: data.code_barre?.trim(),
+              est_actif: true
+            }
+          }
+        },
+        include: {
+          categorie: true,
+          conditionnements: true
+        }
+      });
 
-    logger.info(`Produit créé: ${produit.id} - ${produit.nom}`);
-    return produit;
+      // 3. Ajout des autres conditionnements si fournis
+      if (data.conditionnements && data.conditionnements.length > 0) {
+        for (const cond of data.conditionnements) {
+            // On vérifie le code barre s'il est présent pour chaque conditionnement
+            if (cond.code_barre) {
+                 const existing = await tx.conditionnement_produit.findFirst({ where: { code_barre: cond.code_barre } });
+                 if (existing) throw new Error(`Un conditionnement avec ce code-barre existe déjà: ${cond.code_barre}`);
+            }
+
+           const newCond = await tx.conditionnement_produit.create({
+             data: {
+               produit_id: produit.id,
+               nom: cond.nom,
+               quantite_base: Number(cond.quantite_base),
+               prix_vente: Number(cond.prix_vente),
+               // Pour les autres conditionnements, on n'a pas forcément de prix d'achat défini dans l'interface actuelle
+               // On peut laisser null, ou mettre une valeur par défaut si besoin.
+               code_barre: cond.code_barre,
+               est_actif: true
+             }
+           });
+           
+           // Ajout au tableau pour le retour API
+           (produit.conditionnements as any[]).push(newCond);
+        }
+      }
+      logger.info(`Produit créé: ${produit.id} - ${produit.nom}`);
+      
+      // On retourne l'objet directement car getById ne verrait pas le produit avant le commit de la transaction
+      return {
+        ...produit,
+        stocks: [],
+        prix_historiques: []
+      };
+    });
   }
 
   /**
    * Met à jour un produit
    */
   async update(id: string, data: UpdateProduitDto): Promise<any> {
-    const existing = await this.prisma.produit.findUnique({ where: { id } });
+    const existing = await this.prisma.produit.findUnique({ 
+        where: { id },
+        include: { conditionnements: true }
+    });
     if (!existing) {
       throw new Error('Produit non trouvé');
     }
 
     this.validateProduitData(data);
 
-    // Vérification code-barre unique si modifié
-    if (data.code_barre && data.code_barre !== existing.code_barre) {
-      await this.checkCodeBarreUnique(data.code_barre, id);
-    }
-
-    // Gestion historique prix
-    if (data.prix_vente !== undefined && Number(data.prix_vente) !== existing.prix_vente) {
-      await this.prisma.historique_prix.create({
-        data: {
-          produit_id: id,
-          ancien_prix: existing.prix_vente,
-          nouveau_prix: Number(data.prix_vente),
-          raison: data.raison_changement_prix || 'Mise à jour fiche produit'
-        }
-      });
-      logger.info(`Historique prix créé pour produit ${id}: ${existing.prix_vente} -> ${data.prix_vente}`);
+    // Si on change le prix/code barre "root", on met à jour le conditionnement par défaut (Unité)
+    // On cherche le conditionnement "Unité" ou celui avec quantite_base = 1
+    const defaultConditionnement = existing.conditionnements.find(c => c.quantite_base === 1);
+    
+    // Vérification code-barre unique si modifié (sur le cond par défaut)
+    if (data.code_barre && defaultConditionnement && data.code_barre !== defaultConditionnement.code_barre) {
+      await this.checkCodeBarreUnique(data.code_barre, defaultConditionnement.id);
     }
 
     const produit = await this.prisma.produit.update({
       where: { id },
       data: {
         nom: data.nom?.trim(),
-        code_barre: data.code_barre?.trim(),
+        // code_barre, prix_achat, prix_vente ne sont plus sur produit
         categorie_id: data.categorie_id,
         description: data.description?.trim(),
-        prix_achat: data.prix_achat !== undefined ? Number(data.prix_achat) : undefined,
-        prix_vente: data.prix_vente !== undefined ? Number(data.prix_vente) : undefined,
         unite: data.unite,
         marge_min_pourcent: data.marge_min_pourcent !== undefined ? Number(data.marge_min_pourcent) : undefined,
+        gere_peremption: data.gere_peremption !== undefined ? data.gere_peremption : undefined,
         est_actif: data.est_actif
       }
     });
+
+    // Mise à jour du conditionnement par défaut via les champs root
+    if (defaultConditionnement) {
+        const updateDefaultData: any = {};
+        if (data.prix_vente !== undefined) updateDefaultData.prix_vente = Number(data.prix_vente);
+        if (data.prix_achat !== undefined) updateDefaultData.prix_achat = Number(data.prix_achat);
+        if (data.code_barre !== undefined) updateDefaultData.code_barre = data.code_barre;
+
+        if (Object.keys(updateDefaultData).length > 0) {
+            await this.prisma.conditionnement_produit.update({
+                where: { id: defaultConditionnement.id },
+                data: updateDefaultData
+            });
+        }
+    }
+
+    // Gestion des autres conditionnements
+    if (data.conditionnements) {
+      for (const cond of data.conditionnements) {
+        if (cond.action === 'create' && cond.nom && cond.quantite_base && cond.prix_vente) {
+          await this.prisma.conditionnement_produit.create({
+            data: {
+              produit_id: id,
+              nom: cond.nom,
+              quantite_base: Number(cond.quantite_base),
+              prix_vente: Number(cond.prix_vente),
+              code_barre: cond.code_barre
+            }
+          });
+        } else if (cond.action === 'update' && cond.id) {
+            await this.prisma.conditionnement_produit.update({
+                where: { id: cond.id },
+                data: {
+                    nom: cond.nom,
+                    quantite_base: cond.quantite_base ? Number(cond.quantite_base) : undefined,
+                    prix_vente: cond.prix_vente ? Number(cond.prix_vente) : undefined,
+                    code_barre: cond.code_barre
+                }
+            });
+        } else if (cond.action === 'delete' && cond.id) {
+            await this.prisma.conditionnement_produit.delete({
+                where: { id: cond.id }
+            });
+        }
+      }
+    }
 
     logger.info(`Produit mis à jour: ${produit.id} - ${produit.nom}`);
     return produit;

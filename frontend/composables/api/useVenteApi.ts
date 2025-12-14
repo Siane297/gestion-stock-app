@@ -12,7 +12,9 @@ export interface VenteDetail {
   prix_unitaire: number;
   remise: number;
   prix_total: number;
+  conditionnement_id?: string;
   produit?: { nom: string };
+  conditionnement?: { nom: string; quantite_base: number };
 }
 
 export interface Facture {
@@ -63,6 +65,7 @@ export interface CreateVenteDto {
   generer_facture?: boolean;
   details: Array<{
     produit_id: string;
+    conditionnement_id?: string;
     quantite: number;
     prix_unitaire: number;
     remise?: number;

@@ -162,6 +162,7 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
     // Créer le compte TenantUser associé avec toutes les permissions
     const ownerTenantUser = await tenantPrisma.tenantUser.create({
       data: {
+        id: user.id, // CRITIQUE : L'ID doit correspondre à celui de l'utilisateur public pour la correspondance du token
         employeeId: ownerEmployee.id,
         email,
         password: hashedPassword,
@@ -225,6 +226,10 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
     };
     
     logger.debug(`[REGISTER] Configuration cookies: secure=${refreshCookieOptions.secure}, sameSite=${refreshCookieOptions.sameSite}, isProduction=${isProduction}`);
+    
+    // Nettoyer les anciens cookies
+    res.clearCookie('refresh_token');
+    res.clearCookie('auth_token');
     
     res.cookie('refresh_token', refreshToken, refreshCookieOptions);
     
@@ -340,6 +345,10 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
           host: req.get('host')
         });
         
+        // Nettoyer les anciens cookies
+        res.clearCookie('refresh_token');
+        res.clearCookie('auth_token');
+
         res.cookie('refresh_token', refreshToken, refreshCookieOptions);
         if (process.env.NODE_ENV !== 'production') {
           console.log('[✅ ADMIN LOGIN] Cookie refresh_token défini pour', adminUser.email);
@@ -623,6 +632,10 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
       host: req.get('host')
     });
     
+    // Nettoyer les anciens cookies pour éviter les conflits
+    res.clearCookie('refresh_token');
+    res.clearCookie('auth_token');
+
     res.cookie('refresh_token', refreshToken, refreshCookieOptions);
     if (process.env.NODE_ENV !== 'production') {
       console.log('[✅ TENANT LOGIN] Cookie refresh_token défini pour', tenantUser.email);

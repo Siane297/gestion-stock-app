@@ -14,6 +14,13 @@ export const useSecureApi = () => {
     const { accessToken, user } = useSecureAuth();
     const fullUrl = url.startsWith('http') ? url : `${baseURL}${url}`;
 
+    // Tentative de récupération proactive du token si manquant (Client-side uniquement)
+    // Cela évite les erreurs 401 initiales lors du chargement de la page
+    if (!accessToken.value && process.client) {
+      const { refreshAccessToken } = useSecureAuth();
+      await refreshAccessToken(false); 
+    }
+
     // Headers de base
     const headers = {
       'Content-Type': 'application/json',
