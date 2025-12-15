@@ -67,7 +67,7 @@
         >
             <!-- Qty Control -->
             <div class="flex flex-col items-center justify-center gap-1 bg-gray-50 rounded-md px-1 w-8">
-                <button @click="store.updateQuantity(item.uniqueId, 1)" class="hover:text-primary  transition-colors"><i class="pi pi-plus text-xs"></i></button>
+                <button @click="store.updateQuantity(item.uniqueId, 1)" class="hover:text-primary transition-colors"><i class="pi pi-plus text-xs"></i></button>
                 <span class="font-bold text-sm">{{ item.quantity }}</span>
                 <button @click="store.updateQuantity(item.uniqueId, -1)" class="hover:text-red-500 transition-colors"><i class="pi pi-minus text-xs"></i></button>
             </div>
