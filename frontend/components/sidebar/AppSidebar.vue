@@ -190,10 +190,10 @@ const menuCategories = [
         permission: 'point-vente',
       },
       {
-        name: 'Ventes',
+        name: 'Vente',
         icon: 'tabler:coins',
-        link: '/ventes',
-        permission: 'ventes',
+        link: '/vente',
+        permission: 'vente',
       },
       {
         name: 'Achat',

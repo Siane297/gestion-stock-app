@@ -22,7 +22,7 @@
             <div v-for="(field, index) in fields" :key="field.name" :class="getFieldClass(index)"
               class="flex flex-col gap-2">
 
-              <label v-if="field.showLabel !== false && field.type !== 'conditionnement'" :for="field.name"
+              <label v-if="field.showLabel !== false && field.type !== 'conditionnement' && field.type !== 'achat-lines'" :for="field.name"
                 class="font-semibold text-gray-700">
                 {{ field.label }}
                 <span v-if="field.required" class="text-red-500">*</span>
@@ -101,7 +101,7 @@
 
               <!-- Achat Lines -->
               <AchatLinesField v-else-if="field.type === 'achat-lines'" v-model="formData[field.name]"
-                :label="field.label" />
+                :label="field.label" :required="field.required" />
 
               <!-- Checkbox -->
               <div v-else-if="field.type === 'checkbox'" class="flex items-center gap-2 mt-2">
@@ -233,6 +233,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   submit: [data: Record<string, any>];
   cancel: [];
+  change: [data: Record<string, any>];
   addClick: [field: FormField]; // Événement pour le bouton +
   imageUpload: [field: FormField, file: File]; // Événement pour l'upload d'image
   imageRemove: [field: FormField]; // Événement pour la suppression d'image
@@ -261,7 +262,12 @@ watch(
   () => props.fields,
   (newFields) => {
     newFields.forEach((field) => {
-      // Mettre à jour les champs si la valeur change dans les props
+      // 1. Initialiser le champ s'il n'existe pas encore dans formData
+      if (!(field.name in formData.value)) {
+         formData.value[field.name] = field.value !== undefined ? field.value : "";
+      }
+
+      // 2. Mettre à jour les champs si la valeur change dans les props (binding externe)
       // On ne met à jour que si la valeur est définie et différente de la valeur actuelle
       if (field.value !== undefined && field.value !== formData.value[field.name]) {
         // Pour les champs image, on veut toujours mettre à jour si la prop change
@@ -269,6 +275,15 @@ watch(
         formData.value[field.name] = field.value;
       }
     });
+  },
+  { deep: true }
+);
+
+// Surveiller les changements locaux pour émettre l'événement "change"
+watch(
+  formData,
+  (newVal) => {
+      emit('change', newVal);
   },
   { deep: true }
 );

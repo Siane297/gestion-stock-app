@@ -74,6 +74,34 @@ export const createAchat = async (req: Request, res: Response) => {
 };
 
 /**
+ * Met à jour un achat (général)
+ */
+export const updateAchat = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'ID requis' });
+    }
+    const achatService = new AchatService(req.tenantPrisma);
+    const result = await achatService.update(id, req.body);
+
+    res.json({
+      success: true,
+      message: 'Achat mis à jour',
+      data: result,
+    });
+  } catch (error: any) {
+    logger.error('Erreur lors de la mise à jour de l\'achat:', error);
+    const status = error.message === 'Achat non trouvé' ? 404 : 
+                   error.message.includes('Impossible de modifier') ? 400 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message || 'Erreur lors de la mise à jour',
+    });
+  }
+};
+
+/**
  * Met à jour le statut d'un achat (réception)
  */
 export const updateAchatStatut = async (req: Request, res: Response) => {

@@ -71,6 +71,11 @@ export const useAchatApi = () => {
     return response.data || null;
   };
 
+  const updateAchat = async (id: string, data: Partial<CreateAchatDto>): Promise<Achat | null> => {
+    const response = await patch<ApiResponse<Achat>>(`/api/achats/${id}`, data);
+    return response.data || null;
+  };
+
   const updateAchatStatut = async (id: string, statut: StatutAchat): Promise<boolean> => {
     await patch(`/api/achats/${id}/statut`, { statut });
     return true;
@@ -90,6 +95,7 @@ export const useAchatApi = () => {
     getAchats,
     getAchatById,
     createAchat,
+    updateAchat,
     updateAchatStatut,
     cancelAchat,
     deleteAchat,

@@ -104,7 +104,7 @@
     <div class="p-4 bg-white rounded-lg border-2 border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] z-10">
       <div class="flex justify-between items-end mb-4">
         <span class="text-gray-500 text-sm">Total à payer</span>
-        <span class="text-3xl font-bold text-[#064654] leading-none">{{ formatPrice(store.cartTotal) }}</span>
+        <span class="text-xl font-bold text-[#064654] leading-none">{{ formatPrice(store.cartTotal) }}</span>
       </div>
       
       <div class="grid grid-cols-2 gap-3">
@@ -112,15 +112,15 @@
             label="Attente" 
             variant="secondary" 
             icon="pi pi-clock" 
-            size="md"
+            size="sm"
             @click="handleHold"
             :disabled="store.cart.length === 0"
         />
         <AppButton 
             label="ENCAISSER" 
-            variant="primary" 
+            variant="success" 
             icon="pi pi-check-circle" 
-            size="md"
+            size="sm"
             class="shadow-lg shadow-primary/30"
             @click="handleCheckoutClick"
             :disabled="store.cart.length === 0"

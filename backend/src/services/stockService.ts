@@ -22,6 +22,7 @@ export interface CreateMouvementDto {
   lot_id?: string;
   numero_lot?: string;     // Pour mouvement manuel
   date_peremption?: Date; // Pour mouvement manuel
+  magasin_dest_id?: string; // Pour transfert
 }
 
 export interface StockUpdateResult {
@@ -113,11 +114,19 @@ export class StockService {
       throw new Error('La quantité doit être un entier positif');
     }
 
-    // Déterminer l'opération (incrément ou décrément)
+    if (data.type === 'TRANSFERT' && !data.magasin_dest_id) {
+        throw new Error('Le magasin de destination est requis pour un transfert');
+    }
+    if (data.type === 'TRANSFERT' && data.magasin_id === data.magasin_dest_id) {
+        throw new Error('Le magasin de destination doit être différent du magasin d\'origine');
+    }
+
+    // Déterminer l'opération (incrément ou décrément) sur le magasin source
     const isIncrement = ['ENTREE_ACHAT', 'ENTREE_RETOUR'].includes(data.type) ||
       (data.type === 'AJUSTEMENT' && data.raison?.toLowerCase().includes('ajout'));
     
-    const isDecrement = ['SORTIE_VENTE', 'SORTIE_PERISSABLE'].includes(data.type) ||
+    // TRANSFERT est une sortie pour le magasin source
+    const isDecrement = ['SORTIE_VENTE', 'SORTIE_PERISSABLE', 'TRANSFERT'].includes(data.type) ||
       (data.type === 'AJUSTEMENT' && !data.raison?.toLowerCase().includes('ajout'));
 
     // Vérification du stock actuel
@@ -143,7 +152,6 @@ export class StockService {
     // 0. Gestion Lot (Résolution lot_id ou création si manuel)
     if (data.numero_lot && !data.lot_id) {
          // Rechercher ou créer le lot
-         // On suppose que pour un AJUSTEMENT ou ENTREE, si on donne un lot, on le crée/récupère.
          const lot = await prismaClient.lot_produit.upsert({
              where: {
                  produit_id_numero_lot: { produit_id: data.produit_id, numero_lot: data.numero_lot }
@@ -153,7 +161,7 @@ export class StockService {
                  numero_lot: data.numero_lot,
                  date_peremption: data.date_peremption
              },
-             update: {} // On ne met pas à jour la date si existe (ou alors si ?) Disons que non pour sécuriser.
+             update: {}
          });
          data.lot_id = lot.id;
     }
@@ -161,7 +169,6 @@ export class StockService {
     // Mise à jour table stock_lot
     if (data.lot_id) {
        if (isIncrement) {
-           // Upsert stock_lot
            await prismaClient.stock_lot.upsert({
                where: {
                    magasin_id_lot_id: { magasin_id: data.magasin_id, lot_id: data.lot_id }
@@ -170,10 +177,6 @@ export class StockService {
                update: { quantite: { increment: data.quantite } }
            });
        } else if (isDecrement) {
-           // Decrement stock_lot (Check logic should be ideally done before, but atomic decrement works)
-           // Warning: prisma doesn't check negative on float by default, but checkStockAvailable does for global. 
-           // For specific lot, we assume caller checked or we check here.
-           // Let's assume strict management:
            await prismaClient.stock_lot.update({
                where: {
                    magasin_id_lot_id: { magasin_id: data.magasin_id, lot_id: data.lot_id }
@@ -183,28 +186,21 @@ export class StockService {
        }
     }
 
-    // 0.5. Validation de l'existence de l'utilisateur (FK Check Safeguard)
+    // 0.5. Validation utilisateur et magasin dest
     if (data.utilisateur_id) {
-        // On vérifie si l'utilisateur existe dans le tenant actuel
-        // Si non (ex: script de restauration incomplet), on met null pour éviter le crash FK
         try {
             const userExists = await prismaClient.tenantUser.findUnique({
                 where: { id: data.utilisateur_id },
                 select: { id: true }
             });
-            
-            if (!userExists) {
-                logger.warn(`⚠️ [StockService] Utilisateur ${data.utilisateur_id} introuvable pour le mouvement. Passage en anonyme.`);
-                data.utilisateur_id = undefined;
-            }
+            if (!userExists) data.utilisateur_id = undefined;
         } catch (e) {
-            // Si la table n'existe pas ou erreur, on ignore pour ne pas bloquer
-            logger.warn('⚠️ [StockService] Impossible de vérifier utilisateur:', e);
             data.utilisateur_id = undefined;
         }
     }
 
-    // 1. Créer le mouvement
+    // 1. Créer le mouvement (Source)
+    // Pour un transfert, ce mouvement représente la SORTIE du magasin A
     const mouvement = await prismaClient.mouvements_stock.create({
       data: {
         magasin_id: data.magasin_id,
@@ -212,17 +208,16 @@ export class StockService {
         utilisateur_id: data.utilisateur_id || null,
         type: data.type,
         quantite: data.quantite,
-        raison: data.raison || (isIncrement ? 'Entrée de stock' : 'Sortie de stock'),
+        raison: data.raison || (isIncrement ? 'Entrée de stock' : (data.type === 'TRANSFERT' ? `Transfert vers autre magasin` : 'Sortie de stock')),
         vente_id: data.vente_id || null,
         achat_id: data.achat_id || null,
         lot_id: data.lot_id || null
       }
     });
 
-    // 2. Mettre à jour ou créer le stock
+    // 2. Mettre à jour le stock Source
     let newStock;
     if (!currentStock) {
-      // Créer le stock (uniquement pour les incréments)
       newStock = await prismaClient.stock_magasin.create({
         data: {
           magasin_id: data.magasin_id,
@@ -232,7 +227,6 @@ export class StockService {
         }
       });
     } else {
-      // Mettre à jour le stock existant
       newStock = await prismaClient.stock_magasin.update({
         where: {
           magasin_id_produit_id: {
@@ -248,7 +242,56 @@ export class StockService {
       });
     }
 
-    logger.info(`Mouvement stock créé: ${data.type} ${data.quantite} unités pour produit ${data.produit_id} dans magasin ${data.magasin_id}`);
+    // 3. Gérer le TRANSFERT (Destination)
+    if (data.type === 'TRANSFERT' && data.magasin_dest_id) {
+        // Entrée dans le magasin B
+        await prismaClient.stock_magasin.upsert({
+            where: {
+                magasin_id_produit_id: {
+                    magasin_id: data.magasin_dest_id,
+                    produit_id: data.produit_id
+                }
+            },
+            create: {
+                magasin_id: data.magasin_dest_id,
+                produit_id: data.produit_id,
+                quantite: data.quantite,
+                quantite_minimum: 0
+            },
+            update: {
+                quantite: { increment: data.quantite }
+            }
+        });
+
+        // Créer un mouvement miroir pour l'entrée ?
+        // Pour la traçabilité complète, c'est mieux d'avoir une ligne "ENTREE_TRANSFERT" ou juste un TRANSFERT entrant.
+        // Mais gardons simple : On trace juste que le stock B a augmenté.
+        // Idéalement, on crée un deuxième mouvement pour le magasin B.
+        await prismaClient.mouvements_stock.create({
+            data: {
+              magasin_id: data.magasin_dest_id,
+              produit_id: data.produit_id,
+              utilisateur_id: data.utilisateur_id || null,
+              type: 'TRANSFERT', // On garde le même type, mais magasin est différent
+              quantite: data.quantite,
+              raison: `Réception transfert depuis ${data.magasin_id}`, // Idéalement le nom du magasin
+              lot_id: data.lot_id || null
+            }
+        });
+
+        // Si stock_lot utilisé, on doit aussi incrémenter le lot dans le magasin B
+        if (data.lot_id) {
+            await prismaClient.stock_lot.upsert({
+                where: {
+                    magasin_id_lot_id: { magasin_id: data.magasin_dest_id, lot_id: data.lot_id }
+                },
+                create: { magasin_id: data.magasin_dest_id, lot_id: data.lot_id, quantite: data.quantite },
+                update: { quantite: { increment: data.quantite } }
+            });
+        }
+    }
+
+    logger.info(`Mouvement de stock enregistré : ${data.type} de ${data.quantite} unités pour le produit ${data.produit_id} dans le magasin ${data.magasin_id}`);
 
     return { mouvement, newStock };
   }
@@ -496,6 +539,55 @@ export class StockService {
             code_barre: m.produit.conditionnements[0]?.code_barre || null
         }
     }));
+  }
+  /**
+   * Traite la réception d'un achat (création des mouvements d'entrée)
+   */
+  async processAchatReception(
+    achatId: string,
+    magasinId: string,
+    details: any[],
+    tx?: any
+  ): Promise<void> {
+    const prismaClient = tx || this.prisma;
+    
+    logger.info(`Traitement réception achat ${achatId} pour magasin ${magasinId}`);
+
+    for (const detail of details) {
+        let lot_id = undefined;
+
+        // Gestion du LOT si présent
+        if (detail.numero_lot && detail.date_peremption) {
+             // Upsert lot
+             let lot = await prismaClient.lot_produit.findUnique({
+                 where: {
+                     produit_id_numero_lot: { produit_id: detail.produit_id, numero_lot: detail.numero_lot }
+                 }
+             });
+
+             if (!lot) {
+                 lot = await prismaClient.lot_produit.create({
+                     data: {
+                         produit_id: detail.produit_id,
+                         numero_lot: detail.numero_lot,
+                         date_peremption: detail.date_peremption
+                     }
+                 });
+             }
+             lot_id = lot.id;
+        }
+
+        // Création du mouvement
+        await this.createMouvement({
+            magasin_id: magasinId,
+            produit_id: detail.produit_id,
+            type: 'ENTREE_ACHAT',
+            quantite: detail.quantite, // Quantité totale (unités)
+            achat_id: achatId,
+            lot_id: lot_id,
+            raison: `Réception achat` // On pourrait ajouter le numéro de commande ici si dispo
+        }, prismaClient);
+    }
   }
 }
 

@@ -19,6 +19,7 @@ export interface CreateVenteDto {
   utilisateur_id: string;
   client_id?: string;
   methode_paiement: MethodePaiement;
+  statut?: StatutVente;
   notes?: string;
   details: VenteDetailDto[];
   montant_remise?: number; // Remise globale
@@ -74,7 +75,7 @@ export class VenteService {
     const produitMap = new Map(produits.map(p => [p.id, p]));
     // 3. Préparer les données de vente
     let prixTotalVente = 0;
-    const detailsVente = [];
+    const detailsVente: any[] = [];
     const itemsToCheckStock: Array<{ produit_id: string; quantite: number }> = []; // Pour regrouper les quantités par produit pour le check global
 
     for (const item of data.details) {
@@ -215,6 +216,12 @@ export class VenteService {
             email: true,
             employee: { select: { fullName: true } } 
           } 
+        },
+        details: {
+            include: {
+                produit: { select: { nom: true } },
+                conditionnement: { select: { nom: true } }
+            }
         },
         _count: { select: { details: true } }
       },

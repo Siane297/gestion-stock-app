@@ -36,6 +36,7 @@ export interface CreateMouvementDto {
   raison?: string;
   numero_lot?: string;
   date_peremption?: Date;
+  magasin_dest_id?: string;
 }
 
 export interface SetMinimumStockDto {

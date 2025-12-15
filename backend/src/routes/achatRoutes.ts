@@ -3,6 +3,7 @@ import {
     getAllAchats,
     getAchatById,
     createAchat,
+    updateAchat,
     updateAchatStatut,
     deleteAchat,
     cancelAchat,
@@ -16,7 +17,8 @@ router.use(authenticate);
 router.get('/', getAllAchats);
 router.get('/:id', getAchatById);
 router.post('/', createAchat);
-router.patch('/:id/statut', updateAchatStatut);
+router.patch('/:id', updateAchat); // General update
+router.patch('/:id/statut', updateAchatStatut); // Status update
 router.patch('/:id/cancel', cancelAchat);
 router.delete('/:id', deleteAchat);
 

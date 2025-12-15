@@ -112,21 +112,30 @@ export const usePos = defineStore('pos', () => {
 
   const flattenCatalog = () => {
     const items: PosProductItem[] = [];
+    const magId = currentMagasinId.value;
 
     allProducts.value.forEach(p => {
+      // Calcul du stock global (pour la boutique courante)
+      let stockProduit = 0;
+      if (p.stocks && magId) {
+          const stockEntry = p.stocks.find((s: any) => s.magasin_id === magId);
+          stockProduit = stockEntry ? stockEntry.quantite : 0;
+      }
+
       const hasDefinedUnit = p.conditionnements?.some((c: any) => c.quantite_base === 1);
 
-      // 1. Unité de base
+      // 1. Unité de base (si aucune unité explicite définie)
       if (!hasDefinedUnit && p.prix_vente && p.prix_vente > 0) {
         items.push({
           uniqueId: `${p.id}_UNIT`,
           productId: p.id,
-          conditionnementId: undefined, // Pas de conditionnement ID pour l'unité de base
+          conditionnementId: undefined, 
           name: p.nom,
           price: p.prix_vente,
           isPack: false,
+          packLabel: 'Unité',
           quantityInBase: 1,
-          stockAvailable: p.stock_actuel || 0,
+          stockAvailable: stockProduit,
           categoryName: p.categorie?.nom,
           image: p.photo
         });
@@ -142,9 +151,9 @@ export const usePos = defineStore('pos', () => {
             name: `${p.nom}`,
             price: c.prix_vente,
             isPack: c.quantite_base > 1,
-            packLabel: c.nom,
+            packLabel: c.nom, // Sera "Unité", "Pack de 6", etc.
             quantityInBase: c.quantite_base,
-            stockAvailable: Math.floor((p.stock_actuel || 0) / c.quantite_base),
+            stockAvailable: Math.floor(stockProduit / c.quantite_base),
             categoryName: p.categorie?.nom,
             image: p.photo
           });

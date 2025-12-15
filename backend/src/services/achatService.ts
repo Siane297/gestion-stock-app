@@ -248,50 +248,12 @@ export class AchatService {
       await this.prisma.$transaction(async (tx: any) => {
         const stockServiceTx = new StockService(tx);
 
-        // Créer les mouvements de stock pour chaque produit
-        for (const detail of achat.details) {
-          let lot_id = undefined;
-
-          // Si présence de numéro de lot, on gère le lot
-          if (detail.numero_lot && detail.date_peremption) {
-              // Vérifier si le produit gère la péremption (optionnel, mais mieux pour la cohérence)
-              const prod = await tx.produit.findUnique({ where: { id: detail.produit_id } });
-              
-              if (prod) { // On stocke le lot même si gere_peremption est false pour l'instant, ou on force true ?
-                 // On assume que si l'utilisateur saisit un lot, on le crée.
-                 
-                 // Upsert du lot
-                 // On cherche d'abord s'il existe (unique contrainte)
-                 let lot = await tx.lot_produit.findUnique({
-                     where: {
-                         produit_id_numero_lot: { produit_id: detail.produit_id, numero_lot: detail.numero_lot }
-                     }
-                 });
-
-                 if (!lot) {
-                     lot = await tx.lot_produit.create({
-                         data: {
-                             produit_id: detail.produit_id,
-                             numero_lot: detail.numero_lot,
-                             date_peremption: detail.date_peremption
-                         }
-                     });
-                 }
-                 lot_id = lot.id;
-              }
-          }
-
-          await stockServiceTx.createMouvement({
-            magasin_id: achat.magasin_id,
-            produit_id: detail.produit_id,
-            type: 'ENTREE_ACHAT',
-            quantite: detail.quantite,
-            utilisateur_id: data.utilisateur_id,
-            raison: `Réception achat ${achat.numero_commande || id}`,
-            achat_id: achat.id,
-            lot_id: lot_id
-          }, tx);
-        }
+        await stockServiceTx.processAchatReception(
+            id,
+            achat.magasin_id,
+            achat.details,
+            tx
+        );
 
         // Mettre à jour le statut
         await tx.achat.update({

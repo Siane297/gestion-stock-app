@@ -4,7 +4,7 @@
     @click="$emit('add', item)"
   >
     <!-- Badge Pack -->
-    <div v-if="item.isPack" class="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 shadow-sm">
+    <div v-if="item.packLabel" class="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 shadow-sm">
       {{ item.packLabel }}
     </div>
 
@@ -28,7 +28,7 @@
             {{ item.name }}
         </h3>
         <p v-if="item.isPack" class="text-xs text-orange-600 font-medium mt-0.5">{{ item.packLabel }}</p>
-        <p v-else class="text-xs text-gray-400 mt-0.5">Unité</p>
+        <p v-else class="text-xs text-orange-600 font-medium mt-0.5">Unité</p>
       </div>
 
       <div class="mt-2 flex items-end justify-between">

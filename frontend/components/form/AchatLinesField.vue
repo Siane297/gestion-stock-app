@@ -3,6 +3,7 @@
     <div class="flex items-center justify-between">
       <label class="font-semibold text-gray-700">
         {{ label }}
+        <span v-if="required" class="text-red-500">*</span>
       </label>
       <button type="button" @click="openPopup()"
         class="text-sm px-3 py-1.5 bg-[#064654] text-white rounded-lg hover:bg-[#064654]/90 transition-colors flex items-center gap-2">
@@ -43,10 +44,9 @@
             <span class="block text-xs text-gray-400">Prix Unitaire</span>
             <span class="font-medium font-mono">{{ item.prix_unitaire.toFixed(2) }}</span>
           </div>
-          <div v-if="item.prix_unitaire_conditionnement">
+          <div v-if="item.conditionnement_id && item.conditionnement_id !== 'UNIT'">
             <span class="block text-xs text-gray-400">Prix Colis</span>
-            <span class="font-medium font-mono text-orange-600">{{ item.prix_unitaire_conditionnement.toFixed(2)
-              }}</span>
+            <span class="font-medium font-mono text-orange-600">{{ getPrixConditionnement(item)?.toFixed(2) }}</span>
           </div>
           <div v-if="item.numero_lot">
             <span class="block text-xs text-gray-400">Lot</span>
@@ -177,6 +177,7 @@ import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import DatePicker from 'primevue/datepicker';
 import Button from 'primevue/button';
+import AppButton from '~/components/button/AppButton.vue';
 
 interface AchatLineItem {
   produit_id: string;
@@ -193,11 +194,13 @@ interface AchatLineItem {
 interface Props {
   modelValue?: AchatLineItem[];
   label?: string;
+  required?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: () => [],
-  label: 'Produits'
+  label: 'Produits',
+  required: false
 });
 
 const emit = defineEmits<{
@@ -245,6 +248,20 @@ const formatDate = (d: string | Date | undefined) => {
   return new Date(d).toLocaleDateString();
 };
 
+const getPrixConditionnement = (item: AchatLineItem) => {
+    if (item.prix_unitaire_conditionnement) return item.prix_unitaire_conditionnement;
+    
+    // Calculer à la volée
+    if (item.conditionnement_id) {
+         const prod = produits.value.find(p => p.id === item.produit_id);
+         const pack = prod?.conditionnements?.find((c:any) => c.id === item.conditionnement_id);
+         if (pack) {
+             return item.prix_unitaire * pack.quantite_base;
+         }
+    }
+    return 0;
+};
+
 const openPopup = (index: number | null = null) => {
   editingIndex.value = index;
 
@@ -255,10 +272,23 @@ const openPopup = (index: number | null = null) => {
       form.produit_id = item.produit_id;
       form.conditionnement_id = item.conditionnement_id || '';
 
-      if (item.conditionnement_id) {
+      if (item.conditionnement_id && item.conditionnement_id !== 'UNIT') {
         // Mode colis
         form.quantite_saisie = item.quantite_conditionnement || 0;
-        form.prix_saisie = item.prix_unitaire_conditionnement || 0;
+        
+        // Calcul du prix colis si non fourni (car non stocké en base)
+        if (item.prix_unitaire_conditionnement) {
+             form.prix_saisie = item.prix_unitaire_conditionnement;
+        } else {
+             // Retrouver le ratio du conditionnement
+             const prod = produits.value.find(p => p.id === item.produit_id);
+             const pack = prod?.conditionnements?.find((c:any) => c.id === item.conditionnement_id);
+             if (pack) {
+                 form.prix_saisie = item.prix_unitaire * pack.quantite_base;
+             } else {
+                 form.prix_saisie = 0;
+             }
+        }
       } else {
         // Mode unitaire
         form.quantite_saisie = item.quantite;

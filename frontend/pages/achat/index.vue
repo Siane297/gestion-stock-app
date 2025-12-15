@@ -80,8 +80,7 @@ const handleView = (a: Achat) => {
 };
 
 const handleEdit = (a: Achat) => {
-    // router.push(`/achat/modifier/${a.id}`);
-     toast.add({ severity: 'warn', summary: 'Info', detail: `Modification non implémentée`, life: 3000 });
+    router.push(`/achat/modifier/${a.id}`);
 };
 
 const handleDelete = async (a: Achat) => {
