@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ticket de Caisse</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      @page {
+        margin: 0;
+        size: auto;
+      }
+      body {
+        margin: 0;
+        padding: 10px;
+        font-family: "Courier New", monospace;
+        background: white;
+        width: 100%;
+      }
+      .receipt-container {
+        width: 100%;
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      .receipt-header {
+        text-align: center;
+        border-bottom: 2px dashed #000;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+      }
+      .receipt-header img {
+        max-width: 60px;
+        margin-bottom: 5px;
+      }
+      .receipt-header h2 {
+        margin: 5px 0;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .receipt-header p {
+        margin: 2px 0;
+        font-size: 10px;
+      }
+      .receipt-line {
+        display: flex;
+        justify-content: space-between;
+        margin: 3px 0;
+        padding: 0 5px;
+      }
+      .receipt-info {
+        margin: 15px 0;
+        font-size: 11px;
+      }
+      .receipt-items {
+        margin-top: 15px;
+      }
+      .separator {
+        border-top: 1px dashed #000;
+        margin: 10px 0;
+      }
+      .item {
+        margin: 8px 0;
+        padding: 0 5px;
+      }
+      .item-name {
+        font-weight: bold;
+        margin-bottom: 2px;
+      }
+      .item-details {
+        font-size: 11px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .receipt-total {
+        border-top: 2px solid #000;
+        padding-top: 10px;
+        margin-top: 15px;
+        font-weight: bold;
+      }
+      .total-line {
+        display: flex;
+        justify-content: space-between;
+        margin: 5px 0;
+        padding: 0 5px;
+      }
+      .total-line.grand-total {
+        font-size: 16px;
+        margin-top: 10px;
+      }
+      .receipt-footer {
+        text-align: center;
+        margin-top: 20px;
+        border-top: 2px dashed #000;
+        padding-top: 10px;
+      }
+      .receipt-footer p {
+        margin: 5px 0;
+      }
+      .thanks {
+        font-weight: bold;
+        font-size: 13px;
+      }
+      .legal {
+        font-size: 9px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="receipt-container">
+      <!-- En-tête avec logo et infos entreprise -->
+      <div class="receipt-header">
+        {{#if company.logo}}
+        <img src="{{company.logo}}" alt="Logo" />
+        {{/if}}
+        <h2>{{company.name}}</h2>
+        {{#if company.address}}
+        <p>{{company.address}}</p>
+        {{/if}} {{#if company.phone}}
+        <p>Tél: {{company.phone}}</p>
+        {{/if}}
+      </div>
+
+      <!-- Informations de la vente -->
+      <div class="receipt-info">
+        <div class="receipt-line">
+          <span>N° Ticket:</span>
+          <strong>{{vente.numeroVente}}</strong>
+        </div>
+        <div class="receipt-line">
+          <span>Date:</span>
+          <span>{{formatDate vente.date}} {{formatTime vente.date}}</span>
+        </div>
+        <div class="receipt-line">
+          <span>Vendeur:</span>
+          <span>{{vente.vendeur}}</span>
+        </div>
+        <div class="receipt-line">
+          <span>Magasin:</span>
+          <span>{{vente.magasin}}</span>
+        </div>
+        {{#if (ne vente.client.nom "Client anonyme")}}
+        <div class="receipt-line">
+          <span>Client:</span>
+          <span>{{vente.client.nom}}</span>
+        </div>
+        {{/if}}
+      </div>
+
+      <!-- Séparateur -->
+      <div class="separator"></div>
+
+      <!-- Liste des articles -->
+      <div class="receipt-items">
+        {{#each vente.details}}
+        <div class="item">
+          <div class="item-name">
+            {{this.produit}} {{#if this.conditionnement}}
+            ({{this.conditionnement}}) {{/if}}
+          </div>
+          <div class="item-details">
+            <span>{{this.quantite}} x {{this.prixUnitaire}} KMF</span>
+            <strong>{{this.total}} KMF</strong>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+
+      <!-- Total -->
+      <div class="receipt-total">
+        <div class="total-line grand-total">
+          <span>TOTAL:</span>
+          <strong>{{vente.montantTotal}} KMF</strong>
+        </div>
+
+        <div
+          class="separator"
+          style="margin-top: 10px; margin-bottom: 10px"
+        ></div>
+
+        <div class="total-line" style="font-size: 12px">
+          <span>Mode paiement:</span>
+          <span>{{vente.modePaiement}}</span>
+        </div>
+        <div class="total-line" style="font-size: 12px">
+          <span>Montant payé:</span>
+          <span>{{vente.montantPaye}} KMF</span>
+        </div>
+        {{#if (gt vente.rendu 0)}}
+        <div class="total-line" style="font-size: 12px">
+          <span>Rendu:</span>
+          <strong>{{vente.rendu}} KMF</strong>
+        </div>
+        {{/if}}
+      </div>
+
+      <!-- Footer -->
+      <div class="receipt-footer">
+        <p class="thanks">Merci de votre visite !</p>
+        <p class="legal">Ticket non contractuel</p>
+        <p class="legal">
+          {{formatDate vente.date}} - {{formatTime vente.date}}
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

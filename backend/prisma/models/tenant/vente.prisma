@@ -17,12 +17,15 @@ enum MethodePaiement {
 
 model vente {
     id                String          @id @default(uuid())
+    numero_vente      String?         @unique // Format TC-YYYYMMDD-XXX
     magasin_id        String
     utilisateur_id    String
     client_id         String?
     montant_total     Float
     montant_remise    Float           @default(0)
     montant_tva       Float           @default(0)
+    montant_paye      Float? // Montant effectivement payé par le client
+    montant_rendu     Float? // Monnaie rendue au client
     statut            StatutVente
     methode_paiement  MethodePaiement
     notes             String?

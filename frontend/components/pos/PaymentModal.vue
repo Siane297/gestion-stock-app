@@ -65,13 +65,13 @@
       <div class="flex gap-3 pt-2">
          <AppButton 
             label="Annuler" 
-            variant="secondary" 
+            variant="outline" 
              fullWidth
              @click="$emit('update:visible', false)"
          />
          <AppButton 
             label="Valider le paiement" 
-            variant="success" 
+            variant="primary" 
             icon="pi pi-check"
             fullWidth
             :disabled="amountReceived < total"
@@ -105,34 +105,36 @@ const selectedMethod = ref('ESPECES');
 const amountReceived = ref(0);
 const processing = ref(false);
 
-const changeAmount = computed(() => {
-  return (amountReceived.value || 0) - props.total;
-});
+const changeAmount = computed(() => amountReceived.value - props.total);
 
-// Auto-fill amount received with total when opening
+// Reset amount when modal opens
 watch(() => props.visible, (newVal) => {
-    if (newVal) {
-        amountReceived.value = props.total;
-        selectedMethod.value = 'ESPECES';
-    }
+  if (newVal) {
+    amountReceived.value = props.total;
+    selectedMethod.value = 'ESPECES';
+  }
 });
 
-const formatPrice = (p: number) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'KMF', maximumFractionDigits: 0 }).format(p);
+const formatPrice = (amount: number) => {
+  return new Intl.NumberFormat('fr-FR', { 
+    style: 'currency', 
+    currency: 'KMF',
+    minimumFractionDigits: 0 
+  }).format(amount);
 };
 
-const handlePayment = async () => {
-    if (amountReceived.value < props.total) return;
-    
-    processing.value = true;
-    // Simulate API call delay if needed, or just emit immediately
-    setTimeout(() => {
-        emit('confirm', {
-            method: selectedMethod.value,
-            amountReceived: amountReceived.value,
-            change: changeAmount.value
-        });
-        processing.value = false;
-    }, 800);
+const handlePayment = () => {
+  if (amountReceived.value < props.total) return;
+  
+  processing.value = true;
+  
+  setTimeout(() => {
+    emit('confirm', {
+      method: selectedMethod.value,
+      amountReceived: amountReceived.value,
+      change: changeAmount.value
+    });
+    processing.value = false;
+  }, 800);
 };
 </script>

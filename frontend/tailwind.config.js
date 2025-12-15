@@ -19,6 +19,7 @@ export default {
         bleu: '#D5EDF6',
         slot: '#F2F7FA',
         side: '#013844',
+        side2: '#064654',
         
       },
     },

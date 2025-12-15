@@ -7,7 +7,7 @@ import { useToast } from 'primevue/usetoast';
 import { PDF_TYPES, type PdfGenerationOptions } from '~/types/pdf';
 
 export const useSecurePdf = () => {
-  const { post } = useSecureApi();
+  const { post, get } = useSecureApi();
   const toast = useToast();
   
   /**
@@ -46,8 +46,15 @@ export const useSecurePdf = () => {
       // Appeler l'API avec gestion automatique des tokens sécurisés
       const response = await post(endpoint, options.params || {}, {
         responseType: 'blob', // Important : réponse en format blob
+        // exposeHeaders: ['Content-Disposition'] // N'est pas une option standard fetch/axios mais utile pour mémo
       });
       
+      // La réponse interceptée par useCustomFetch/ofetch retourne directement le body (Blob)
+      // Mais on n'a peut-être pas accès aux headers facilement ici si l'intercepteur nettoie tout
+      // Si useSecureApi utilise $fetch, response est le body.
+      // Il faudrait utiliser `onResponse` pour chopper les headers, ou fetch avec `raw: true` ?
+      // Pour l'instant on garde la logique existante pour generatePdf.
+
       // Vérifier que la réponse est bien un blob PDF
       if (!(response instanceof Blob)) {
         throw new Error('Réponse invalide: PDF attendu');
@@ -79,37 +86,23 @@ export const useSecurePdf = () => {
       console.log('✅ [PDF] PDF généré avec succès:', filename);
       
     } catch (error: any) {
-      console.error('❌ [PDF] Erreur génération PDF:', error);
-      
-      // Messages d'erreur personnalisés selon le contexte
-      let errorMessage = 'Erreur lors de la génération du PDF';
-      
-      if (error.message?.includes('timeout')) {
-        errorMessage = 'La génération du PDF a pris trop de temps. Veuillez réessayer.';
-      } else if (error.message?.includes('network')) {
-        errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet.';
-      } else if (error.status === 401) {
-        errorMessage = 'Session expirée. Veuillez vous reconnecter.';
-      } else if (error.status === 403) {
-        errorMessage = 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
-      } else if (error.status === 429) {
-        errorMessage = 'Trop de demandes. Veuillez patienter avant de réessayer.';
-      } else if (error.status >= 500) {
-        errorMessage = 'Erreur serveur. Veuillez contacter le support technique.';
-      }
-      
-      // Notification d'erreur
-      toast.add({
-        severity: 'error',
-        summary: 'Erreur',
-        detail: errorMessage,
-        life: 8000,
-      });
-      
-      // Re-lancer l'erreur pour permettre la gestion au niveau composant
-      throw new Error(errorMessage);
+      handlePdfError(error);
     }
   };
+
+  const handlePdfError = (error: any) => {
+      console.error('❌ [PDF] Erreur génération PDF:', error);
+      let errorMessage = 'Erreur lors de la génération du PDF';
+      
+      if (error.message?.includes('timeout')) errorMessage = 'La génération du PDF a pris trop de temps. Veuillez réessayer.';
+      else if (error.message?.includes('network')) errorMessage = 'Erreur de connexion.';
+      else if (error.status === 401) errorMessage = 'Session expirée.';
+      else if (error.status === 403) errorMessage = 'Accès refusé.';
+      else if (error.status >= 500) errorMessage = 'Erreur serveur.';
+      
+      toast.add({ severity: 'error', summary: 'Erreur', detail: errorMessage, life: 8000 });
+      throw new Error(errorMessage);
+  }
 
   /**
    * Générer PDF de la liste des employés
@@ -157,6 +150,53 @@ export const useSecurePdf = () => {
   };
 
   /**
+   * Générer un ticket de caisse via l'API dédiée
+   * Utilise GET et récupère le nom du fichier depuis les headers
+   */
+  /**
+   * Générer un ticket de caisse via l'API dédiée
+   * Utilise fetch manuellement pour accéder aux headers (Content-Disposition)
+   */
+  const generateReceiptPdf = async (venteId: string): Promise<void> => {
+      try {
+          console.log(`🧾 [PDF] Demande ticket vente: ${venteId}`);
+          
+          const { accessToken } = useSecureAuth();
+          const config = useRuntimeConfig();
+          const apiBase = config.public.apiBase || 'http://localhost:3001';
+          
+          // Utilisation de fetch natif pour pouvoir lire les headers (Content-Disposition)
+          const response = await fetch(`${apiBase}/api/ventes/${venteId}/pdf`, {
+              method: 'GET',
+              headers: { 
+                  'Authorization': `Bearer ${accessToken.value}`,
+                  'Content-Type': 'application/json'
+              }
+          });
+          
+           if (!response.ok) {
+             throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+           }
+           
+           const blob = await response.blob();
+           
+           // Récupérer le nom du fichier du header
+           let filename = `Ticket-${venteId.substring(0, 8)}.pdf`;
+           const contentDisposition = response.headers.get('Content-Disposition');
+           if (contentDisposition) {
+               const match = contentDisposition.match(/filename="?([^"]+)"?/);
+               if (match && match[1]) filename = match[1];
+           }
+           
+           downloadBlob(blob, filename);
+           toast.add({ severity: 'success', summary: 'Succès', detail: `Ticket ${filename} téléchargé`, life: 3000 });
+
+      } catch (err: any) {
+          handlePdfError(err);
+      }
+  };
+
+  /**
    * Générer PDF de la liste des congés
    */
   const generateCongesPdf = async (filename?: string): Promise<void> => {
@@ -167,14 +207,12 @@ export const useSecurePdf = () => {
   };
 
   return {
-    // Fonction générique
     generatePdf,
-    
-    // Fonctions spécialisées
     generateEmployeesPdf,
     generateAttendancesPdf,
     generateUsersPdf,
     generateBilansPdf,
     generateCongesPdf,
+    generateReceiptPdf
   };
 };

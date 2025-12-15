@@ -9,9 +9,9 @@
     </div>
 
     <!-- Image / Placeholder -->
-    <div class="h-24 w-full bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
+    <div class="h-24 w-full bg-bleu/50 rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
       <img v-if="item.image" :src="item.image" alt="Product" class="h-full w-full object-cover" />
-      <span v-else class="text-2xl opacity-20">📦</span>
+      <span v-else class="text-2xl opacity-50">📦</span>
       
       <!-- Overlay Add -->
       <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -27,7 +27,7 @@
         <h3 class="font-semibold text-gray-800 text-sm leading-tight line-clamp-2" :title="item.name">
             {{ item.name }}
         </h3>
-        <p v-if="item.isPack" class="text-xs text-orange-600 font-medium mt-0.5">{{ item.packLabel }}</p>
+        <p v-if="item.isPack" class="text-xs text-orange-600 font-medium mt-0.5">{{ item.packLabel }} (x{{ item.quantityInBase }})</p>
         <p v-else class="text-xs text-orange-600 font-medium mt-0.5">Unité</p>
       </div>
 

@@ -11,7 +11,8 @@ export const PDF_TYPES = {
   employees: 'Liste-des-Employes',
   attendances: 'Rapport-Pointage',
   bilans: 'Bilan-Presence',
-  conges: 'Liste-des-Conges'
+  conges: 'Liste-des-Conges',
+  receipt: 'Ticket-de-Caisse'
 } as const;
 
 /**

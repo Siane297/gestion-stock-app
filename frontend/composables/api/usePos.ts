@@ -30,6 +30,7 @@ export interface CartItem {
   quantity: number;
   isPack: boolean;
   packLabel?: string;
+  quantityInBase?: number;
   total: number;
 }
 
@@ -180,6 +181,7 @@ export const usePos = defineStore('pos', () => {
         quantity: 1,
         isPack: item.isPack,
         packLabel: item.packLabel,
+        quantityInBase: item.quantityInBase,
         total: item.price
       });
     }
@@ -209,10 +211,10 @@ export const usePos = defineStore('pos', () => {
     selectedClientId.value = null; // Reinit client
   };
 
-  const submitSale = async (paymentData: { method: MethodePaiement, amountReceived: number, change: number }): Promise<boolean> => {
+  const submitSale = async (paymentData: { method: MethodePaiement, amountReceived: number, change: number }): Promise<{ venteId: string } | null> => {
      if (!currentMagasinId.value) {
          console.error("Aucun magasin sélectionné");
-         return false;
+         return null;
      }
 
      const payload: CreateVenteDto = {
@@ -220,6 +222,8 @@ export const usePos = defineStore('pos', () => {
          client_id: selectedClientId.value || undefined,
          methode_paiement: paymentData.method,
          montant_total: cartTotal.value,
+         montant_paye: paymentData.amountReceived,
+         montant_rendu: paymentData.change,
          details: cart.value.map(item => ({
              produit_id: item.productId,
              conditionnement_id: item.conditionnementId,
@@ -231,11 +235,11 @@ export const usePos = defineStore('pos', () => {
 
      try {
          const result = await createVente(payload);
-         if (result) {
+         if (result && result.id) {
             clearCart(); 
-            return true;
+            return { venteId: result.id };
          }
-         return false;
+         return null;
      } catch (e) {
          console.error("Erreur vente", e);
          throw e;

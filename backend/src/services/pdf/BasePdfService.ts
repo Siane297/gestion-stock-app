@@ -9,7 +9,9 @@ export type PdfFormat = 'A4' | 'A3' | 'Letter';
 
 export interface PdfConfiguration {
   orientation: PdfOrientation;
-  format: PdfFormat;
+  format?: PdfFormat;
+  width?: string;
+  height?: string;
   margins?: {
     top?: string;
     right?: string; 
@@ -54,6 +56,12 @@ export abstract class BasePdfService {
       orientation: 'portrait',
       format: 'A4',
       margins: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
+    },
+    // Format thermique pour tickets de caisse (80mm)
+    receipt: {
+      orientation: 'portrait',
+      width: '80mm',
+      margins: { top: '2mm', right: '2mm', bottom: '2mm', left: '2mm' }
     }
   };
 
@@ -295,9 +303,30 @@ export abstract class BasePdfService {
       console.log('🎨 [PDF] Attente chargement des styles...');
       await new Promise(resolve => setTimeout(resolve, 150)); // Réduit à 150ms
 
+      // Si une largeur personnalisée est définie (ex: ticket de caisse), on calcule la hauteur dynamique
+      let dynamicHeight = config.height;
+      if (config.width && !config.height) {
+        console.log('📏 [PDF] Calcul de la hauteur dynamique du contenu...');
+        const bodyHeight = await page.evaluate(() => {
+          // @ts-ignore
+          const body = document.body;
+          // @ts-ignore
+          const html = document.documentElement;
+          return Math.max(
+            body.scrollHeight, body.offsetHeight,
+            html.clientHeight, html.scrollHeight, html.offsetHeight
+          );
+        });
+        // Ajouter une marge de sécurité
+        dynamicHeight = `${Math.ceil(bodyHeight) + 10}px`;
+        console.log(`📏 [PDF] Hauteur calculée: ${dynamicHeight}`);
+      }
+
       // Options PDF optimisées
       const pdfOptions: PDFOptions = {
-        format: config.format,
+        format: config.width ? undefined : config.format,
+        width: config.width,
+        height: dynamicHeight,
         landscape: config.orientation === 'landscape',
         printBackground: true,
         margin: config.margins || { top: '10mm', right: '8mm', bottom: '10mm', left: '8mm' },

@@ -118,9 +118,9 @@ const buttonClasses = computed(() => {
 
   // Taille
   const sizeClasses = {
-    sm: 'px-3 py-3 tracking-wide text-sm',
-    md: 'px-4 py-3 tracking-wide text-base',
-    lg: 'px-6 py-4 tracking-wide text-lg',
+    sm: 'p-2.5 tracking-wide text-sm',
+    md: 'p-3 tracking-wide text-base',
+    lg: 'p-4 tracking-wide text-lg',
   };
   baseClasses.push(sizeClasses[props.size]);
 
@@ -231,8 +231,8 @@ button {
 /* Effet 3D pour les boutons secondary */
 .shadow-3d-secondary {
   box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.08),
-    0 2px 4px -1px rgba(0, 0, 0, 0.04),
+    0 4px 6px -1px rgba(152, 149, 149, 0.08),
+    0 2px 4px -1px rgba(190, 190, 190, 0.04),
     inset 0 -2px 4px rgba(0, 0, 0, 0.1),
     inset 0 2px 4px rgba(255, 255, 255, 0.3);
 }
@@ -242,7 +242,7 @@ button {
     0 6px 8px -1px rgba(0, 0, 0, 0.12),
     0 3px 5px -1px rgba(0, 0, 0, 0.06),
     inset 0 -2px 4px rgba(0, 0, 0, 0.15),
-    inset 0 2px 4px rgba(255, 255, 255, 0.35);
+    inset 0 2px 4px rgba(226, 225, 225, 0.056);
 }
 
 .shadow-3d-secondary:active {

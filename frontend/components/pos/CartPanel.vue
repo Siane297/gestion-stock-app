@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full bg-bleu/20 border-2 rounded-lg p-3 border-gris/40">
+  <div class="flex flex-col h-full bg-bleu/40 border-2 rounded-lg p-3 border-gris/40">
     <!-- Header Panier -->
     <div class="p-4 border-b border-gray-100 rounded-t-lg bg-primary flex justify-between items-center">
       <h2 class="font-bold text-white flex items-center gap-2">
@@ -54,7 +54,7 @@
     <!-- Liste Items -->
     <div class="flex-1 overflow-y-auto p-2 space-y-2 rounded-lg">
       <div v-if="store.cart.length === 0" class="h-full flex bg-white border-2 border-dashed flex-col py-5 items-center justify-center text-gray-400 rounded-lg">
-        <i class="pi pi-shopping-bag text-5xl mb-4"></i>
+        <i class="pi pi-shopping-bag text-3xl mb-4"></i>
         <p>Le panier est vide</p>
         <p class="text-sm">Sélectionnez des articles à gauche</p>
       </div>
@@ -67,7 +67,7 @@
         >
             <!-- Qty Control -->
             <div class="flex flex-col items-center justify-center gap-1 bg-gray-50 rounded-md px-1 w-8">
-                <button @click="store.updateQuantity(item.uniqueId, 1)" class="hover:text-primary transition-colors"><i class="pi pi-plus text-xs"></i></button>
+                <button @click="store.updateQuantity(item.uniqueId, 1)" class="hover:text-primary  transition-colors"><i class="pi pi-plus text-xs"></i></button>
                 <span class="font-bold text-sm">{{ item.quantity }}</span>
                 <button @click="store.updateQuantity(item.uniqueId, -1)" class="hover:text-red-500 transition-colors"><i class="pi pi-minus text-xs"></i></button>
             </div>
@@ -78,15 +78,15 @@
                     {{ item.name }}
                 </div>
                 <div class="flex items-center gap-2 text-xs">
-                     <span v-if="item.isPack" class="text-orange-600 bg-orange-50 px-1.5 rounded text-[10px] font-bold">{{ item.packLabel }}</span>
-                     <span v-else class="text-gray-400">Unité</span>
-                     <span class="text-gray-400">x {{ formatPrice(item.price) }}</span>
+                     <span v-if="item.isPack" class="text-orange-600 bg-orange-50 px-1.5 rounded text-[10px] font-bold">{{ item.packLabel }} (x{{ item.quantityInBase }})</span>
+                     <span v-else class="text-orange-600 bg-orange-50 px-1.5 rounded text-[10px] font-bold">Unité</span>
+                     <!-- <span class="text-gray-400">x {{ formatPrice(item.price) }}</span> -->
                 </div>
             </div>
 
             <!-- Total Item -->
             <div class="flex flex-col justify-center items-end min-w-[60px]">
-                <span class="font-bold text-[#064654]">{{ formatPrice(item.total) }}</span>
+                <span class="font-bold text-primary">{{ formatPrice(item.total) }}</span>
             </div>
 
             <!-- Remove Button Slide -->
@@ -103,22 +103,22 @@
     <!-- Footer Totaux -->
     <div class="p-4 bg-white rounded-lg border-2 border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] z-10">
       <div class="flex justify-between items-end mb-4">
-        <span class="text-gray-500 text-sm">Total à payer</span>
-        <span class="text-xl font-bold text-[#064654] leading-none">{{ formatPrice(store.cartTotal) }}</span>
+        <span class="text-noir text-sm">Total à payer</span>
+        <span class="text-xl font-bold text-primary leading-none">{{ formatPrice(store.cartTotal) }}</span>
       </div>
       
       <div class="grid grid-cols-2 gap-3">
         <AppButton 
             label="Attente" 
-            variant="secondary" 
+            variant="outline" 
             icon="pi pi-clock" 
             size="sm"
             @click="handleHold"
             :disabled="store.cart.length === 0"
         />
         <AppButton 
-            label="ENCAISSER" 
-            variant="success" 
+            label="Encaisser" 
+            variant="primary" 
             icon="pi pi-check-circle" 
             size="sm"
             class="shadow-lg shadow-primary/30"
@@ -146,6 +146,7 @@ import PaymentModal from '~/components/pos/PaymentModal.vue';
 
 const store = usePos();
 const toast = useToast();
+const { generateReceiptPdf } = useSecurePdf();
 
 const showPayment = ref(false);
 
@@ -167,8 +168,17 @@ const handleCheckoutClick = () => {
 
 const handlePaymentConfirm = async (paymentData: any) => {
     try {
-        const success = await store.submitSale(paymentData);
-        if (success) {
+        const result = await store.submitSale(paymentData);
+        if (result && result.venteId) {
+            // Auto-download receipt PDF
+            try {
+                await generateReceiptPdf(result.venteId);
+                console.log('📄 Ticket de caisse téléchargé automatiquement');
+            } catch (pdfError) {
+                console.warn('⚠️  Impossible de télécharger le ticket:', pdfError);
+                // Don't block the sale if PDF download fails
+            }
+
             toast.add({ 
                 severity: 'success', 
                 summary: 'Vente terminée', 

@@ -24,6 +24,8 @@ export interface CreateVenteDto {
   details: VenteDetailDto[];
   montant_remise?: number; // Remise globale
   montant_tva?: number;
+  montant_paye?: number; // Montant effectivement payé par le client
+  montant_rendu?: number; // Monnaie rendue au client
 }
 
 export interface UpdateVenteStatutDto {
@@ -49,6 +51,36 @@ export class VenteService {
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.stockService = new StockService(prisma);
+  }
+
+  /**
+   * Génère un numéro de ticket au format TC-YYYYMMDD-XXX
+   * TC = Ticket de Caisse
+   * YYYYMMDD = Date
+   * XXX = Séquence journalière (remise à zéro chaque jour)
+   */
+  private async generateReceiptNumber(magasinId: string): Promise<string> {
+    const today = new Date();
+    const dateStr = (today.toISOString().split('T')[0] || '').replace(/-/g, ''); // YYYYMMDD
+    
+    // Compter les ventes du jour pour ce magasin
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    
+    const countToday = await this.prisma.vente.count({
+      where: {
+        magasin_id: magasinId,
+        date_creation: {
+          gte: startOfDay,
+          lte: endOfDay
+        }
+      }
+    });
+    
+    // Incrémenter pour la nouvelle vente
+    const sequence = (countToday + 1).toString().padStart(3, '0');
+    
+    return `TC-${dateStr}-${sequence}`;
   }
 
   /**
@@ -142,15 +174,21 @@ export class VenteService {
 
     // 5. Transaction de création
     return this.prisma.$transaction(async (tx) => {
-      // a. Créer la vente
+      // a. Générer le numéro de ticket
+      const numeroVente = await this.generateReceiptNumber(data.magasin_id);
+      
+      // b. Créer la vente
       const vente = await tx.vente.create({
         data: {
+          numero_vente: numeroVente,
           magasin_id: data.magasin_id,
           utilisateur_id: data.utilisateur_id,
           // Relation client optionnelle
           ...(data.client_id ? { client_id: data.client_id } : {}),
           montant_total: prixTotalVente,
           montant_remise: data.montant_remise || 0,
+          montant_paye: data.montant_paye || prixTotalVente,
+          montant_rendu: data.montant_rendu || 0,
           statut: data.statut || 'PAYEE',
           methode_paiement: data.methode_paiement,
           notes: data.notes,

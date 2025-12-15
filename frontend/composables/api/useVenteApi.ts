@@ -1,4 +1,5 @@
 import { useSecureApi } from '~/composables/useSecureApi';
+import { useSecureAuth } from '~/composables/useSecureAuth';
 import type { ApiResponse } from './config';
 
 export type StatutVente = 'EN_ATTENTE' | 'PAYEE' | 'ANNULEE' | 'REMBOURSEE';
@@ -59,6 +60,8 @@ export interface CreateVenteDto {
   client_id?: string;
   montant_total: number;
   montant_remise?: number;
+  montant_paye?: number;    // Montant payé par le client
+  montant_rendu?: number;   // Monnaie rendue
   statut?: StatutVente;
   methode_paiement: MethodePaiement;
   notes?: string;
@@ -111,9 +114,7 @@ export const useVenteApi = () => {
   const updateVenteStatut = async (id: string, statut: StatutVente): Promise<boolean> => {
     await patch(`/api/ventes/${id}/statut`, { statut });
     return true;
-  };
-
-  return {
+  };  return {
     getVentes,
     getVenteById,
     getVenteStats,

@@ -4,6 +4,7 @@ import { AttendancePdfService } from '../services/pdf/AttendancePdfService.js';
 import { BilanPdfService } from '../services/pdf/BilanPdfService.js';
 import { UserPdfService } from '../services/pdf/UserPdfService.js';
 import { CongePdfService } from '../services/pdf/CongePdfService.js';
+import { ReceiptPdfService } from '../services/pdf/ReceiptPdfService.js';
 import { prismaPublic } from '../services/tenantService.js';
 
 /**
@@ -694,6 +695,126 @@ export class PdfController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la génération du PDF.',
+      });
+    }
+  }
+
+  /**
+   * Générer le ticket de caisse PDF pour une vente
+   */
+  public static async generateReceiptPdf(req: Request, res: Response): Promise<void> {
+    try {
+      console.log('📄 [PDF-Controller] Début génération ticket de caisse');
+      
+      if (!req.tenantPrisma) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Contexte tenant manquant.' 
+        });
+        return;
+      }
+
+      const venteId = req.params.id;
+      const userId = req.user?.userId;
+      const companyId = req.user?.companyId;
+
+      if (!userId || !companyId) {
+        res.status(401).json({ 
+          success: false, 
+          message: 'Authentification requise.' 
+        });
+        return;
+      }
+
+      console.log(`🧾 [PDF-Controller] Génération ticket pour vente: ${venteId}`);
+
+      // Récupérer vente + relations
+      const [vente, company] = await Promise.all([
+        Promise.race([
+          req.tenantPrisma.vente.findUnique({
+            where: { id: venteId },
+            include: {
+              details: { 
+                include: { 
+                  produit: { select: { nom: true } },
+                  conditionnement: { select: { nom: true } }
+                } 
+              },
+              client: { select: { nom: true } },
+              magasin: { select: { nom: true } },
+              utilisateur: { 
+                include: { 
+                  employee: { select: { fullName: true } } 
+                } 
+              }
+            }
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout: Récupération vente')), 10000)
+          )
+        ]) as Promise<any>,
+        
+        Promise.race([
+          prismaPublic.company.findUnique({
+            where: { id: companyId },
+            select: { 
+              name: true, 
+              address: true, 
+              telephoneOrganisation: true, 
+              logo: true 
+            }
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout: Récupération entreprise')), 10000)
+          )
+        ]) as Promise<any>
+      ]);
+
+      if (!vente) {
+        res.status(404).json({ 
+          success: false, 
+          message: 'Vente non trouvée.' 
+        });
+        return;
+      }
+
+      const companyInfo = {
+        name: company?.name || 'Entreprise',
+        address: company?.address,
+        phone: company?.telephoneOrganisation,
+        logo: company?.logo
+      };
+
+      // Générer le PDF
+      const pdfBuffer = await ReceiptPdfService.generateReceipt(
+        vente, 
+        companyInfo, 
+        { tenantId: companyId, userId }
+      );
+
+      const filename = `Ticket-${vente.numero_vente || vente.id.substring(0, 8)}.pdf`;
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
+      res.send(pdfBuffer);
+      console.log(`✅ [PDF-Controller] Ticket généré: ${filename}`);
+
+    } catch (error) {
+      console.error('❌ [PDF-Controller] Erreur génération ticket:', error);
+      const isTimeoutError = error instanceof Error && error.message.includes('Timeout');
+      const errorMessage = isTimeoutError 
+        ? 'La génération du ticket a pris trop de temps. Veuillez réessayer.'
+        : 'Erreur lors de la génération du ticket.';
+      
+      res.status(500).json({ 
+        success: false, 
+        message: errorMessage 
       });
     }
   }
