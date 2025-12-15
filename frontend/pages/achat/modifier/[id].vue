@@ -35,6 +35,7 @@
         :loading="saving"
         @submit="handleSubmit"
         @cancel="handleCancel"
+        @change="onFormChange"
         ref="formRef"
       />
     </div>
@@ -115,7 +116,7 @@ const achatFields = computed(() => {
         ],
         optionLabel: 'label',
         optionValue: 'value',
-        value: achat.value.statut,
+        value: currentForm.value.statut || achat.value.statut,
         disabled: achat.value.statut === 'ANNULE' ,
         helpText: "Attention : Passer à 'RECU_COMPLET' mettra à jour le stock automatiquement."
       },
@@ -164,7 +165,8 @@ const achatFields = computed(() => {
         required: true,
         fullWidth: true,
         // Conversion des détails existants pour le composant
-        value: achat.value.details.map((d: any) => ({
+        // Conversion des détails existants pour le composant - IMPORTANT : Utiliser la valeur courant du formulaire si elle existe pour ne pas écraser les changements
+        value: (currentForm.value.details && currentForm.value.details.length > 0) ? currentForm.value.details : achat.value.details.map((d: any) => ({
             ...d,
             conditionnement_id: d.conditionnement_id, // Keep null if null
             // Le composant attend peut-être des champs spécifiques, on passe tout
@@ -178,9 +180,42 @@ const achatFields = computed(() => {
         required: false,
         fullWidth: true,
         value: achat.value.notes
-      }
+      },
+      // Champ conditionnel pour le reliquat
+      ...(hasReducedQuantities.value ? [{
+          name: 'create_reliquat',
+          label: 'Générer une commande reliquat pour les quantités non reçues ?',
+          type: 'checkbox' as const,
+          binary: true,
+          value: true, // Par défaut à true quand ça apparaît
+          helpText: "Une nouvelle commande sera créée avec les quantités restantes."
+      }] : [])
     ];
 });
+
+const currentForm = ref<any>({});
+
+const onFormChange = (newData: any) => {
+    currentForm.value = newData;
+};
+
+// Détecter si les quantités ont baissé
+const hasReducedQuantities = computed(() => {
+    if (!achat.value || !currentForm.value.details) return false;
+    
+    // On compare les détails initiaux avec ceux du formulaire
+    // Attention: currentForm.value.details peut être incomplet au début
+    const formDetails = currentForm.value.details;
+    if (!Array.isArray(formDetails)) return false;
+
+    // Pour chaque produit initial, on regarde s'il y en a moins dans le form
+    return achat.value.details.some((initialLine: any) => {
+        const formLine = formDetails.find((d: any) => d.produit_id === initialLine.produit_id);
+        if (!formLine) return true; // Ligne supprimée = réduction
+        return Number(formLine.quantite) < initialLine.quantite; // Quantité réduite
+    });
+});
+
 
 const handleSubmit = async (data: any) => {
     saving.value = true;
@@ -200,9 +235,11 @@ const handleSubmit = async (data: any) => {
                 numero_commande: data.numero_commande,
                 date_livraison_prevue: data.date_livraison_prevue,
                 notes: data.notes,
+                create_reliquat: data.create_reliquat,
                 details: data.details.map((d: any) => ({
                     produit_id: d.produit_id,
                     quantite: Number(d.quantite),
+                    quantite_recue: d.quantite_recue ? Number(d.quantite_recue) : 0,
                     prix_unitaire: Number(d.prix_unitaire),
                     prix_total: Number(d.prix_total),
                     numero_lot: d.numero_lot || undefined,

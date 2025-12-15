@@ -9,6 +9,7 @@ export interface AchatDetailDto {
   produit_id: string;
   conditionnement_id?: string; // Ajout
   quantite: number; // Unités totales (calculé ou saisi)
+  quantite_recue?: number; // Added
   quantite_conditionnement?: number; // Nombre de colis (saisi)
   prix_unitaire: number; // Prix par UNITE (calculé ou saisi)
   prix_unitaire_conditionnement?: number; // Prix par COLIS (saisi)
@@ -25,6 +26,7 @@ export interface UpdateAchatDto {
     numero_commande?: string;
     date_livraison_prevue?: Date;
     notes?: string;
+    create_reliquat?: boolean;
     details?: Array<AchatDetailDto & { id?: string }>; // id si mise à jour ligne existante
 }
 
@@ -240,8 +242,8 @@ export class AchatService {
       throw new Error('Achat non trouvé');
     }
 
-    // Si on passe à RECU_COMPLET et que ce n'était pas déjà reçu
-    if (data.statut === 'RECU_COMPLET' && 
+    // Si on passe à RECU_COMPLET ou RECU_PARTIELLEMENT et que ce n'était pas déjà reçu
+    if ((data.statut === 'RECU_COMPLET' || data.statut === 'RECU_PARTIELLEMENT') && 
         achat.statut !== 'RECU_COMPLET' && 
         achat.statut !== 'RECU_PARTIELLEMENT') {
       
@@ -259,7 +261,7 @@ export class AchatService {
         await tx.achat.update({
           where: { id },
           data: {
-            statut: 'RECU_COMPLET',
+            statut: data.statut, // On utilise le statut demandé (RECU_COMPLET ou RECU_PARTIELLEMENT)
             date_livraison_reelle: new Date()
           }
         });
@@ -303,30 +305,133 @@ export class AchatService {
             }
         });
 
-        // Mise à jour détails (Full replace ou smart update ? Smart update est plus complexe, faisons delete/create partiel pour simplifier ou gérer les cas)
-        // Ici on suppose que le frontend envoie TOUS les détails valides.
+        // Mise à jour détails et gestion Stock (Partial Reception)
         if (data.details) {
-            // Supprimer les détails non présents
-            // C'est complexe, pour l'instant on supprime tout et on recrée ? 
-            // Risqué si un détail avait une ID externe référencée ailleurs (pas le cas ici).
-            // Mieux: On supprime tout et on recrée pour cet MVP.
-            
-            await tx.achat_detail.deleteMany({ where: { achat_id: id } });
+             const oldDetails = await tx.achat_detail.findMany({ where: { achat_id: id } });
+             const oldDetailsMap = new Map(oldDetails.map(d => [d.produit_id, d]));
 
-            for (const item of data.details) {
+             // On va tracker les mouvements de stock nécessaires
+             const stockMovements = [];
+             
+             // Nettoyage existant : On supprime tout et on recrée ? 
+             // Le problème de tout supprimer c'est qu'on perd l'historique 'quantite_recue' si on ne le renvoie pas. 
+             // Mais ici on suppose que le frontend renvoie tout l'état désiré.
+             
+             // Attention : Si on supprime et recrée, on perd la référence ID de la ligne, mais pour le stock c'est pas grave tant qu'on compare.
+             // MAIS pour calculer le diff, il nous faut l'ancien état.
+             
+             await tx.achat_detail.deleteMany({ where: { achat_id: id } });
+
+             let totalOrdered = 0;
+             let totalReceived = 0;
+
+             for (const item of data.details) {
+                const qtyOrdered = Number(item.quantite);
+                
+                // Nouvelle propriété quantite_recue (si pas envoyée, on assume 0 OU on garde l'ancienne si c'est un patch partiel ?)
+                // Ici on assume que le frontend envoie la nouvelle valeur désirée.
+                // Attention: 'item' est un DTO, il faut s'assurer qu'il a 'quantite_recue'. 
+                // Je vais devoir update le DTO interface aussi, mais JS s'en fiche.
+                const qtyReceivedNew = Number((item as any).quantite_recue || 0);
+
+                totalOrdered += qtyOrdered;
+                totalReceived += qtyReceivedNew;
+
+                // Comparaison avec l'ancien état pour stock
+                const oldDetail = oldDetailsMap.get(item.produit_id);
+                const qtyReceivedOld = oldDetail ? oldDetail.quantite_recue : 0;
+                
+                const diff = qtyReceivedNew - qtyReceivedOld;
+
+                if (diff > 0) {
+                     // Réception incrémentale
+                     // Conversion si conditionnement ? 
+                     // Simplification : On gère le stock en UNITÉS pures ici pour éviter la complexité collis/vrac mélangés.
+                     // Le frontend doit envoyer des unités ou on convertit ?
+                     // A priori 'quantite' et 'quantite_recue' sont en UNITÉS de base (pas colis).
+                     
+                     stockMovements.push({
+                         produit_id: item.produit_id,
+                         quantite: diff,
+                         // On essaie de préserver lot/peremption si fournis
+                         numero_lot: item.numero_lot,
+                         date_peremption: item.date_peremption
+                     });
+                }
+                // Si diff < 0 (correction erreur saisie), on devrait sortir du stock ? 
+                // Pour l'instant on gère que l'entrée.
+
+                // Recréation ligne
                 await tx.achat_detail.create({
                     data: {
                         achat_id: id,
                         produit_id: item.produit_id,
-                        quantite: Number(item.quantite),
+                        quantite: qtyOrdered,
+                        quantite_recue: qtyReceivedNew,
                         prix_unitaire: Number(item.prix_unitaire),
                         prix_total: Number(item.prix_total),
                         numero_lot: item.numero_lot,
-                        date_peremption: item.date_peremption
+                        date_peremption: item.date_peremption,
+                        conditionnement_id: item.conditionnement_id,
+                        quantite_conditionnement: item.quantite_conditionnement ? Number(item.quantite_conditionnement) : null
                     }
                 });
+             }
+             
+             // Application mouvements stock
+             if (stockMovements.length > 0) {
+                 const stockServiceTx = new StockService(tx as any);
+                 for (const mvmt of stockMovements) {
+                     // Gestion Lot (si nécessaire)
+                     let lot_id = undefined;
+                     if (mvmt.numero_lot && mvmt.date_peremption) {
+                        // ... code lot (copié de processAchatReception ou similar)
+                        // Pour simplifier, on appelle processAchatReception avec juste ce produit ?
+                        // Non, processAchatReception fait createMouvement 'ENTREE_ACHAT'.
+                        // On peut l'appeler pour un 'mini' update.
+                        await stockServiceTx.processAchatReception(id, existing.magasin_id, [{
+                            produit_id: mvmt.produit_id,
+                            quantite: mvmt.quantite,
+                            numero_lot: mvmt.numero_lot,
+                            date_peremption: mvmt.date_peremption
+                        }], tx);
+                     } else {
+                         await stockServiceTx.incrementStock(
+                             existing.magasin_id, 
+                             mvmt.produit_id, 
+                             mvmt.quantite, 
+                             { achat_id: id, raison: 'Réception partielle achat' },
+                             tx
+                         );
+                     }
+                 }
+                 logger.info(`Stock mis à jour pour achat ${id} (+${stockMovements.length} lignes)`);
+             }
+            
+            // Mise à jour automatique du statut
+            // Si on a commencé à recevoir : RECU_PARTIELLEMENT
+            // Si tout reçu : RECU_COMPLET
+            let newStatut = existing.statut;
+            if (totalReceived > 0 && totalReceived < totalOrdered) {
+                newStatut = 'RECU_PARTIELLEMENT';
+            } else if (totalReceived >= totalOrdered && totalOrdered > 0) {
+                newStatut = 'RECU_COMPLET';
+                // TODO: Gérer date_livraison_reelle si pas encore mise
+            } else if (totalReceived === 0 && existing.statut !== 'COMMANDE') {
+                // Retour à commande ? Possible si correction erreur.
+                // newStatut = 'COMMANDE'; 
             }
             
+            // On ne change le statut que si ce n'est pas déjà Annulé ou Payé/Facturé (sauf si upgrade vers complet ?)
+            if (existing.statut !== 'ANNULE' && existing.statut !== 'PAYE' && existing.statut !== 'FACTURE_RECU') {
+                 if (newStatut !== existing.statut) {
+                      await tx.achat.update({ where: { id }, data: { 
+                          statut: newStatut,
+                          ...(newStatut === 'RECU_COMPLET' ? { date_livraison_reelle: new Date() } : {})
+                      }});
+                 }
+            }
+
             // Recalcul total
             const total = data.details.reduce((acc, d) => acc + Number(d.prix_total), 0);
             await tx.achat.update({ where: { id }, data: { montant_total: total } });

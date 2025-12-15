@@ -3,8 +3,8 @@
     class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-white to-secondary/10 p-4">
     <div class="w-full max-w-5xl">
       <!-- Header avec effet 3D -->
-      <BannerHeader3D :title="headerTitle" :description="headerDescription" title-class="text-3xl md:text-4xl"
-        icon="solar:user-id-linear" />
+      <!-- <BannerHeader3D :title="headerTitle" :description="headerDescription" title-class="text-3xl md:text-4xl"
+        icon="solar:user-id-linear" /> -->
 
       <!-- Carte principale du stepper -->
       <div class="bg-white rounded-lg border-2 border-gris/40 shadow-sm px-8 pt-5 pb-1">
@@ -191,7 +191,7 @@ import Textarea from "primevue/textarea";
 import Select from "primevue/select";
 import Message from "primevue/message";
 import AppButton from "~/components/button/AppButton.vue";
-import BannerHeader3D from "~/components/banner/BannerHeader3D.vue";
+// import BannerHeader3D from "~/components/banner/BannerHeader3D.vue";
 import { Icon } from "@iconify/vue";
 import PasswordValidation from "~/components/PasswordValidation.vue";
 import { useValidation } from "~/composables/useValidation";

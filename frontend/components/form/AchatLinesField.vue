@@ -25,12 +25,21 @@
           <div>
             <div class="font-bold text-lg text-[#064654]">{{ getProductName(item.produit_id) }}</div>
             <div v-if="item.quantite_conditionnement"
-              class="text-sm font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full inline-block mt-1">
+              class="text-sm font-medium text-orange-600 bg-orange-50 px-4 py-1 rounded-full flex items-center gap-2 mt-1">
               📦 {{ item.quantite_conditionnement }} colis ({{ item.quantite }} unités)
+              <div v-if="item.quantite_recue !== undefined" class="text-xs font-bold"
+                :class="item.quantite_recue >= item.quantite ? 'text-green-600' : 'text-orange-600'">
+                Reçu : {{ item.conditionnement_id ? (item.quantite_recue / (item.quantite /
+                  item.quantite_conditionnement)) : item.quantite_recue }} / {{ item.quantite_conditionnement }} colis
+              </div>
             </div>
             <div v-else
-              class="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full inline-block mt-1">
+              class="text-sm font-medium text-gray-500 bg-gray-100 px-4 py-1 rounded-full inline-block mt-1">
               🔢 {{ item.quantite }} unités
+              <div v-if="item.quantite_recue !== undefined" class="text-xs font-bold mt-1"
+                :class="item.quantite_recue >= item.quantite ? 'text-green-600' : 'text-orange-600'">
+                Reçu : {{ item.quantite_recue }} / {{ item.quantite }}
+              </div>
             </div>
           </div>
           <div class="text-right">
@@ -129,6 +138,30 @@
           </div>
         </div>
 
+        <!-- 4.5 Quantité Reçue (Si modification) -->
+        <div v-if="editingIndex !== null" class="p-3 bg-green-50 rounded-lg border border-green-200">
+          <div class="flex flex-col gap-2">
+            <label class="font-semibold text-green-800">
+              Quantité Reçue ({{ form.conditionnement_id ? 'Colis' : 'Unités' }})
+            </label>
+            <div class="flex items-center gap-3">
+              <InputNumber v-model="form.quantite_recue_saisie" :min="0" :max="form.quantite_saisie" showButtons
+                buttonLayout="horizontal" :step="1" inputClass="text-center font-bold text-green-700" class="w-full">
+                <template #incrementbuttonicon>
+                  <span class="pi pi-plus" />
+                </template>
+                <template #decrementbuttonicon>
+                  <span class="pi pi-minus" />
+                </template>
+              </InputNumber>
+              <span class="text-sm text-green-600 whitespace-nowrap">
+                / {{ form.quantite_saisie }} {{ form.conditionnement_id ? 'Colis' : 'Unités' }}
+              </span>
+            </div>
+            <small class="text-green-600">Saisissez ce qui a été effectivement livré.</small>
+          </div>
+        </div>
+
         <!-- 5. Total Readonly -->
         <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border">
           <span class="font-semibold text-gray-600">Total Ligne :</span>
@@ -182,8 +215,9 @@ import AppButton from '~/components/button/AppButton.vue';
 interface AchatLineItem {
   produit_id: string;
   conditionnement_id?: string;
-  quantite: number; // Unités
-  quantite_conditionnement?: number; // Colis
+  quantite: number; // Unités commandées
+  quantite_recue?: number; // Unités reçues
+  quantite_conditionnement?: number; // Colis commandés
   prix_unitaire: number; // PU
   prix_unitaire_conditionnement?: number; // Prix Colis
   prix_total: number;
@@ -218,6 +252,7 @@ const form = reactive({
   produit_id: '',
   conditionnement_id: '',
   quantite_saisie: 1, // Peut être unités ou colis selon contexte
+  quantite_recue_saisie: 0, // Nouveau champ saisi
   prix_saisie: 0, // Peut être PU ou PrixColis selon contexte
   numero_lot: '',
   date_peremption: undefined as Date | undefined,
@@ -249,17 +284,36 @@ const formatDate = (d: string | Date | undefined) => {
 };
 
 const getPrixConditionnement = (item: AchatLineItem) => {
-    if (item.prix_unitaire_conditionnement) return item.prix_unitaire_conditionnement;
-    
-    // Calculer à la volée
-    if (item.conditionnement_id) {
-         const prod = produits.value.find(p => p.id === item.produit_id);
-         const pack = prod?.conditionnements?.find((c:any) => c.id === item.conditionnement_id);
-         if (pack) {
-             return item.prix_unitaire * pack.quantite_base;
-         }
+  if (item.prix_unitaire_conditionnement) return item.prix_unitaire_conditionnement;
+
+  // Calculer à la volée
+  if (item.conditionnement_id) {
+    const prod = produits.value.find(p => p.id === item.produit_id);
+    const pack = prod?.conditionnements?.find((c: any) => c.id === item.conditionnement_id);
+    if (pack) {
+      return item.prix_unitaire * pack.quantite_base;
     }
-    return 0;
+  }
+  return 0;
+};
+
+const getQuantiteColis = (item: AchatLineItem) => {
+  if (item.quantite_conditionnement) return item.quantite_conditionnement;
+  // Tenter de calculer si on a le conditionnement et la quantité
+  if (item.conditionnement_id && item.conditionnement_id !== 'UNIT' && item.quantite) {
+    const prod = produits.value.find(p => p.id === item.produit_id);
+    const pack = prod?.conditionnements?.find((c: any) => c.id === item.conditionnement_id);
+    if (pack && pack.quantite_base > 0) {
+      return item.quantite / pack.quantite_base;
+    }
+  }
+  return 0;
+};
+
+const calculateTotal = () => {
+  const qty = Number(form.quantite_saisie || 0);
+  const price = Number(form.prix_saisie || 0);
+  form.total = qty * price;
 };
 
 const openPopup = (index: number | null = null) => {
@@ -270,29 +324,41 @@ const openPopup = (index: number | null = null) => {
     const item = items.value[index];
     if (item) {
       form.produit_id = item.produit_id;
-      form.conditionnement_id = item.conditionnement_id || '';
 
+      // On vérifie d'abord si un conditionnement spécifique est sauvegardé
       if (item.conditionnement_id && item.conditionnement_id !== 'UNIT') {
-        // Mode colis
-        form.quantite_saisie = item.quantite_conditionnement || 0;
-        
-        // Calcul du prix colis si non fourni (car non stocké en base)
-        if (item.prix_unitaire_conditionnement) {
-             form.prix_saisie = item.prix_unitaire_conditionnement;
+        form.conditionnement_id = item.conditionnement_id;
+
+        // Priorité à la quantité conditionnement explicite, sinon calcul
+        if (item.quantite_conditionnement) {
+          form.quantite_saisie = item.quantite_conditionnement;
         } else {
-             // Retrouver le ratio du conditionnement
-             const prod = produits.value.find(p => p.id === item.produit_id);
-             const pack = prod?.conditionnements?.find((c:any) => c.id === item.conditionnement_id);
-             if (pack) {
-                 form.prix_saisie = item.prix_unitaire * pack.quantite_base;
-             } else {
-                 form.prix_saisie = 0;
-             }
+          form.quantite_saisie = getQuantiteColis(item) || (item.quantite || 0); // Fallback safe
         }
+
+        // Calcul prix colis ou récupération
+        form.prix_saisie = getPrixConditionnement(item) || 0;
+
+        // Conversion reçue (Unités -> Colis)
+        // On doit retrouver combien de colis ont été reçus
+        if (item.quantite_recue && selectedConditionnement.value) {
+             // Math.round pour éviter les erreurs de virgule flottante
+             form.quantite_recue_saisie = Math.round((item.quantite_recue / selectedConditionnement.value.quantite_base) * 100) / 100;
+        } else if (item.quantite_recue && item.quantite_conditionnement && item.quantite) {
+             // Fallback si selectedConditionnement n'est pas encore calculé (rare car computed)
+             // On utilise le ratio Qty / QtyColis
+             const ratio = item.quantite / item.quantite_conditionnement;
+             form.quantite_recue_saisie = Math.round((item.quantite_recue / ratio) * 100) / 100;
+        } else {
+             form.quantite_recue_saisie = 0;
+        }
+
       } else {
-        // Mode unitaire
+        // Mode unit
+        form.conditionnement_id = '';
         form.quantite_saisie = item.quantite;
         form.prix_saisie = item.prix_unitaire;
+        form.quantite_recue_saisie = item.quantite_recue || 0;
       }
 
       form.numero_lot = item.numero_lot || '';
@@ -303,7 +369,7 @@ const openPopup = (index: number | null = null) => {
       } else {
         showLotDetails.value = false;
       }
-      calculateTotal(); // Recelcule total based on populated values
+      calculateTotal();
     }
   } else {
     // Reset form for new
@@ -355,11 +421,7 @@ const onConditionnementChange = () => {
   calculateTotal();
 };
 
-const calculateTotal = () => {
-  const qty = Number(form.quantite_saisie || 0);
-  const price = Number(form.prix_saisie || 0);
-  form.total = qty * price;
-};
+
 
 const isValid = computed(() => {
   return form.produit_id && form.quantite_saisie > 0 && form.prix_saisie >= 0;
@@ -370,8 +432,9 @@ const submitDirect = () => {
 
   let quantiteFinale = form.quantite_saisie;
   let prixUnitaireFinale = form.prix_saisie;
-  let quantiteColis = undefined;
-  let prixColis = undefined;
+  let quantiteColis: number | undefined = undefined;
+  let prixColis: number | undefined = undefined;
+  let quantiteRecueFinale = 0; // Added declaration
 
   if (form.conditionnement_id && selectedConditionnement.value) {
     // Mode Colis
@@ -381,12 +444,19 @@ const submitDirect = () => {
     // Conversion pour le stockage interne (Unités)
     quantiteFinale = quantiteColis * selectedConditionnement.value.quantite_base;
     prixUnitaireFinale = prixColis / selectedConditionnement.value.quantite_base;
+
+    // Conversion reçue (Unités)
+    quantiteRecueFinale = (form.quantite_recue_saisie || 0) * selectedConditionnement.value.quantite_base;
+  } else {
+    // Mode Unité
+    quantiteRecueFinale = form.quantite_recue_saisie || 0;
   }
 
   const newItem: AchatLineItem = {
     produit_id: form.produit_id,
     conditionnement_id: form.conditionnement_id || undefined,
     quantite: quantiteFinale,             // Unités
+    quantite_recue: quantiteRecueFinale,  // Unités
     quantite_conditionnement: quantiteColis, // Colis
     prix_unitaire: prixUnitaireFinale,    // PU
     prix_unitaire_conditionnement: prixColis, // Prix Colis

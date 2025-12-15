@@ -582,7 +582,7 @@ export class StockService {
             magasin_id: magasinId,
             produit_id: detail.produit_id,
             type: 'ENTREE_ACHAT',
-            quantite: detail.quantite, // Quantité totale (unités)
+            quantite: (detail.quantite_recue && detail.quantite_recue > 0) ? detail.quantite_recue : detail.quantite, // Quantité reçue (si partielle) ou totale
             achat_id: achatId,
             lot_id: lot_id,
             raison: `Réception achat` // On pourrait ajouter le numéro de commande ici si dispo
