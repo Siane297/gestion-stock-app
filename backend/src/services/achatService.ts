@@ -233,51 +233,117 @@ export class AchatService {
    * Met à jour le statut d'un achat (avec réception si applicable)
    */
   async updateStatut(id: string, data: UpdateAchatStatutDto): Promise<any> {
-    const achat = await this.prisma.achat.findUnique({
-      where: { id },
-      include: { details: true }
-    });
+    try {
+      const achat = await this.prisma.achat.findUnique({
+        where: { id },
+        include: { details: true }
+      });
 
-    if (!achat) {
-      throw new Error('Achat non trouvé');
+      if (!achat) {
+        throw new Error('Achat non trouvé');
+      }
+
+      // Déterminer le type de transition
+      const isReception = this.isReceptionStatus(data.statut) && !this.isReceptionStatus(achat.statut);
+      const isCancellationAfterReception = data.statut === 'ANNULE' && this.isReceptionStatus(achat.statut);
+
+      // Utiliser le bon handler selon le type de transition
+      if (isReception) {
+        return await this.handleReception(id, achat, data);
+      } else if (isCancellationAfterReception) {
+        return await this.handleCancellationWithStockReversal(id, achat, data);
+      } else {
+        return await this.handleSimpleStatusUpdate(id, data.statut);
+      }
+    } catch (error: any) {
+      logger.error(`Erreur lors de la mise à jour du statut de l'achat ${id}: ${error.message}`);
+      throw new Error(`Impossible de mettre à jour le statut: ${error.message}`);
     }
+  }
 
-    // Si on passe à RECU_COMPLET ou RECU_PARTIELLEMENT et que ce n'était pas déjà reçu
-    if ((data.statut === 'RECU_COMPLET' || data.statut === 'RECU_PARTIELLEMENT') && 
-        achat.statut !== 'RECU_COMPLET' && 
-        achat.statut !== 'RECU_PARTIELLEMENT') {
-      
-      await this.prisma.$transaction(async (tx: any) => {
-        const stockServiceTx = new StockService(tx);
+  /**
+   * Vérifie si un statut correspond à une réception
+   */
+  private isReceptionStatus(statut: string): boolean {
+    return statut === 'RECU_COMPLET' || statut === 'RECU_PARTIELLEMENT';
+  }
 
-        await stockServiceTx.processAchatReception(
-            id,
-            achat.magasin_id,
-            achat.details,
-            tx
-        );
+  /**
+   * Gère la réception d'un achat avec mise à jour du stock
+   */
+  private async handleReception(id: string, achat: any, data: UpdateAchatStatutDto): Promise<any> {
+    return this.prisma.$transaction(async (tx: any) => {
+      const stockServiceTx = new StockService(tx);
 
-        // Mettre à jour le statut
-        await tx.achat.update({
-          where: { id },
-          data: {
-            statut: data.statut, // On utilise le statut demandé (RECU_COMPLET ou RECU_PARTIELLEMENT)
-            date_livraison_reelle: new Date()
-          }
-        });
+      // Mise à jour du stock via réception
+      await stockServiceTx.processAchatReception(
+        id,
+        achat.magasin_id,
+        achat.details,
+        tx
+      );
+
+      // Mise à jour du statut et date de livraison
+      await tx.achat.update({
+        where: { id },
+        data: {
+          statut: data.statut,
+          date_livraison_reelle: new Date()
+        }
       });
 
       logger.info(`Achat ${id} reçu - Stock mis à jour pour ${achat.details.length} produits`);
-    } else {
-      // Simple mise à jour du statut
-      await this.prisma.achat.update({
+      return { success: true, message: 'Réception enregistrée avec succès' };
+    });
+  }
+
+  /**
+   * Gère l'annulation d'un achat déjà reçu avec retour du stock
+   */
+  private async handleCancellationWithStockReversal(id: string, achat: any, data: UpdateAchatStatutDto): Promise<any> {
+    return this.prisma.$transaction(async (tx: any) => {
+      const stockServiceTx = new StockService(tx);
+
+      // Retirer du stock les quantités qui avaient été reçues
+      for (const detail of achat.details) {
+        const qtyToRemove = (detail.quantite_recue && detail.quantite_recue > 0) 
+          ? detail.quantite_recue 
+          : detail.quantite;
+
+        if (qtyToRemove > 0) {
+          await stockServiceTx.createMouvement({
+            magasin_id: achat.magasin_id,
+            produit_id: detail.produit_id,
+            type: 'SORTIE_VENTE', // Décrément du stock
+            quantite: qtyToRemove,
+            utilisateur_id: data.utilisateur_id,
+            raison: `Annulation achat ${achat.numero_commande || id}`,
+            achat_id: achat.id
+          }, tx);
+        }
+      }
+
+      // Mise à jour du statut
+      await tx.achat.update({
         where: { id },
-        data: { statut: data.statut }
+        data: { statut: 'ANNULE' }
       });
 
-      logger.info(`Achat ${id} statut mis à jour: ${data.statut}`);
-    }
+      logger.info(`Achat ${id} annulé - Stock reversé pour ${achat.details.length} produits`);
+      return { success: true, message: 'Achat annulé et stock reversé' };
+    });
+  }
 
+  /**
+   * Gère une simple mise à jour de statut sans impact stock
+   */
+  private async handleSimpleStatusUpdate(id: string, statut: StatutAchat): Promise<any> {
+    await this.prisma.achat.update({
+      where: { id },
+      data: { statut }
+    });
+
+    logger.info(`Achat ${id} - Statut mis à jour: ${statut}`);
     return { success: true, message: 'Statut mis à jour avec succès' };
   }
 
