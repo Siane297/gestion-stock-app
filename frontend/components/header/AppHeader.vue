@@ -102,13 +102,18 @@ const router = useRouter();
 const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     '/accueil': 'Tableau de bord',
+    '/stock': 'Stock',
+    '/achat': 'Achat',
+    '/vente': 'Vente',
+    '/comptabilite': 'Comptabilité',
+    '/fournisseur': 'Fournisseur',
+    '/client': 'Client',
     '/employees': 'Employés',
-    '/pointage': 'Pointage',
-    '/historique': 'Historique',
-    '/parametre': 'Paramètres',
-    '/profile': 'Mon profil',
+    '/point-vente': 'Point de vente',
+    '/store': 'Boutique/Magasin',
+    '/produits': 'Produits',
   };
-  return titles[route.path] || 'Pointage App';
+  return titles[route.path] || 'ZawadiCom';
 });
 
 // User info - Récupérer les vraies données

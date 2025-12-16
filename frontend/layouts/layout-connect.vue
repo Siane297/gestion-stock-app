@@ -1,11 +1,11 @@
 <template>
   <div class="min-h-screen flex flex-col md:flex-row">
     <!-- Section gauche - Formulaire -->
-    <div class="min-h-screen md:w-[40%] flex items-center justify-center bg-slot px-6 py-8 sm:px-8 sm:py-10 lg:px-8">
+    <div class="min-h-screen md:w-[40%] flex items-center justify-center bg-white px-6 py-8 sm:px-8 sm:py-10 lg:px-8">
       <div class="w-full max-w-md">
         <!-- Logo en haut -->
         <div class="mb-6">
-          <AppLogo size="lg" />
+          <img src="~/assets/images/logo-2.png" alt="Logo" class=" h-24 w-auto" />
         </div>
 
         <!-- Contenu du formulaire -->
@@ -13,30 +13,28 @@
       </div>
     </div>
 
-    <!-- Section droite - Image -->
-    <div class="hidden md:flex md:w-[60%] relative min-h-[400px] md:min-h-screen overflow-hidden bg-blue-900">
+    <!-- Section droite - Image & Waves -->
+    <div class="hidden md:flex md:w-[60%] relative min-h-[400px] md:min-h-screen overflow-hidden bg-primary items-center justify-center">
+      
+      <!-- Waves Background -->
+      <div class="absolute inset-0 z-0 opacity-30 ">
+        <svg class="absolute top-0 left-0 w-full" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="#ffffff" fill-opacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
+        </svg>
+        <svg class="absolute bottom-0 right-0 w-full h-1/3" viewBox="0 0 1440 320" preserveAspectRatio="none">
+           <path fill="#ffffff" fill-opacity="1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        </svg>
+      </div>
+
       <!-- Image de fond -->
-      <img src="/assets/image/equipe.jpg" alt="Equipe" class="absolute inset-0 w-full h-full object-cover" />
-
-      <!-- Overlay dégradé -->
-      <div class="absolute inset-0 bg-gradient-to-t from-[#2B48D1] via-[#2B48D1]/40 to-transparent"></div>
-
-      <!-- Bordure rectangle en haut à droite -->
-      <div class="glass-corner top-right"></div>
-
-      <!-- Bordure rectangle en bas à gauche -->
-      <div class="glass-corner bottom-left"></div>
+      <img src="~/assets/images/img-connect-2.png" alt="Connexion" class="w-[600px] max-w-2xl object-contain relative bottom-10 z-10 drop-shadow-2xl" />
 
       <!-- Contenu texte -->
-      <div class="absolute bottom-0 left-0 right-0 p-12  mb-6 z-10 text-white flex justify-center items-center">
-        <div class="flex flex-col">
-          <h2 class="text-4xl font-bold mb-4">Bienvenue sur Pointage APP</h2>
-        <p class="text-lg opacity-90 max-w-2xl">
-          Votre solution complète pour la gestion des temps et des présences. Simplifiez le suivi de vos équipes, optimisez la productivité et accédez à vos données en temps réel, le tout dans une interface moderne et intuitive.
+      <div class="absolute bottom-10 left-10 right-10 p-8 z-20 bg-white/90 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl text-left">
+        <h2 class="text-3xl lg:text-4xl font-bold mb-3 tracking-tight text-[#061141]">Gestion Intelligente & Simplifiée</h2>
+        <p class="text-lg text-gray-700 max-w-3xl font-light leading-relaxed">
+          Optimisez votre activité avec notre solution tout-en-un : gestion de stock, encaissement (POS) et suivi d'équipe. Gagnez du temps et concentrez-vous sur l'essentiel.
         </p>
-        <!-- Ligne décorative -->
-        <div class="w-[300px] h-1 bg-white mt-8"></div>
-        </div>
       </div>
     </div>
   </div>
@@ -46,38 +44,9 @@
 import AppLogo from '~/components/logo/AppLogo.vue';
 
 // Ce layout est utilisé pour les pages de connexion 
-// Il affiche le formulaire à gauche et une image à droite
+// Il affiche le formulaire à gauche et une image à droite avec illustration
 </script>
 
 <style scoped>
-/* Bordures rectangulaires aux coins - Style repris de EmployeeBadge */
-.glass-corner {
-  position: absolute;
-  background: transparent;
-  border: 60px solid rgba(255, 255, 255, 0.254);
-  /* Couleur flou fix */
-  z-index: 5;
-}
-
-/* Bordure en haut à droite */
-.glass-corner.top-right {
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 250px;
-  border-bottom-left-radius: 90px;
-  border-top: none;
-  border-right: none;
-}
-
-/* Bordure en bas à gauche */
-.glass-corner.bottom-left {
-  bottom: 0;
-  left: 0;
-  width: 300px;
-  height: 250px;
-  border-top-right-radius: 90px;
-  border-bottom: none;
-  border-left: none;
-}
+/* Styles spécifiques au layout si nécessaire */
 </style>

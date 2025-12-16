@@ -1,7 +1,7 @@
 <template>
   <StepperInscription
     :steps="inscriptionSteps"
-    header-title="Bienvenue sur Pointage App"
+    header-title="Bienvenue sur ZawadiCom"
     header-description="Créez votre espace de gestion en quelques étapes"
     :on-submit="handleRegister"
   />

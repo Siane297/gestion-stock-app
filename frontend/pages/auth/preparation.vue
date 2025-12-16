@@ -105,9 +105,9 @@ const minTimeElapsed = ref(false);
 
 const checkStatus = async () => {
   if (!companyId.value) {
-    progress.value = 100; // Pas d'ID, on suppose terminé ou erreur
+    progress.value = 100; 
     tasks.value.forEach(t => t.completed = true);
-    return true; // Stop polling logic locally (but redirect is managed elsewhere)
+    return true; 
   }
 
   try {
@@ -119,24 +119,12 @@ const checkStatus = async () => {
       const status = response.data.status;
       
       if (status === 'PROVISIONING') {
-        // En cours... on avance un peu la barre fictivement
-        if (progress.value < 90) progress.value += 5;
-        return false; // Continue polling
-      } else if (status === 'TRIAL' || status === 'ACTIVE') {
-        // Terminé !
-        isFinished.value = true;
-        progress.value = 100;
-        tasks.value.forEach(t => t.completed = true);
-        
-        // Si le temps min est écoulé, on redirige
-        if (minTimeElapsed.value) {
-           setTimeout(() => {
-                window.location.href = props.redirectTo;
-           }, 1000);
-           return true; 
-        }
-        // Sinon on attend que le timer minTimeElapsed le déclenche
+        // Le backend travaille... on laisse la simulation gérer la barre
         return false; 
+      } else if (status === 'TRIAL' || status === 'ACTIVE') {
+        isFinished.value = true;
+        tasks.value.forEach(t => t.completed = true);
+        return true; // Stop polling API
       } else if (status === 'FAILED') {
         error.value = "Une erreur est survenue lors de la création de votre espace. Veuillez contacter le support.";
         return true; 
@@ -148,46 +136,58 @@ const checkStatus = async () => {
   return false;
 };
 
-// Polling
-onMounted(async () => {
-    // Timer minimum de 3 secondes pour l'UX
-    setTimeout(() => {
-        minTimeElapsed.value = true;
-        // Si c'était déjà fini, on déclenche la redirection maintenant
-        if (isFinished.value) {
+const simulateProgress = () => {
+    // Incrémenter jusqu'à 90% max pendant la phase d'attente
+    // On veut atteindre ~90% en props.duration (par défaut 3000ms ici hardcodé via minTimeElapsed)
+    // 3000ms / 50ms = 60 ticks. 90 / 60 = 1.5% par tick.
+    const interval = setInterval(() => {
+        if (progress.value >= 90) {
+            // Ralentir drastiquement si on attend encore l'API ou le timer
+            if (progress.value < 99) progress.value += 0.1;
+        } else {
+            progress.value += 1.5;
+        }
+        
+        // Si tout est fini (API Ok + Timer Ok), on termine
+        if (isFinished.value && minTimeElapsed.value) {
+             progress.value = 100;
+             clearInterval(interval);
              setTimeout(() => {
                 window.location.href = props.redirectTo;
-             }, 1000);
+             }, 500);
         }
+    }, 50);
+    return interval;
+};
+
+// Polling
+onMounted(async () => {
+    // 1. Démarrer la simulation visuelle immédiate
+    simulateProgress();
+
+    // 2. Timer minimum de 3 secondes pour l'UX
+    setTimeout(() => {
+        minTimeElapsed.value = true;
     }, 3000);
 
-  const interval = setInterval(async () => {
-    if (error.value) {
-      clearInterval(interval);
-      return;
-    }
-    
-    // Si déjà fini et en attente du timer, on ne poll plus l'API inutilement, 
-    // mais on laisse l'interval actif pour checker minTimeElapsed ? 
-    // Non, le setTimeout s'en charge. On peut stop le polling API si isFinished.
-    if (isFinished.value) {
-        // On n'arrête pas l'interval ici car checkStatus gère la redirection
-        // Mais checkStatus retournera false tant que minTimeElapsed est false...
-        // Optimisation: si isFinished, on attend juste le timer.
-        return;
-    }
+    // 3. Polling API
+    const interval = setInterval(async () => {
+        if (error.value) {
+            clearInterval(interval);
+            return;
+        }
+        
+        // Si API a fini, on arrête de poller, on laisse la simulation finir le job
+        if (isFinished.value) {
+            clearInterval(interval);
+            return;
+        }
 
-    const stop = await checkStatus();
-    if (stop && (status === 'FAILED' || !companyId.value)) {
-      clearInterval(interval);
-    }
-    // Note: Si SUCCESS mais pas minTimeElapsed, checkStatus retourne false (ou true avec delai géré)
-    // Ici j'ai modifié checkStatus pour ne renvoyer true (stop) que si redirection lancée ou erreur
-    if (isFinished.value && minTimeElapsed.value) {
-         clearInterval(interval);
-    }
-    
-  }, 1000); // Check toutes les 1 secondes (plus réactif)
+        const stop = await checkStatus();
+        if (stop) {
+            clearInterval(interval);
+        }
+    }, 1000); 
   
   // Premier check immédiat
   checkStatus();

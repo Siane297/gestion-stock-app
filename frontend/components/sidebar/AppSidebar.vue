@@ -15,12 +15,12 @@
       class="fixed left-0 top-0 h-screen w-64 bg-side border-r border-gris/50  flex flex-col shadow-sm z-50 lg:z-40"
     >
     <!-- Logo -->
-    <div class="p-4 border-b border-gris/50">
-      <div class="flex items-center gap-3">
-        <AppLogo size="sm" />
+    <div class="px-4 py-[6px] border-b border-gris/50">
+      <div class="flex items-center gap-1">
+        <img src="~/assets/images/logo-white.png" alt="Logo" class=" w-16 h-auto object-contain" />
         <div class="flex flex-col gap-1">
-          <span class="font-bold text-lg tracking-wide text-white leading-tight">{{ user?.company?.name || 'Pointage App' }}</span>
-          <span class="text-xs tracking-wide text-white/60">Pointage App</span>
+          <span class="font-bold text-lg tracking-wide text-white leading-tight">ZawadiCom</span>
+          <span class="text-xs tracking-wide text-white/60">Gestion stock & vente</span>
         </div>
       </div>
     </div>

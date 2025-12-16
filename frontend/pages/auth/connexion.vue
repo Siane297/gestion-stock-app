@@ -3,31 +3,33 @@
     <!-- Titre -->
     <div class="mb-8">
       <h2 class="text-3xl font-bold text-gray-900 mb-2">Connexion</h2>
-      <p class="text-gray-600">Accédez à votre espace de gestion de présence</p>
+      <p class="text-gray-600">Accédez à votre espace de gestion de gestion</p>
     </div>
 
     <!-- Formulaire -->
     <form @submit.prevent="handleLogin" class="space-y-6">
-      <!-- Email -->
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-          Email
-        </label>
-        <InputText id="email" v-model="email" type="email" placeholder="votre@email.com" class="w-full"
-          :class="{ 'p-invalid': errors.email }" required />
-        <small v-if="errors.email" class="p-error">{{ errors.email }}</small>
-      </div>
-
-      <!-- Password -->
-      <div>
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-          Mot de passe
-        </label>
-        <div class="relative">
-          <Password id="password" v-model="password" placeholder="••••••••" :feedback="false" toggleMask
-            inputClass="w-full" :inputStyle="{ width: '100%' }" :class="{ 'p-invalid': errors.password }" required />
+      <div class="flex flex-col gap-5 mb-2">
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            Email
+          </label>
+          <InputText id="email" v-model="email" type="email" placeholder="votre@email.com" class="w-full"
+            :class="{ 'p-invalid': errors.email }" required />
+          <small v-if="errors.email" class="p-error">{{ errors.email }}</small>
         </div>
-        <small v-if="errors.password" class="p-error">{{ errors.password }}</small>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+            Mot de passe
+          </label>
+          <div class="relative">
+            <Password id="password" v-model="password" placeholder="••••••••" :feedback="false" toggleMask
+              inputClass="w-full" :inputStyle="{ width: '100%' }" :class="{ 'p-invalid': errors.password }" required />
+          </div>
+          <small v-if="errors.password" class="p-error">{{ errors.password }}</small>
+        </div>
       </div>
 
       <!-- Error message -->
@@ -37,7 +39,7 @@
 
       <!-- Submit button -->
       <AppButton type="submit" label="Se connecter" icon-left="mdi:login" :loading="isLoading" variant="primary"
-        size="md" full-width />
+        size="sm" full-width />
     </form>
 
     <!-- Footer -->
@@ -103,7 +105,7 @@ const handleLogin = async () => {
   try {
     // Utiliser le composable d'authentification sécurisée
     const { login } = useSecureAuth();
-    
+
     const response = await login({
       email: email.value,
       password: password.value,
