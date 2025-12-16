@@ -27,7 +27,7 @@ export default defineNuxtConfig({
           'Access-Control-Allow-Credentials': 'true',
           // Autoriser le backend à communiquer avec ce frontend
           'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
-            ? 'https://pointage-back.onrender.com' 
+            ? 'https://gestion-stock-app-qon3.onrender.com' 
             : 'http://localhost:3001',
           // Permissions Policy pour l'accès caméra (plus direct)
           'Permissions-Policy': 'camera=(self), microphone=(self), geolocation=(self)',
@@ -95,7 +95,7 @@ export default defineNuxtConfig({
     // CORS sécurisé
     corsHandler: {
       origin: process.env.NODE_ENV === 'production' 
-        ? ['https://pointage-back.onrender.com']
+        ? ['https://gestion-stock-app-qon3.onrender.com']
         : ['http://localhost:3000', 'http://localhost:3001'],
       credentials: true,
     },
