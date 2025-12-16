@@ -34,7 +34,7 @@
       <div class="mt-2 flex items-end justify-between">
         <span class="font-bold text-lg text-[#064654]">{{ formatPrice(item.price) }}</span>
         <!-- Stock indicator (opt) -->
-        <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-700" title="Stock estimé">
+        <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-green-100 border border-green-500 text-green-700" title="Stock estimé">
           {{ item.stockAvailable }}
         </span>
       </div>
