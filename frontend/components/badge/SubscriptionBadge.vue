@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <span :class="badgeClasses">
         <Icon v-if="showIcon" :icon="badgeIcon" class="text-sm" />
         {{ badgeLabel }}
@@ -56,4 +56,4 @@ const badgeLabel = computed(() => {
 const badgeIcon = computed(() => {
     return props.status ? badgeConfig[props.status]?.icon || 'lucide:help-circle' : 'lucide:help-circle';
 });
-</script>
+</script> -->
