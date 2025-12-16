@@ -115,36 +115,11 @@ export const useSecurePdf = () => {
   };
 
   /**
-   * Générer PDF de l'historique des pointages
-   */
-  const generateAttendancesPdf = async (params?: {
-    startDate?: string;
-    endDate?: string;
-    employeeId?: string;
-  }, filename?: string): Promise<void> => {
-    await generatePdf({
-      type: 'attendances',
-      params,
-      filename,
-    });
-  };
-
-  /**
    * Générer PDF de la liste des utilisateurs
    */
   const generateUsersPdf = async (filename?: string): Promise<void> => {
     await generatePdf({
       type: 'users',
-      filename,
-    });
-  };
-
-  /**
-   * Générer PDF des bilans de présence
-   */
-  const generateBilansPdf = async (filename?: string): Promise<void> => {
-    await generatePdf({
-      type: 'bilans',
       filename,
     });
   };
@@ -196,23 +171,10 @@ export const useSecurePdf = () => {
       }
   };
 
-  /**
-   * Générer PDF de la liste des congés
-   */
-  const generateCongesPdf = async (filename?: string): Promise<void> => {
-    await generatePdf({
-      type: 'conges',
-      filename,
-    });
-  };
-
   return {
     generatePdf,
     generateEmployeesPdf,
-    generateAttendancesPdf,
     generateUsersPdf,
-    generateBilansPdf,
-    generateCongesPdf,
     generateReceiptPdf
   };
 };

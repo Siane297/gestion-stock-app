@@ -16,7 +16,7 @@
         />
         <div>
           <h1 class="text-2xl font-bold text-white">Fiche Employé</h1>
-          <p class="text-sm text-gray-500">Détails et historique complet</p>
+          <p class="text-sm text-gray-500">Détails de l'employé</p>
         </div>
       </div>
     </div>
@@ -124,58 +124,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Section 2: Graphiques -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Column Chart - Entrées/Sorties par jour -->
-        <EmployeeColumnChart
-          :data="historique"
-          :loading="loadingHistorique"
-          @month-change="handleMonthChange"
-        />
-
-        <!-- Donut - Taux de présence -->
-        <EmployeeDonutChart
-          :data="historique"
-          :selected-month="selectedMonth"
-          :loading="loadingHistorique"
-        />
-      </div>
-
-      <!-- Section 3: Onglets Historique & Congés -->
-      <div class="bg-white rounded-lg border-2 border-gris/40 p-6">
-        <!-- TabSelector -->
-        <div class="mb-6">
-          <TabSelector
-            v-model="activeTab"
-            :options="tabOptions"
-          />
-        </div>
-
-        <!-- Contenu des onglets -->
-        <div>
-          <!-- Onglet Historique -->
-          <div v-if="activeTab === 'historique'">
-            <TableHistorique
-              :data="historique"
-              :loading="loadingHistorique"
-              :hide-employee-column="true"
-              :hide-search-bar="false"
-            />
-          </div>
-
-          <!-- Onglet Congés -->
-          <div v-if="activeTab === 'conges'">
-            <TableConges
-              :data="conges"
-              :loading="loadingConges"
-              :hide-employee-column="true"
-              :hide-action-buttons="true"
-              :hide-pdf-button="true"
-            />
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -186,17 +134,8 @@ import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 import AppButton from '~/components/button/AppButton.vue';
 import AvatarInitials from '~/components/avatar/AvatarInitials.vue';
-import TabSelector from '~/components/common/TabSelector.vue';
-import TableHistorique from '~/components/table/TableHistorique.vue';
-import TableConges from '~/components/table/TableConges.vue';
-import EmployeeColumnChart from '~/components/chart/EmployeeColumnChart.vue';
-import EmployeeDonutChart from '~/components/chart/EmployeeDonutChart.vue';
 import { useEmployeeApi } from '~/composables/api/useEmployeeApi';
-import { useBilanPresenceApi } from '~/composables/api/useHistoriqueApi';
-import { useCongeApi } from '~/composables/api/useCongeApi';
 import type { Employee } from '~/composables/api/useEmployeeApi';
-import type { BilanPresence } from '~/composables/api/useHistoriqueApi';
-import type { Conge } from '~/composables/api/useCongeApi';
 
 // Protection de la page
 definePageMeta({
@@ -209,37 +148,10 @@ const toast = useToast();
 
 // APIs
 const { getEmployeeById } = useEmployeeApi();
-const { getHistorique } = useBilanPresenceApi();
-const { getCongesEmploye } = useCongeApi();
 
 // État
 const loading = ref(true);
-const loadingHistorique = ref(true);
-const loadingConges = ref(true);
 const employee = ref<Employee | null>(null);
-const historique = ref<BilanPresence[]>([]);
-const conges = ref<Conge[]>([]);
-const activeTab = ref('historique');
-const selectedMonth = ref<Date>(new Date());
-
-// Handler pour le changement de mois
-const handleMonthChange = (date: Date) => {
-  selectedMonth.value = date;
-};
-
-// Options des onglets
-const tabOptions = [
-  {
-    label: 'Historique Pointage',
-    value: 'historique',
-    icon: 'lucide:clipboard-list',
-  },
-  {
-    label: 'Congés',
-    value: 'conges',
-    icon: 'lucide:calendar-off',
-  },
-];
 
 // Récupérer le nom du département
 const getDepartmentName = (department: any): string => {
@@ -302,45 +214,8 @@ const loadEmployeeData = async () => {
   }
 };
 
-// Charger l'historique
-const loadHistorique = async () => {
-  try {
-    const employeeId = route.params.id as string;
-    historique.value = await getHistorique({ employeeId });
-  } catch (error) {
-    console.error('Erreur lors du chargement de l\'historique:', error);
-    toast.add({
-      severity: 'error',
-      summary: 'Erreur',
-      detail: 'Impossible de charger l\'historique',
-      life: 3000,
-    });
-  } finally {
-    loadingHistorique.value = false;
-  }
-};
-
-// Charger les congés
-const loadConges = async () => {
-  try {
-    const employeeId = route.params.id as string;
-    conges.value = await getCongesEmploye(employeeId);
-  } catch (error) {
-    console.error('Erreur lors du chargement des congés:', error);
-    toast.add({
-      severity: 'error',
-      summary: 'Erreur',
-      detail: 'Impossible de charger les congés',
-      life: 3000,
-    });
-  } finally {
-    loadingConges.value = false;
-  }
-};
-
 // Chargement initial
 onMounted(async () => {
   await loadEmployeeData();
-  await Promise.all([loadHistorique(), loadConges()]);
 });
 </script>
