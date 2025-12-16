@@ -189,10 +189,22 @@ const handlePaymentConfirm = async (paymentData: any) => {
             store.clearCart();
         }
     } catch (e: any) {
+        console.error('Erreur validation vente:', e);
+        // Extraction du message d'erreur spécifique du backend
+        let errorMessage = 'Impossible de valider la vente';
+        
+        if (e.response && e.response._data && e.response._data.message) {
+            errorMessage = e.response._data.message;
+        } else if (e.data && e.data.message) {
+            errorMessage = e.data.message;
+        } else if (e.message) {
+            errorMessage = e.message;
+        }
+
         toast.add({ 
             severity: 'error', 
             summary: 'Erreur vente', 
-            detail: e.message || 'Impossible de valider la vente', 
+            detail: errorMessage, 
             life: 5000 
         });
     }

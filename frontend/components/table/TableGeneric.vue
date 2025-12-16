@@ -56,7 +56,7 @@
         :field="col.field"
         :header="col.header"
         :sortable="col.sortable !== false"
-        headerClass="bg-bleu text-black text-[14px] font-semibold py-3 px-4"
+        headerClass="!bg-bleu text-black text-[14px] font-semibold py-3 px-4"
       >
         <template v-if="col.type === 'tag'" #body="{ data }">
             <Tag :value="getNestedValue(data, col.field)" severity="info" />
@@ -82,7 +82,7 @@
       <Column
         header="Actions"
         :style="{ width: '100px' }"
-        headerClass="bg-bleu text-black text-[14px] font-semibold py-3 px-4"
+        headerClass="!bg-bleu text-black text-[14px] font-semibold py-3 px-4"
         alignFrozen="right"
         frozen
       >

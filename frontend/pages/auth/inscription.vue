@@ -212,8 +212,9 @@ const handleRegister = async (data: Record<string, any>) => {
       } catch (e) {
         console.warn('[inscription] Impossible de charger l\'utilisateur juste après inscription', e);
       }
-      // Rediriger vers la page de préparation
-      await navigateTo('/auth/preparation');
+      // Rediriger vers la page de préparation avec l'ID company si disponible
+      const companyId = response.data?.company?.id;
+      await navigateTo(`/auth/preparation${companyId ? '?companyId=' + companyId : ''}`);
       return { success: true };
     } else {
       return {

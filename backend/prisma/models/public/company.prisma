@@ -7,6 +7,8 @@ enum SubscriptionStatus {
   ACTIVE // Abonnement actif payé
   EXPIRED // Période d'essai ou abonnement expiré
   BLOCKED // Bloqué manuellement par le Super Admin
+  PROVISIONING // En cours de création (async)
+  FAILED // Échec de la création
 }
 
 model Company {

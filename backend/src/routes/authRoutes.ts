@@ -87,8 +87,7 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // console.log('[REGISTER] Création de l\'organisation...');
-    // Créer l'organisation avec période d'essai de 14 jours
-    // Créer l'organisation avec période d'essai de 14 jours (en tenant compte du timezone)
+    // Créer l'organisation avec statut PROVISIONING
     const now = new Date();
     const trialEndsAt = DateHelpers.addDaysInTimezone(now, 14, country);
     
@@ -104,102 +103,98 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
         isActive: true,
         // Période d'essai de 14 jours
         trialEndsAt: trialEndsAt,
-        subscriptionStatus: 'TRIAL',
+        subscriptionStatus: 'PROVISIONING', // <-- Statut initial
       },
     });
 
-    logger.info(`Organisation créée: ${company.name} (${schemaName})`);
-    // console.log('[REGISTER] Organisation créée avec ID:', company.id);
+    logger.info(`Organisation créée (PROVISIONING): ${company.name} (${schemaName})`);
 
-    // console.log('[REGISTER] Création du schéma PostgreSQL...');
-    // Créer le schéma PostgreSQL pour le tenant
-    await createTenantSchema(schemaName);
-    
-    if (process.env.NODE_ENV !== 'production') {
-      logger.info(`Schéma tenant créé: ${schemaName}`);
-    }
-
-    // console.log('[REGISTER] Création de l\'utilisateur ADMIN...');
-    // Créer l'utilisateur et l'associer à l'organisation
+    // Créer l'utilisateur ADMIN public immédiatement pour avoir un compte actif
     const user = await prismaPublic.user.create({
       data: {
         email,
         name,
         password: hashedPassword,
         emailVerified: false,
-        role: 'ADMIN', // Premier utilisateur = ADMIN de l'organisation
+        role: 'ADMIN',
         companyId: company.id,
       },
     });
 
     if (process.env.NODE_ENV !== 'production') {
-      logger.info(`Utilisateur ADMIN créé: ${user.email} pour ${company.name}`);
+      logger.info(`Utilisateur ADMIN créé: ${user.email}`);
     }
 
-    // Créer automatiquement un employé et un compte TenantUser pour l'admin
-    const { getTenantConnection } = await import('../services/tenantService.js');
-    const tenantPrisma = getTenantConnection(schemaName);
+    // Lancer la création du schéma en ARRIÈRE-PLAN
+    (async () => {
+      try {
+        if (process.env.NODE_ENV !== 'production') {
+          logger.info(`[BACKGROUND] Début création schéma pour ${schemaName}...`);
+        }
+        
+        await createTenantSchema(schemaName);
+        
+        // Mettre à jour le statut en TRIAL une fois terminé
+        await prismaPublic.company.update({
+          where: { id: company.id },
+          data: { subscriptionStatus: 'TRIAL' }
+        });
+        
+        // Créer les données dans le TENANT (Employé, TenantUser, Magasin)
+        const { getTenantConnection } = await import('../services/tenantService.js');
+        const tenantPrisma = getTenantConnection(schemaName);
 
-    // Générer un matricule unique basé sur le timestamp
-    const matricule = `ADMIN-${Date.now().toString().slice(-6)}`;
+        const matricule = `ADMIN-${Date.now().toString().slice(-6)}`;
 
-    // Créer l'employé propriétaire (SANS poste/département - il les saisira lui-même)
-    const ownerEmployee = await tenantPrisma.employee.create({
-      data: {
-        matricule,
-        fullName: name,
-        email,
-        positionId: null, // Le propriétaire le saisira lui-même
-        departmentId: null, // Le propriétaire le saisira lui-même
-        isActive: true,
-        isOwner: true, // Marquer comme propriétaire
-        hireDate: new Date(),
-      },
-    });
+        const ownerEmployee = await tenantPrisma.employee.create({
+          data: {
+            matricule,
+            fullName: name,
+            email,
+            positionId: null,
+            departmentId: null,
+            isActive: true,
+            isOwner: true,
+            hireDate: new Date(),
+          },
+        });
 
-    // console.log('[REGISTER] Employé créé avec ID:', ownerEmployee.id);
+        const ownerTenantUser = await tenantPrisma.tenantUser.create({
+          data: {
+            id: user.id, // IMPORTANT: garder le même ID
+            employeeId: ownerEmployee.id,
+            email,
+            password: hashedPassword,
+            role: 'ADMIN',
+            isBlocked: false,
+            isOwner: true,
+            permissions: JSON.stringify(['accueil', 'employees', 'pointage', 'historique', 'parametre', 'utilisateur']),
+          },
+        });
 
-    // Créer le compte TenantUser associé avec toutes les permissions
-    const ownerTenantUser = await tenantPrisma.tenantUser.create({
-      data: {
-        id: user.id, // CRITIQUE : L'ID doit correspondre à celui de l'utilisateur public pour la correspondance du token
-        employeeId: ownerEmployee.id,
-        email,
-        password: hashedPassword,
-        role: 'ADMIN', // Rôle ADMIN pour le propriétaire (tous les droits)
-        isBlocked: false,
-        isOwner: true, // Marquer comme propriétaire (ne peut pas être bloqué/supprimé)
-        permissions: JSON.stringify(['accueil', 'employees', 'pointage', 'historique', 'parametre', 'utilisateur']), // Toutes les permissions
-      },
-    });
-
-    // console.log('[REGISTER] TenantUser créé avec ID:', ownerTenantUser.id);
-
-    // console.log('[REGISTER] TenantUser créé avec ID:', ownerTenantUser.id);
-
-    // Créer automatiquement la boutique principale
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[REGISTER] Création de la Boutique Principale...');
-    }
-
-    const boutiquePrincipale = await tenantPrisma.magasin.create({
-      data: {
-        nom: companyName,
-        localisation: address || null,
-        telephone: telephoneOrganisation || null,
-        email: emailOrganisation || null,
-        gerant_id: ownerTenantUser.id,
-        est_actif: true,
-        // Horaires par défaut
-        heure_ouverture: '08:00',
-        heure_fermeture: '18:00',
-      },
-    });
-
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[REGISTER] Boutique Principale créée avec ID:', boutiquePrincipale.id);
-      console.log('[REGISTER] Génération des tokens JWT...');
-    }
+        await tenantPrisma.magasin.create({
+          data: {
+            nom: companyName,
+            localisation: address || null,
+            telephone: telephoneOrganisation || null,
+            email: emailOrganisation || null,
+            gerant_id: ownerTenantUser.id,
+            est_actif: true,
+            heure_ouverture: '08:00',
+            heure_fermeture: '18:00',
+          },
+        });
+        
+        logger.info(`[BACKGROUND] Initialisation complète pour ${schemaName}`);
+        
+      } catch (err) {
+        logger.error(`[BACKGROUND] Erreur critique lors de la création du tenant ${schemaName}:`, err);
+        await prismaPublic.company.update({
+          where: { id: company.id },
+          data: { subscriptionStatus: 'FAILED' }
+        });
+      }
+    })();
     
     // Générer les tokens JWT avec le companyId
     const tokenPayload = {
@@ -212,39 +207,27 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
     const refreshToken = generateRefreshToken(tokenPayload);
     const accessToken = generateAccessToken(tokenPayload);
 
-    // Configuration des cookies adaptée à l'environnement
+    // Configuration des cookies
     const isProduction = process.env.NODE_ENV === 'production';
-    const isRender = !!process.env.RENDER;
     
     const refreshCookieOptions = {
       httpOnly: true,
-      secure: isProduction, // true en production, false en dev
-      sameSite: isProduction ? 'none' as const : 'lax' as const, // none en prod pour cross-domain, lax en dev
+      secure: isProduction,
+      sameSite: isProduction ? 'none' as const : 'lax' as const,
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
-      ...(isProduction && { domain: undefined }), // Pas de domain spécifique en production
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      ...(isProduction && { domain: undefined }),
     };
     
-    logger.debug(`[REGISTER] Configuration cookies: secure=${refreshCookieOptions.secure}, sameSite=${refreshCookieOptions.sameSite}, isProduction=${isProduction}`);
-    
-    // Nettoyer les anciens cookies
     res.clearCookie('refresh_token');
     res.clearCookie('auth_token');
-    
     res.cookie('refresh_token', refreshToken, refreshCookieOptions);
-    
-    if (process.env.NODE_ENV !== 'production') {
-      logger.debug(`[REGISTER] Cookie refresh_token défini pour ${user.email}`);
-    }
-    if (process.env.NODE_ENV !== 'production') {
-      logger.info('[REGISTER] Inscription terminée avec succès');
-    }
 
     return res.status(201).json({
       success: true,
-      message: 'Inscription réussie. Votre organisation a été créée.',
+      message: 'Inscription réussie. Préparation de votre espace en cours...',
       data: {
-        accessToken, // Access token pour mémoire JavaScript
+        accessToken,
         user: {
           id: user.id,
           email: user.email,
@@ -255,6 +238,8 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
           id: company.id,
           name: company.name,
         },
+        // Indicateur pour le frontend
+        requiresProvisioning: true 
       },
     });
   } catch (error: any) {
@@ -1046,6 +1031,50 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
+    });
+  }
+});
+
+/**
+ * GET /api/auth/company-status/:companyId
+ * Vérifier le statut de création de l'entreprise
+ */
+router.get('/company-status/:companyId', async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.params;
+    
+    const company = await prismaPublic.company.findUnique({
+      where: { id: companyId },
+      select: {
+        id: true,
+        schemaName: true,
+        subscriptionStatus: true
+      }
+    });
+
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: 'Entreprise non trouvée'
+      });
+    }
+
+    // Si actif, on ne fait rien de spécial, le frontend redirigera
+    if (company.subscriptionStatus === 'TRIAL' || company.subscriptionStatus === 'ACTIVE') {
+       // Succès
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        status: company.subscriptionStatus
+      }
+    });
+  } catch (error) {
+    logger.error('Erreur vérification statut:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur serveur'
     });
   }
 });

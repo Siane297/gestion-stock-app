@@ -62,10 +62,12 @@
 
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
+import { useCurrentUser } from "~/composables/api/useUserApi";
+
 interface Props {
   title?: string;
   message?: string;
-  duration?: number; // Durée en millisecondes
+  duration?: number;
   redirectTo?: string;
 }
 
@@ -81,40 +83,82 @@ definePageMeta({
   layout: false,
 });
 
+const route = useRoute();
+const config = useRuntimeConfig();
+const { user } = useCurrentUser();
 const progress = ref(0);
+const error = ref<string | null>(null);
+
 const tasks = ref([
-  { label: 'Création de votre organisation', completed: false },
+  { label: 'Création de votre organisation', completed: true },
   { label: 'Configuration de la base de données', completed: false },
   { label: 'Préparation de votre espace', completed: false },
   { label: 'Finalisation', completed: false },
 ]);
 
-// Animation de progression
-onMounted(() => {
-  const taskDuration = props.duration / tasks.value.length;
+const companyId = computed(() => {
+  return (route.query.companyId as string) || user.value?.company?.id;
+});
 
-  // Compléter les tâches une par une
-  tasks.value.forEach((task, index) => {
-    setTimeout(() => {
-      task.completed = true;
-    }, taskDuration * (index + 1));
-  });
+const checkStatus = async () => {
+  if (!companyId.value) {
+    progress.value = 100; // Pas d'ID, on suppose terminé ou erreur
+    tasks.value.forEach(t => t.completed = true);
+    return true; // Stop polling
+  }
 
-  // Progression continue
-  const interval = setInterval(() => {
-    if (progress.value < 100) {
-      progress.value += 100 / (props.duration / 100);
-    } else {
-      clearInterval(interval);
-      // Rediriger après completion avec rechargement complet
-      // pour garantir que toutes les données sont chargées
-      setTimeout(() => {
-        // Utiliser window.location.href au lieu de navigateTo
-        // pour forcer un rechargement complet de la page
-        window.location.href = props.redirectTo;
-      }, 500);
+  try {
+    const response = await $fetch<{ success: boolean; data: { status: string } }>(
+      `${config.public.apiBase}/api/auth/company-status/${companyId.value}`
+    );
+
+    if (response.success) {
+      const status = response.data.status;
+      
+      if (status === 'PROVISIONING') {
+        // En cours... on avance un peu la barre fictivement
+        if (progress.value < 90) progress.value += 5;
+        return false; // Continue polling
+      } else if (status === 'TRIAL' || status === 'ACTIVE') {
+        // Terminé !
+        progress.value = 100;
+        tasks.value.forEach(t => t.completed = true);
+        return true; // Stop polling
+      } else if (status === 'FAILED') {
+        error.value = "Une erreur est survenue lors de la création de votre espace. Veuillez contacter le support.";
+        return true; // Stop polling
+      }
     }
-  }, 100);
+  } catch (err) {
+    console.error("Erreur polling:", err);
+    // On ne stop pas forcément en cas d'erreur réseau temporaire
+  }
+  return false;
+};
+
+// Polling
+onMounted(async () => {
+  // Attendre un peu que le composable user soit prêt si besoin
+  if (!companyId.value) {
+    // Si on vient d'arriver, user store peut ne pas être hydraté
+    // On attend un peu ou on espère qu'il l'est
+  }
+
+  const interval = setInterval(async () => {
+    if (error.value) {
+      clearInterval(interval);
+      return;
+    }
+
+    const finished = await checkStatus();
+    if (finished) {
+      clearInterval(interval);
+      // Redirection après court délai
+      setTimeout(() => {
+        window.location.href = props.redirectTo;
+      }, 1000);
+    }
+  }, 2000); // Check toutes les 2 secondes
 });
 </script>
 

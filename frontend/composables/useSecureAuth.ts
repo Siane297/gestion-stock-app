@@ -37,6 +37,11 @@ export interface AuthResponse {
         schemaName: string;
       };
     };
+    company?: {
+      id: string;
+      name: string;
+    };
+    requiresProvisioning?: boolean;
   };
 }
 
