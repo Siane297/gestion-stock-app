@@ -67,8 +67,8 @@ const allowedOrigins = process.env.CORS_ORIGIN
   : ['http://localhost:3000'];
 
 // Toujours ajouter l'URL de Vercel en production
-if (process.env.NODE_ENV === 'production' && !allowedOrigins.includes('https://pointage-front.vercel.app')) {
-  allowedOrigins.push('https://pointage-front.vercel.app');
+if (process.env.NODE_ENV === 'production' && !allowedOrigins.includes('https://gestion-stock-app-kappa.vercel.app/')) {
+  allowedOrigins.push('https://gestion-stock-app-kappa.vercel.app/');
 }
 
 console.log('CORS: Origines autorisées:', allowedOrigins);
