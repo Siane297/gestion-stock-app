@@ -12,7 +12,7 @@
       <!-- Total Display -->
       <div class="bg-[#064654] text-white p-6 rounded-xl text-center shadow-lg">
         <div class="text-sm opacity-80 uppercase tracking-widest font-medium">Net à Payer</div>
-        <div class="text-4xl font-bold mt-2">{{ formatPrice(total) }}</div>
+        <div class="text-4xl font-bold mt-2">{{ formatPrice(localTotal) }}</div>
       </div>
 
       <!-- Payment Methods -->
@@ -43,7 +43,7 @@
             currency="KMF" 
             locale="fr-FR"
             class="w-full text-lg"
-            :class="{ 'p-invalid': amountReceived < total }"
+            :class="{ 'p-invalid': amountReceived < localTotal }"
             inputClass="text-center font-bold text-xl"
             autofocus
             @keyup.enter="handlePayment"
@@ -74,7 +74,7 @@
             variant="primary" 
             icon="pi pi-check"
             fullWidth
-            :disabled="amountReceived < total"
+            :disabled="amountReceived < localTotal"
             :loading="processing"
             @click="handlePayment"
          />
@@ -104,12 +104,15 @@ const paymentMethods = [
 const selectedMethod = ref('ESPECES');
 const amountReceived = ref(0);
 const processing = ref(false);
+// Snapshot du total pour éviter le glitch visuel quand le panier est vidé (total -> 0) pendant la fermeture
+const localTotal = ref(0);
 
-const changeAmount = computed(() => amountReceived.value - props.total);
+const changeAmount = computed(() => amountReceived.value - localTotal.value);
 
 // Reset amount when modal opens
 watch(() => props.visible, (newVal) => {
   if (newVal) {
+    localTotal.value = props.total;
     amountReceived.value = props.total;
     selectedMethod.value = 'ESPECES';
   }
@@ -124,7 +127,7 @@ const formatPrice = (amount: number) => {
 };
 
 const handlePayment = () => {
-  if (amountReceived.value < props.total) return;
+  if (amountReceived.value < localTotal.value) return;
   
   processing.value = true;
   

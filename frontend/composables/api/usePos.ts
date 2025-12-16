@@ -258,6 +258,8 @@ export const usePos = defineStore('pos', () => {
          const result = await createVente(payload);
          if (result && result.id) {
             clearCart(); 
+            // Recharger le catalogue pour mettre à jour les stocks
+            await loadCatalog();
             return { venteId: result.id };
          }
          return null;
