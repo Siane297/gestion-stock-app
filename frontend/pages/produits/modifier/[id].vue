@@ -116,11 +116,38 @@ onUnmounted(() => {
     pageTitleOverride.value = null;
 });
 
-// Définition des champs du formulaire produit (identique à l'ajout mais avec valeurs)
+const config = useRuntimeConfig();
+const apiBase = config.public.apiBase as string;
+let serverUrl = '';
+try {
+    if (apiBase.startsWith('http')) {
+        serverUrl = new URL(apiBase).origin;
+    }
+} catch (e) {
+    console.error("Erreur parsing API Base URL", e);
+}
+
+const getFullImageUrl = (path?: string) => {
+    if (!path) return undefined;
+    if (path.startsWith('http')) return path;
+    return `${serverUrl}${path}`;
+};
+
+// Définition des champs
 const productFields = computed(() => {
     if (!produit.value) return [];
 
     return [
+   {
+    name: "image",
+    label: "Image du produit",
+    type: "image" as const,
+    required: false,
+    value: getFullImageUrl((produit.value as any).image_url),
+    placeholder: "Ajouter/Modifier image",
+    acceptedFormats: "image/png,image/jpeg,image/jpg,image/webp",
+    maxSize: 5
+  },
   {
     name: "nom",
     label: "Nom du produit",
@@ -137,6 +164,14 @@ const productFields = computed(() => {
     required: false,
     value: produit.value.code_barre
   },
+ 
+  // ... (rest of fields unchanged until submit) ...
+// (Skipping unchanged fields for brevity in tool call, but replace_file_content needs contiguity. I will target the handleSubmit part separately if needed or include enough context.)
+// Actually, I need to update the `value` in `productFields` at line 145. And `handleSubmit` at line 221.
+// They are far apart. I should split this into two calls or use `multi_replace`.
+// I will use multi_replace (via `replace_file_content` with chunks if I can, but wait, `replace_file_content` logic limitation).
+// I will use two tool calls.
+
   {
     name: "unite",
     label: "Unité de base",
@@ -212,27 +247,41 @@ const handleSubmit = async (data: Record<string, any>) => {
   loading.value = true;
 
   try {
-    // Préparer les données pour Update
-    // Note: Pour les conditionnements, l'API Update attend peut-être une structure spécifique (action: 'create' | 'update')
-    // ou alors elle est intelligente et fait un replace.
-    // D'après useProduitApi, UpdateProduitDto.conditionnements a un champ 'action'.
-    // C'est complexe si le formulaire renvoie juste un tableau complet.
-    // Simplification: On renvoie le tableau, et si l'API backend est bien faite (Prisma), on peut gérer ça.
-    // Mais regardons useProduitApi: 
-    /* 
-      conditionnements?: Array<{
-        id?: string;
-        nom?: string;
-        ...
-        action?: 'create' | 'update' | 'delete';
-      }>;
-    */
-    // Le composant `ConditionnementField` renvoie probablement juste la liste actuelle.
-    // Pour l'instant, envoyons tel quel, mais il faudra peut-être adapter le backend ou le DTO si ça casse.
-    // Ou alors on ne modifie pas les conditionnements ici pour l'instant si c'est trop risqué sans voir le backend.
+    // 1. Adaptation des conditionnements pour coller au DTO
+    let condsPayload: any[] = [];
     
-    // Pour simplifier, supposons que l'API gère l'update si on envoie tout. Sinon, ça sera une amélioration future.
-    
+    // a. Map current items (Create or Update)
+    if (data.conditionnements) {
+        condsPayload = data.conditionnements.map((c: any) => ({
+            id: c.id, 
+            nom: c.nom,
+            quantite_base: Number(c.quantite_base),
+            prix_vente: Number(c.prix_vente),
+            code_barre: c.code_barre,
+            image_url: c.image_url,
+            image_id: c.image_id,
+            action: c.id ? 'update' : 'create' 
+        }));
+    }
+
+    // b. Detect deleted items
+    if (produit.value && produit.value.conditionnements) {
+        const originalIds = produit.value.conditionnements.map((c: any) => c.id);
+        const currentIds = data.conditionnements 
+            ? data.conditionnements.map((c: any) => c.id).filter((id: any) => id)
+            : [];
+        
+        const deletedIds = originalIds.filter(id => !currentIds.includes(id));
+        
+        deletedIds.forEach(id => {
+            condsPayload.push({
+                id: id,
+                action: 'delete'
+            });
+        });
+    }
+
+    // 2. Prepare Payload
     const payload: UpdateProduitDto = {
       nom: data.nom,
       code_barre: data.code_barre || undefined,
@@ -240,31 +289,59 @@ const handleSubmit = async (data: Record<string, any>) => {
       prix_achat: data.prix_achat ? Number(data.prix_achat) : undefined,
       prix_vente: Number(data.prix_vente),
       unite: data.unite,
-      // gere_peremption: data.gere_peremption, // Pas dans UpdateProduitDto ? Vérifier useProduitApi.
-      // Ah, UpdateProduitDto n'a pas gere_peremption dans l'interface que j'ai vue plus tôt !
-      // Vérifions... L'interface montrée ligne 61 avait: nom, description, code_barre, categorie_id, unite, prixs, marge, tva, est_actif, conditionnements.
-      // PAS de gere_peremption dans UpdateProduitDto ? C'est étrange car présent dans Produit.
-      // Si manquant, je ne peux pas le mettre à jour.
-      
       est_actif: data.est_actif,
-      
-      // Adaptation des conditionnements pour coller au DTO si possible
-      // Le composant renvoie un tableau d'objets. S'ils ont un ID, c'est update, sinon create.
-      // On va essayer de mapper ça intelligemment.
-      conditionnements: data.conditionnements ? data.conditionnements.map((c: any) => ({
-          id: c.id, 
-          nom: c.nom,
-          quantite_base: Number(c.quantite_base),
-          prix_vente: Number(c.prix_vente),
-          code_barre: c.code_barre,
-          action: c.id ? 'update' : 'create' 
-          // Et pour ceux supprimés ? Le form dynamique renvoie la liste visible.
-          // Si on veut supprimer, il faudrait comparer avec l'original.
-          // Pour l'instant, on gère l'ajout et la modif simple.
-      })) : undefined
+      conditionnements: condsPayload.length > 0 ? condsPayload : undefined
     };
 
-    const updated = await updateProduit(produitId, payload);
+
+
+    let payloadToSend: any = payload;
+    const files = data.$files as Record<string, File> | undefined;
+    const imageFile = files?.['image'];
+
+    // Check for conditionnement files
+    const conditionnementFiles: { file: File, index: number, key: string }[] = [];
+    if (data.conditionnements) {
+        data.conditionnements.forEach((c: any, index: number) => {
+            if (c.image_file) {
+                 const key = `cond_img_${index}`;
+                 conditionnementFiles.push({
+                     file: c.image_file,
+                     index: index,
+                     key: key
+                 });
+                 // Update the payload item with the key so backend knows
+                 if (payload.conditionnements && payload.conditionnements[index]) {
+                     (payload.conditionnements[index] as any).image_key = key;
+                 }
+            }
+        });
+    }
+
+    if (imageFile || conditionnementFiles.length > 0) {
+        const formData = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+             if (value !== undefined && value !== null) {
+                 if (key === 'conditionnements') {
+                     formData.append(key, JSON.stringify(value));
+                 } else {
+                     formData.append(key, String(value));
+                 }
+             }
+        });
+        
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+
+        conditionnementFiles.forEach(cf => {
+            formData.append(cf.key, cf.file);
+        });
+
+        payloadToSend = formData;
+    }
+
+    const updated = await updateProduit(produitId, payloadToSend);
 
     if (!updated) {
       throw new Error("Échec de la modification");

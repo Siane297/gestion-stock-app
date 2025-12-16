@@ -22,10 +22,15 @@ export const useSecureApi = () => {
     }
 
     // Headers de base
-    const headers = {
-      'Content-Type': 'application/json',
+    const headers: Record<string, string> = {
       ...(options.headers || {}),
     };
+
+    // Si le corps n'est pas un FormData, on ajoute application/json par défaut
+    // Si c'est un FormData, on laisse le navigateur gérer le Content-Type (avec boundary)
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     // Ajouter le token d'accès si disponible
     if (accessToken.value) {

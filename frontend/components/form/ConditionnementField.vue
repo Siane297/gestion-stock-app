@@ -17,14 +17,14 @@
     <!-- Liste des conditionnements -->
     <div class="grid grid-cols-1 bg-bleu/50 rounded-lg border-2 border-dashed p-4 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
-        v-for="(item, index) in items"
+        v-for="(item, index) in displayItems"
         :key="index"
-        @click="openPopup(index)"
+        @click="openPopup(item)"
         class="bg-white border rounded-xl p-4 relative group hover:shadow-md transition-shadow cursor-pointer hover:border-primary/50"
       >
         <button
           type="button"
-          @click.stop="removeItem(index)"
+          @click.stop="removeItem(item)"
           class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors z-10"
         >
           <i class="pi pi-times"></i>
@@ -45,12 +45,15 @@
             <span>Code Barre:</span>
             <span class="font-mono text-xs bg-gray-100 px-1 rounded">{{ item.code_barre }}</span>
           </div>
+          <div v-if="item.image_url" class="mt-2">
+            <img :src="getFullImageUrl(item.image_url)" class="w-full h-20 object-contain rounded border border-gray-100" />
+          </div>
         </div>
       </div>
 
       <!-- Placeholder Empty State -->
       <div
-        v-if="items.length === 0"
+        v-if="displayItems.length === 0"
         class="col-span-full  border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-400 bg-white"
       >
         <i class="pi pi-box text-3xl mb-2"></i>
@@ -89,6 +92,8 @@ export interface ConditionnementItem {
   quantite_base: number;
   prix_vente: number;
   code_barre?: string;
+  image_url?: string;
+  image_file?: File;
   action?: 'create' | 'update' | 'delete';
 }
 
@@ -148,11 +153,23 @@ const baseFields = [
     placeholder: 'Scanner ou saisir...',
     required: false,
     value: ''
+  },
+  {
+    name: 'image_url',
+    label: 'Image',
+    type: 'image' as const, // We will use Image type for the popup
+    required: false,
+    value: ''
   }
 ];
 
+const displayItems = computed(() => {
+    // Masquer l'unité de base (quantite_base = 1) car gérée dans le produit principal
+    return items.value.filter(item => item.quantite_base !== 1);
+});
+
 // Champs calculés dynamiquement pour inclure les valeurs en mode édition
-const popupFields = computed(() => {
+const popupFields = computed((): any[] => {
     if (editingIndex.value === null) {
         // Mode Ajout: Champs vides (ou valeurs par défaut)
         return baseFields.map(f => ({ ...f, value: undefined }));
@@ -164,9 +181,15 @@ const popupFields = computed(() => {
         return baseFields.map(field => {
             // Safety access
             const val = item[field.name as keyof ConditionnementItem];
-            const newVal = (field.name === 'quantite_base' || field.name === 'prix_vente')
+            let newVal = (field.name === 'quantite_base' || field.name === 'prix_vente')
                 ? Number(val) 
                 : val;
+            
+            // Convert relative URL to full URL for preview
+            if (field.name === 'image_url' && typeof val === 'string') {
+                newVal = getFullImageUrl(val);
+            }
+
             return {
                 ...field,
                 value: newVal
@@ -175,8 +198,15 @@ const popupFields = computed(() => {
     }
 });
 
-const openPopup = (index: number | null = null) => {
-  editingIndex.value = index;
+const openPopup = (item: ConditionnementItem | null = null) => {
+  if (item) {
+      // Trouver l'index réel dans la liste complète
+      const realIndex = items.value.indexOf(item);
+      editingIndex.value = realIndex;
+  } else {
+      // Nouvel item
+      editingIndex.value = null;
+  }
   showPopup.value = true;
 };
 
@@ -197,7 +227,8 @@ const handlePopupSubmit = (data: any) => {
     quantite_base: Number(data.quantite_base),
     prix_vente: Number(data.prix_vente),
     code_barre: data.code_barre,
-    // Si ID existe -> update, sinon create
+    image_url: data.image_url,
+    image_file: data.$files && data.$files['image_url'] ? data.$files['image_url'] : undefined,
     action: currentItem?.id ? 'update' : 'create'
   };
 
@@ -215,9 +246,29 @@ const handlePopupSubmit = (data: any) => {
   resetPopup();
 };
 
-const removeItem = (index: number) => {
-  const newItems = [...items.value];
-  newItems.splice(index, 1);
-  emit('update:modelValue', newItems);
+const removeItem = (item: ConditionnementItem) => {
+  const realIndex = items.value.indexOf(item);
+  if (realIndex !== -1) {
+      const newItems = [...items.value];
+      newItems.splice(realIndex, 1);
+      emit('update:modelValue', newItems);
+  }
+};
+
+const config = useRuntimeConfig();
+const apiBase = config.public.apiBase as string;
+let serverUrl = '';
+try {
+    if (apiBase.startsWith('http')) {
+        serverUrl = new URL(apiBase).origin;
+    }
+} catch (e) {
+    console.error("Erreur parsing API Base URL", e);
+}
+
+const getFullImageUrl = (path?: string) => {
+    if (!path) return undefined;
+    if (path.startsWith('http')) return path;
+    return `${serverUrl}${path}`;
 };
 </script>

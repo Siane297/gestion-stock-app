@@ -112,3 +112,32 @@ export const uploadEmployeePhoto = multer({
   }
 });
 
+// Configuration de multer pour les produits (stockage temporaire avant upload GDrive)
+const productStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Utiliser le nom de la compagnie pour séparer les uploads
+    const companyName = req.companyName || 'default';
+    const uploadPath = path.join(__dirname, '../../uploads/images', companyName, 'products');
+
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    // Nettoyage du nom de fichier pour éviter les caractères spéciaux
+    const originalName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const ext = path.extname(originalName);
+    const filename = `product-${Date.now()}-${path.basename(originalName, ext)}${ext}`;
+    cb(null, filename);
+  }
+});
+
+export const uploadProductImage = multer({
+  storage: productStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  }
+});
+

@@ -29,6 +29,8 @@ model produit {
     marge_min_pourcent Float? // Alerte marge
     gere_peremption    Boolean      @default(false)
     est_actif          Boolean      @default(true)
+    image_url          String?
+    image_id           String?
     date_creation      DateTime     @default(now())
     date_modification  DateTime     @updatedAt
 
@@ -53,6 +55,8 @@ model conditionnement_produit {
     prix_achat    Float? // Prix d'achat
     code_barre    String? // Code barre spécifique (unique si défini)  @unique
     est_actif     Boolean  @default(true)
+    image_url     String?
+    image_id      String?
     date_creation DateTime @default(now())
 
     produit        produit        @relation(fields: [produit_id], references: [id], onDelete: Cascade)

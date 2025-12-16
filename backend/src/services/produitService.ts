@@ -21,7 +21,11 @@ export interface CreateProduitDto {
     quantite_base: number;
     prix_vente: number;
     code_barre?: string;
+    image_url?: string;
+    image_id?: string;
   }>;
+  image_url?: string;
+  image_id?: string;
 }
 
 export interface UpdateProduitDto {
@@ -43,8 +47,12 @@ export interface UpdateProduitDto {
     quantite_base?: number;
     prix_vente?: number;
     code_barre?: string;
+    image_url?: string;
+    image_id?: string;
     action?: 'create' | 'update' | 'delete';
   }>;
+  image_url?: string;
+  image_id?: string;
 }
 
 export interface ProduitFilters {
@@ -207,7 +215,9 @@ export class ProduitService {
               code_barre: data.code_barre?.trim(),
               est_actif: true
             }
-          }
+          },
+          image_url: data.image_url,
+          image_id: data.image_id
         },
         include: {
           categorie: true,
@@ -230,10 +240,10 @@ export class ProduitService {
                nom: cond.nom,
                quantite_base: Number(cond.quantite_base),
                prix_vente: Number(cond.prix_vente),
-               // Pour les autres conditionnements, on n'a pas forcément de prix d'achat défini dans l'interface actuelle
-               // On peut laisser null, ou mettre une valeur par défaut si besoin.
                code_barre: cond.code_barre,
-               est_actif: true
+               est_actif: true,
+               image_url: cond.image_url,
+               image_id: cond.image_id
              }
            });
            
@@ -285,7 +295,9 @@ export class ProduitService {
         unite: data.unite,
         marge_min_pourcent: data.marge_min_pourcent !== undefined ? Number(data.marge_min_pourcent) : undefined,
         gere_peremption: data.gere_peremption !== undefined ? data.gere_peremption : undefined,
-        est_actif: data.est_actif
+        est_actif: data.est_actif,
+        image_url: data.image_url,
+        image_id: data.image_id
       }
     });
 
@@ -308,13 +320,16 @@ export class ProduitService {
     if (data.conditionnements) {
       for (const cond of data.conditionnements) {
         if (cond.action === 'create' && cond.nom && cond.quantite_base && cond.prix_vente) {
+// Update method changes
           await this.prisma.conditionnement_produit.create({
             data: {
               produit_id: id,
               nom: cond.nom,
               quantite_base: Number(cond.quantite_base),
               prix_vente: Number(cond.prix_vente),
-              code_barre: cond.code_barre
+              code_barre: cond.code_barre,
+              image_url: cond.image_url,
+              image_id: cond.image_id
             }
           });
         } else if (cond.action === 'update' && cond.id) {
@@ -324,7 +339,9 @@ export class ProduitService {
                     nom: cond.nom,
                     quantite_base: cond.quantite_base ? Number(cond.quantite_base) : undefined,
                     prix_vente: cond.prix_vente ? Number(cond.prix_vente) : undefined,
-                    code_barre: cond.code_barre
+                    code_barre: cond.code_barre,
+                    image_url: cond.image_url,
+                    image_id: cond.image_id
                 }
             });
         } else if (cond.action === 'delete' && cond.id) {

@@ -57,10 +57,72 @@ export const getProduitById = async (req: Request, res: Response) => {
 /**
  * Crée un nouveau produit
  */
+
 export const createProduit = async (req: Request, res: Response) => {
   try {
     const produitService = new ProduitService(req.tenantPrisma);
-    const produit = await produitService.create(req.body);
+    const productData = req.body;
+
+    // Gestion des uploads (Multi-files)
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      const companyName = req.companyName || 'default';
+      
+      const files = req.files as Express.Multer.File[];
+      
+      files.forEach(file => {
+          const imageUrl = `/uploads/images/${companyName}/products/${file.filename}`;
+          
+          if (file.fieldname === 'image') {
+              // Image principale du produit
+              productData.image_url = imageUrl;
+              productData.image_id = file.filename;
+          } else {
+              // Vérifier si c'est une image de conditionnement (via image_key)
+              // Le parsing des conditionnements se fait plus bas, mais on peut préparer une map ou le faire après parsing.
+              // Le plus simple : on parse d'abord, ensuite on assigne.
+              // Mais ici on est AVANT le parsing JSON des conditionnements.
+              // Sauf que le file upload est déjà fait.
+          }
+      });
+    }
+
+    // Parsing nécessaire car FormData envoie tout en string
+    if (typeof productData.conditionnements === 'string') {
+        try {
+            productData.conditionnements = JSON.parse(productData.conditionnements);
+        } catch (e) {
+            logger.warn("Erreur parsing conditionnements", e);
+        }
+    }
+    
+    // Assignation des images aux conditionnements après parsing
+    if (req.files && Array.isArray(req.files) && productData.conditionnements && Array.isArray(productData.conditionnements)) {
+        const companyName = req.companyName || 'default';
+        const files = req.files as Express.Multer.File[];
+        
+        productData.conditionnements.forEach((cond: any) => {
+            if (cond.image_key) {
+                const file = files.find(f => f.fieldname === cond.image_key);
+                if (file) {
+                    cond.image_url = `/uploads/images/${companyName}/products/${file.filename}`;
+                    // cond.image_id = file.filename; // si besoin
+                    delete cond.image_key; // Nettoyage
+                }
+            }
+        });
+    }
+    // Conversion des types numériques si nécessaire (FormData envoie des strings)
+    if (productData.prix_vente) productData.prix_vente = Number(productData.prix_vente);
+    if (productData.prix_achat) productData.prix_achat = Number(productData.prix_achat);
+    if (productData.marge_min_pourcent) productData.marge_min_pourcent = Number(productData.marge_min_pourcent);
+    if (productData.tva_pourcentage) productData.tva_pourcentage = Number(productData.tva_pourcentage);
+    if (productData.est_actif === 'true') productData.est_actif = true;
+    if (productData.est_actif === 'false') productData.est_actif = false;
+    if (productData.gere_peremption === 'true') productData.gere_peremption = true;
+    if (productData.gere_peremption === 'false') productData.gere_peremption = false;
+
+
+    const produit = await produitService.create(productData);
 
     res.status(201).json({
       success: true,
@@ -87,7 +149,56 @@ export const updateProduit = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
     const produitService = new ProduitService(req.tenantPrisma);
-    const produit = await produitService.update(id, req.body);
+    const productData = req.body;
+
+    // Gestion des uploads (Multi-files)
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      const companyName = req.companyName || 'default';
+      const files = req.files as Express.Multer.File[];
+      
+      files.forEach(file => {
+          const imageUrl = `/uploads/images/${companyName}/products/${file.filename}`;
+          
+          if (file.fieldname === 'image') {
+              productData.image_url = imageUrl;
+              productData.image_id = file.filename;
+          }
+      });
+    }
+
+    // Parsing et typage (FormData)
+    if (typeof productData.conditionnements === 'string') {
+         try {
+            productData.conditionnements = JSON.parse(productData.conditionnements);
+        } catch (e) {
+            logger.warn("Erreur parsing conditionnements update", e);
+        }
+    }
+
+    // Assignation des images aux conditionnements après parsing
+    if (req.files && Array.isArray(req.files) && productData.conditionnements && Array.isArray(productData.conditionnements)) {
+        const companyName = req.companyName || 'default';
+        const files = req.files as Express.Multer.File[];
+        
+        productData.conditionnements.forEach((cond: any) => {
+            if (cond.image_key) {
+                const file = files.find(f => f.fieldname === cond.image_key);
+                if (file) {
+                    cond.image_url = `/uploads/images/${companyName}/products/${file.filename}`;
+                    delete cond.image_key;
+                }
+            }
+        });
+    }
+    if (productData.prix_vente) productData.prix_vente = Number(productData.prix_vente);
+    if (productData.prix_achat) productData.prix_achat = Number(productData.prix_achat);
+    if (productData.marge_min_pourcent) productData.marge_min_pourcent = Number(productData.marge_min_pourcent);
+    if (productData.est_actif === 'true') productData.est_actif = true;
+    if (productData.est_actif === 'false') productData.est_actif = false;
+    if (productData.gere_peremption === 'true') productData.gere_peremption = true;
+    if (productData.gere_peremption === 'false') productData.gere_peremption = false;
+
+    const produit = await produitService.update(id, productData);
 
     res.json({
       success: true,

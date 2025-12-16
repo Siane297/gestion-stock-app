@@ -89,6 +89,16 @@ onMounted(() => {
 
 // Définition des champs du formulaire produit
 const productFields = computed(() => [
+   {
+    name: "image",
+    label: "Image du produit",
+    type: "image" as const,
+    required: false,
+    placeholder: "Ajouter une image",
+    acceptedFormats: "image/png,image/jpeg,image/jpg,image/webp",
+    maxSize: 5, // 5MB
+    helpText: "Format accepté : PNG, JPG, WEBP. Max 5Mo."
+  },
   {
     name: "nom",
     label: "Nom du produit",
@@ -103,6 +113,7 @@ const productFields = computed(() => [
     placeholder: "Scanner ou saisir le code",
     required: false,
   },
+ 
   {
     name: "unite",
     label: "Unité de base",
@@ -131,13 +142,13 @@ const productFields = computed(() => [
     optionLabel: "nom",
     optionValue: "id",
   },
-  {
-    name: "prix_achat",
-    label: "Prix d'achat",
-    type: "number" as const,
-    placeholder: "0.00",
-    required: false,
-  },
+  // {
+  //   name: "prix_achat",
+  //   label: "Prix d'achat",
+  //   type: "number" as const,
+  //   placeholder: "0.00",
+  //   required: false,
+  // },
   {
     name: "prix_vente",
     label: "Prix de vente",
@@ -162,6 +173,7 @@ const productFields = computed(() => [
   //   required: false,
   //   helpText: 'Pourcentage de marge minimum souhaité'
   // },
+  
   {
     name: "conditionnements",
     label: "Conditionnements",
@@ -204,9 +216,67 @@ const handleSubmit = async (data: Record<string, any>) => {
             code_barre: c.code_barre || undefined,
           }))
         : undefined,
+
     };
 
-    const produit = await createProduit(produitPayload);
+    // Construction du FormData si nécessaire (si image présente)
+    // On vérifie si data.$files contient 'image'
+    const files = data.$files as Record<string, File> | undefined;
+    const imageFile = files?.['image'];
+    
+    // Check for conditionnement files
+    const conditionnementFiles: { file: File, index: number, key: string }[] = [];
+    if (produitPayload.conditionnements) {
+        produitPayload.conditionnements.forEach((c: any, index: number) => {
+            // Retrieve the original file from the input data (which came from ConditionnementField)
+            // Note: produitPayload.conditionnements is derived from data.conditionnements, 
+            // but we need access to the original objects which might hold the file property if we passed it through.
+            // Actually, data.conditionnements IS the array of objects from ConditionnementField.
+            const originalItem = data.conditionnements[index];
+            if (originalItem && originalItem.image_file) {
+                const key = `cond_img_${index}`;
+                conditionnementFiles.push({
+                    file: originalItem.image_file,
+                    index: index,
+                    key: key
+                });
+                // Tag the payload so backend knows to look for this file
+                c.image_key = key; 
+            }
+        });
+    }
+
+    let payloadToSend: any = produitPayload;
+
+    if (imageFile || conditionnementFiles.length > 0) {
+        const formData = new FormData();
+        
+        // Append main fields
+        Object.entries(produitPayload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                if (key === 'conditionnements') {
+                     // Stringify conditionnements (which now include image_key markers)
+                     formData.append(key, JSON.stringify(value));
+                } else {
+                     formData.append(key, String(value));
+                }
+            }
+        });
+
+        // Append main image
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+
+        // Append conditionnement images
+        conditionnementFiles.forEach(cf => {
+            formData.append(cf.key, cf.file);
+        });
+
+        payloadToSend = formData;
+    }
+
+    const produit = await createProduit(payloadToSend);
 
     if (!produit) {
       throw new Error("Échec de la création du produit");

@@ -22,6 +22,17 @@
             @action:edit="handleEdit"
             @action:delete="handleDelete"
         >
+             <!-- Custom rendering pour nom (Image + Nom) -->
+             <template #column-nom="{ data }: { data: any }">
+                 <div class="flex items-center gap-3">
+                     <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200 overflow-hidden flex-shrink-0">
+                         <img v-if="data.image_url" :src="getFullImageUrl(data.image_url)" :alt="data.nom" class="w-full h-full object-cover" />
+                         <i v-else class="pi pi-image text-gray-400 text-lg"></i>
+                     </div>
+                     <span class="font-medium text-gray-800">{{ data.nom }}</span>
+                 </div>
+             </template>
+
              <!-- Custom rendering pour status (exemple) -->
              <template #column-est_actif="{ data }: { data: any }">
                  <Tag :severity="data.est_actif ? 'success' : 'danger'" :value="data.est_actif ? 'Actif' : 'Inactif'" />
@@ -47,16 +58,33 @@ import Toast from 'primevue/toast';
 const { getProduits, deleteProduit } = useProduitApi();
 const toast = useToast();
 const router = useRouter();
+const config = useRuntimeConfig();
 
 const produits = ref<Produit[]>([]);
 const loading = ref(false);
 
 const columns: TableColumn[] = [
-    { field: 'nom', header: 'Nom du Produit', sortable: true },
+    { field: 'nom', header: 'Nom du Produit', sortable: true, customRender: true },
     { field: 'categorie.nom', header: 'Catégorie', sortable: true, type: 'tag' },
     { field: 'unite', header: 'Unité', sortable: true },
     { field: 'est_actif', header: 'Statut', sortable: true, customRender: true }, // Utilise le slot #column-est_actif
 ];
+
+const apiBase = config.public.apiBase as string;
+let serverUrl = '';
+try {
+    if (apiBase.startsWith('http')) {
+        serverUrl = new URL(apiBase).origin;
+    }
+} catch (e) {
+    console.error("Erreur parsing API Base URL", e);
+}
+
+const getFullImageUrl = (path?: string) => {
+    if (!path) return undefined;
+    if (path.startsWith('http')) return path; // Déjà absolu
+    return `${serverUrl}${path}`;
+};
 
 const loadProduits = async () => {
     loading.value = true;

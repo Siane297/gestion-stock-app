@@ -107,12 +107,14 @@ export const useProduitApi = () => {
     return response.data || [];
   };
 
-  const createProduit = async (data: CreateProduitDto): Promise<Produit | null> => {
+  const createProduit = async (data: CreateProduitDto | FormData): Promise<Produit | null> => {
+    // Si c'est un FormData, on ne spécifie pas le Content-Type (le navigateur le fait)
+    // Mais useSecureApi utilise $fetch qui le gère généralement bien si le body est FormData.
     const response = await post<ApiResponse<Produit>>('/api/produits', data);
     return response.data || null;
   };
 
-  const updateProduit = async (id: string, data: UpdateProduitDto): Promise<Produit | null> => {
+  const updateProduit = async (id: string, data: UpdateProduitDto | FormData): Promise<Produit | null> => {
     const response = await put<ApiResponse<Produit>>(`/api/produits/${id}`, data);
     return response.data || null;
   };

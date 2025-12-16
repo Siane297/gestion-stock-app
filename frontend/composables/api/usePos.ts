@@ -123,6 +123,27 @@ export const usePos = defineStore('pos', () => {
           stockProduit = stockEntry ? stockEntry.quantite : 0;
       }
 
+      const config = useRuntimeConfig();
+      const apiBase = config.public.apiBase as string; // ex: http://localhost:3001/api
+      // Extraire l'origine (http://localhost:3001)
+      let serverUrl = '';
+      try {
+          if (apiBase.startsWith('http')) {
+              serverUrl = new URL(apiBase).origin;
+          } else {
+             // Fallback si chemin relatif (rare en dev nuxt proxy)
+             serverUrl = ''; 
+          }
+      } catch (e) {
+          console.error("Erreur parsing API Base URL", e);
+      }
+
+      const getFullImageUrl = (path?: string) => {
+          if (!path) return undefined;
+          if (path.startsWith('http')) return path; // Déjà absolu (ex: google drive old)
+          return `${serverUrl}${path}`;
+      };
+
       const hasDefinedUnit = p.conditionnements?.some((c: any) => c.quantite_base === 1);
 
       // 1. Unité de base (si aucune unité explicite définie)
@@ -138,7 +159,7 @@ export const usePos = defineStore('pos', () => {
           quantityInBase: 1,
           stockAvailable: stockProduit,
           categoryName: p.categorie?.nom,
-          image: p.photo
+          image: getFullImageUrl(p.image_url)
         });
       }
 
@@ -146,17 +167,17 @@ export const usePos = defineStore('pos', () => {
       if (p.conditionnements && p.conditionnements.length > 0) {
         p.conditionnements.forEach((c: any) => {
           items.push({
-            uniqueId: `${p.id}_${c.id}`,
-            productId: p.id,
-            conditionnementId: c.id,
-            name: `${p.nom}`,
-            price: c.prix_vente,
-            isPack: c.quantite_base > 1,
-            packLabel: c.nom, // Sera "Unité", "Pack de 6", etc.
-            quantityInBase: c.quantite_base,
-            stockAvailable: Math.floor(stockProduit / c.quantite_base),
-            categoryName: p.categorie?.nom,
-            image: p.photo
+             uniqueId: `${p.id}_${c.id}`,
+             productId: p.id,
+             conditionnementId: c.id,
+             name: `${p.nom}`,
+             price: c.prix_vente,
+             isPack: c.quantite_base > 1,
+             packLabel: c.nom, // Sera "Unité", "Pack de 6", etc.
+             quantityInBase: c.quantite_base,
+             stockAvailable: Math.floor(stockProduit / c.quantite_base),
+             categoryName: p.categorie?.nom,
+             image: getFullImageUrl(c.image_url) || getFullImageUrl(p.image_url) // Image spécifique ou fallback produit
           });
         });
       }

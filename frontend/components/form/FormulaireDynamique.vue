@@ -22,7 +22,7 @@
             <div v-for="(field, index) in fields" :key="field.name" :class="getFieldClass(index)"
               class="flex flex-col gap-2">
 
-              <label v-if="field.showLabel !== false && field.type !== 'conditionnement' && field.type !== 'achat-lines'" :for="field.name"
+              <label v-if="field.showLabel !== false && field.type !== 'conditionnement' && field.type !== 'achat-lines' && field.type !== 'image'" :for="field.name"
                 class="font-semibold text-gray-700">
                 {{ field.label }}
                 <span v-if="field.required" class="text-red-500">*</span>
@@ -118,10 +118,13 @@
               </div>
 
               <!-- Image Upload -->
-              <ImageUploadField v-else-if="field.type === 'image'" :name="field.name" :label="field.label"
-                :required="field.required" :model-value="formData[field.name]"
-                @file-selected="(file) => handleImageSelect(field, file)"
-                @file-removed="() => handleImageRemove(field)" />
+              <div v-else-if="field.type === 'image'" class="w-full md:w-1/2">
+                <ImageUploadField :name="field.name" :label="field.label"
+                    :required="field.required" :model-value="formData[field.name]"
+                    @file-selected="(file) => handleImageSelect(field, file)"
+                    @file-removed="() => handleImageRemove(field)" 
+                />
+              </div>
 
               <!-- Message d'erreur -->
               <small v-if="submitted && field.required && !formData[field.name]" class="text-red-500 block">
@@ -293,7 +296,7 @@ const getFieldClass = (index: number) => {
   const field = props.fields[index];
 
   // Fonction utilitaire pour vérifier si un champ force le "Pleine Largeur"
-  const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'achat-lines');
+  const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'achat-lines' || f.type === 'image');
 
   // 1. Si le champ actuel est explicitement Pleine Largeur, on retourne col-span-2
   if (isFullWidthField(field)) {
@@ -395,8 +398,8 @@ const handleSubmit = async () => {
       }
     }
 
-    // Émettre les données
-    emit("submit", { ...formData.value });
+    // Émettre les données avec les fichiers
+    emit("submit", { ...formData.value, $files: { ...pendingFiles.value } });
 
     // Nettoyer les fichiers et suppressions en attente après soumission réussie
     pendingFiles.value = {};
