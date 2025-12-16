@@ -3,7 +3,7 @@ import { getAllOrganizations, toggleBlockOrganization } from '../controllers/org
 import { requireSuperAdmin } from '../middleware/superAdminMiddleware.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 /**
  * Routes de gestion des organisations

@@ -8,7 +8,7 @@ import {
 } from '../controllers/posteController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 
-const router = Router();
+const router: Router = Router();
 
 // TODO: Activer l'authentification plus tard
 // Routes publiques temporairement (pour chargement dans formulaire)

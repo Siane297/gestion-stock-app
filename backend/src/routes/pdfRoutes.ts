@@ -4,7 +4,7 @@ import { authenticate } from '../middleware/authMiddleware.js';
 import { identifyTenant, requireTenant } from '../middleware/tenantMiddleware.js';
 import rateLimit from 'express-rate-limit';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 /**
  * Rate limiting spécifique pour les PDF (plus restrictif car resource-intensive)

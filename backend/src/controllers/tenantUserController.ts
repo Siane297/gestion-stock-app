@@ -31,7 +31,7 @@ export const getAllTenantUsers = async (req: Request, res: Response) => {
             matricule: true,
             fullName: true,
             email: true,
-            department: { select: { name: true } },
+            // department: { select: { name: true } }, // Relation disabled in schema
             position: { select: { name: true } },
           },
         },
@@ -88,7 +88,7 @@ export const getTenantUserById = async (req: Request, res: Response) => {
             matricule: true,
             fullName: true,
             email: true,
-            department: { select: { name: true } },
+            // department: { select: { name: true } }, // Relation disabled in schema
             position: { select: { name: true } },
           },
         },
@@ -186,7 +186,7 @@ export const createTenantUser = async (req: Request, res: Response) => {
             matricule: true,
             fullName: true,
             email: true,
-            department: { select: { name: true } },
+            // department: { select: { name: true } }, // Relation disabled in schema
             position: { select: { name: true } },
           },
         },
@@ -253,7 +253,7 @@ export const updateTenantUser = async (req: Request, res: Response) => {
             matricule: true,
             fullName: true,
             email: true,
-            department: { select: { name: true } },
+            // department: { select: { name: true } },
             position: { select: { name: true } },
           },
         },

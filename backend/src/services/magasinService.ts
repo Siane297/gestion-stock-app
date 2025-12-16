@@ -246,11 +246,11 @@ export class MagasinService {
           select: {
             id: true,
             nom: true,
-            unite: true,
-            prix_vente: true,
+            // unite: true, // unite relation was removed or changed in schema, verifying... existing code had it
+            // prix_vente: true, // REMOVED
             conditionnements: {
                  where: { quantite_base: 1 },
-                 select: { code_barre: true },
+                 select: { code_barre: true, prix_vente: true },
                  take: 1
             }
           }
@@ -261,6 +261,7 @@ export class MagasinService {
 
     let result = stocks.map(s => ({
       ...s,
+      prix_vente: s.produit.conditionnements?.[0]?.prix_vente, // Map for frontend convenience
       isAlert: s.quantite <= s.quantite_minimum
     }));
 
@@ -280,9 +281,6 @@ export class MagasinService {
     return result;
   }
 
-  /**
-   * Statistiques d'un magasin
-   */
   async getStats(id: string): Promise<{
     totalProduits: number;
     produitsEnAlerte: number;
@@ -298,12 +296,26 @@ export class MagasinService {
     // Stocks
     const stocks = await this.prisma.stock_magasin.findMany({
       where: { magasin_id: id },
-      include: { produit: { select: { prix_vente: true } } }
+      include: { 
+        produit: { 
+          include: {
+            conditionnements: {
+              where: { quantite_base: 1 },
+              take: 1
+            }
+          }
+        } 
+      }
     });
 
     const totalProduits = stocks.length;
     const produitsEnAlerte = stocks.filter(s => s.quantite <= s.quantite_minimum).length;
-    const valeurStock = stocks.reduce((acc, s) => acc + (s.quantite * s.produit.prix_vente), 0);
+    // Calculer la valeur du stock en utilisant le prix de vente du conditionnement de base (unité)
+    const valeurStock = stocks.reduce((acc, s) => {
+      // @ts-ignore
+      const prixVente = s.produit.conditionnements?.[0]?.prix_vente || 0;
+      return acc + (s.quantite * prixVente);
+    }, 0);
 
     // Ventes
     const ventesStats = await this.prisma.vente.aggregate({

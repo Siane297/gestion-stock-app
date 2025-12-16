@@ -8,7 +8,7 @@ import {
   deleteTenantUser,
 } from '../controllers/tenantUserController.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Routes pour la gestion des utilisateurs tenant
 router.get('/', getAllTenantUsers);

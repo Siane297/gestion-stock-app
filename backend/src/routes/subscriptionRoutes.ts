@@ -8,7 +8,7 @@ import {
   updateSubscriptionNotes,
 } from '../controllers/subscriptionController.js';
 
-const router = Router();
+const router: Router = Router();
 
 // Toutes les routes nécessitent une authentification Super Admin
 // (La vérification du rôle SUPER_ADMIN est faite dans le middleware global)
