@@ -2,14 +2,15 @@ import { PrismaClient } from '@prisma/client';
 import { logger } from '../config/logger.js';
 
 // Types DTO
-export type UniteProduit = 'UNITE' | 'KG' | 'LITRE' | 'METRE' | 'PAQUET' | 'AUTRE';
+// Types DTO
+// UnitProduit Enum removed
 
 export interface CreateProduitDto {
   nom: string;
   description?: string;
   code_barre?: string; // Sera mis sur le conditionnement par défaut
   categorie_id?: string;
-  unite?: UniteProduit;
+  unite_id?: string;
   prix_achat?: number; // Sera mis sur le conditionnement par défaut
   prix_vente: number;  // Sera mis sur le conditionnement par défaut
   marge_min_pourcent?: number;
@@ -33,7 +34,7 @@ export interface UpdateProduitDto {
   description?: string;
   code_barre?: string; // Sera mis sur le conditionnement par défaut
   categorie_id?: string;
-  unite?: UniteProduit;
+  unite_id?: string;
   prix_achat?: number; // Sera mis sur le conditionnement par défaut
   prix_vente?: number; // Sera mis sur le conditionnement par défaut
   marge_min_pourcent?: number;
@@ -54,6 +55,7 @@ export interface UpdateProduitDto {
   image_url?: string;
   image_id?: string;
 }
+
 
 export interface ProduitFilters {
   search?: string;
@@ -148,6 +150,7 @@ export class ProduitService {
       orderBy: { nom: 'asc' },
       include: {
         categorie: true,
+        unite: true,
         conditionnements: true,
         stocks: {
           include: { magasin: true }
@@ -164,6 +167,7 @@ export class ProduitService {
       where: { id },
       include: {
         categorie: true,
+        unite: true,
         conditionnements: true,
         stocks: {
           include: { magasin: true }
@@ -192,7 +196,7 @@ export class ProduitService {
     if (data.code_barre) {
       await this.checkCodeBarreUnique(data.code_barre);
     }
-
+    
     return this.prisma.$transaction(async (tx) => {
       // 1. Création du produit (abstrait)
       const produit = await tx.produit.create({
@@ -200,7 +204,7 @@ export class ProduitService {
           nom: String(data.nom).trim(),
           description: data.description?.trim(),
           categorie_id: data.categorie_id,
-          unite: data.unite || 'UNITE',
+          unite_id: data.unite_id,
           marge_min_pourcent: data.marge_min_pourcent !== undefined ? Number(data.marge_min_pourcent) : undefined,
           gere_peremption: data.gere_peremption || false,
           est_actif: data.est_actif !== undefined ? data.est_actif : true,
@@ -292,7 +296,7 @@ export class ProduitService {
         // code_barre, prix_achat, prix_vente ne sont plus sur produit
         categorie_id: data.categorie_id,
         description: data.description?.trim(),
-        unite: data.unite,
+        unite_id: data.unite_id,
         marge_min_pourcent: data.marge_min_pourcent !== undefined ? Number(data.marge_min_pourcent) : undefined,
         gere_peremption: data.gere_peremption !== undefined ? data.gere_peremption : undefined,
         est_actif: data.est_actif,

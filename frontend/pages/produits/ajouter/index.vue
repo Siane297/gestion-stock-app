@@ -29,6 +29,19 @@
       @cancel="showCategoryDialog = false"
     />
 
+    <!-- Popup pour ajouter une unité -->
+    <FormPopupDynamique
+      v-model:visible="showUniteDialog"
+      title="Ajouter une unité"
+      description="Créez une nouvelle unité de mesure"
+      headerTitle="Nouvelle unité"
+      :fields="uniteFields"
+      submit-label="Créer"
+      :loading="loadingUnite"
+      @submit="handleCreateUnite"
+      @cancel="showUniteDialog = false"
+    />
+
     <!-- Toast -->
     <Toast />
   </div>
@@ -39,11 +52,14 @@ import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import FormulaireDynamique from "~/components/form/FormulaireDynamique.vue";
 import FormPopupDynamique from "~/components/form/FormPopupDynamique.vue";
+// ... imports
+import { useUniteApi } from "~/composables/api/useUniteApi";
 import { useProduitApi } from "~/composables/api/useProduitApi";
 import { useCategorieProduitApi } from "~/composables/api/useCategorieProduitApi";
 
 const { createProduit } = useProduitApi();
 const { getCategories, createCategory } = useCategorieProduitApi();
+const { getUnites, createUnite } = useUniteApi();
 const toast = useToast();
 
 const router = useRouter();
@@ -54,29 +70,30 @@ const formRef = ref<InstanceType<typeof FormulaireDynamique> | null>(null);
 // État
 const loading = ref(false);
 
-// Listes des catégories
+// Listes
 const categories = ref<Array<{ id: string; nom: string }>>([]);
+const unites = ref<Array<{ id: string; nom: string }>>([]);
 const loadingLists = ref(false);
 
-// États du popup catégorie
+// États du popup catégorie et unité
 const showCategoryDialog = ref(false);
 const loadingCategory = ref(false);
+const showUniteDialog = ref(false);
+const loadingUnite = ref(false);
 
-// Charger les catégories
-const loadCategories = async () => {
+// Charger les listes
+const loadLists = async () => {
   loadingLists.value = true;
   try {
-    const categoriesData = await getCategories();
-    categories.value = categoriesData;
-    console.log("Catégories chargées:", categories.value.length);
+    const [catsData, unitesData] = await Promise.all([
+        getCategories(),
+        getUnites()
+    ]);
+    categories.value = catsData;
+    unites.value = unitesData;
   } catch (error) {
-    console.error("Erreur chargement catégories:", error);
-    toast.add({
-      severity: "error",
-      summary: "Erreur",
-      detail: "Erreur lors du chargement des catégories",
-      life: 3000,
-    });
+    console.error("Erreur chargement listes:", error);
+    toast.add({ severity: "error", summary: "Erreur", detail: "Erreur chargement données", life: 3000 });
   } finally {
     loadingLists.value = false;
   }
@@ -84,7 +101,7 @@ const loadCategories = async () => {
 
 // Charger au montage
 onMounted(() => {
-  loadCategories();
+  loadLists();
 });
 
 // Définition des champs du formulaire produit
@@ -113,42 +130,26 @@ const productFields = computed(() => [
     placeholder: "Scanner ou saisir le code",
     required: false,
   },
- 
   {
-    name: "unite",
+    name: "unite_id",
     label: "Unité de base",
-    type: "select" as const,
+    type: "select-with-add" as const, // Utiliser select-with-add pour les unités aussi
     placeholder: "Sélectionnez l'unité",
-    required: true,
-    value: "UNITE", // Valeur par défaut
-    options: [
-      { label: "Unité (pièce)", value: "UNITE" },
-      { label: "Kilogramme (kg)", value: "KG" },
-      { label: "Litre (L)", value: "LITRE" },
-      { label: "Mètre (m)", value: "METRE" },
-      { label: "Paquet", value: "PAQUET" },
-      { label: "Autre", value: "AUTRE" },
-    ],
-    optionLabel: "label",
-    optionValue: "value",
+    required: true, // Peut être false si backend optionnel, mais mieux vaut forcer
+    options: unites.value,
+    optionLabel: "nom",
+    optionValue: "id",
   },
   {
     name: "categorie_id",
     label: "Catégorie",
     type: "select-with-add" as const,
     placeholder: "Sélectionnez une catégorie",
-    required: false, // Selon modèle, nullable mais souvent utile
+    required: false,
     options: categories.value,
     optionLabel: "nom",
     optionValue: "id",
   },
-  // {
-  //   name: "prix_achat",
-  //   label: "Prix d'achat",
-  //   type: "number" as const,
-  //   placeholder: "0.00",
-  //   required: false,
-  // },
   {
     name: "prix_vente",
     label: "Prix de vente",
@@ -164,29 +165,12 @@ const productFields = computed(() => [
     helpText:
       "Cochez cette case pour activer le suivi des lots et dates de péremption.",
   },
-
-  // {
-  //   name: 'marge_min_pourcent',
-  //   label: 'Alerte marge (%)',
-  //   type: 'number' as const,
-  //   placeholder: 'Ex: 20',
-  //   required: false,
-  //   helpText: 'Pourcentage de marge minimum souhaité'
-  // },
-  
   {
     name: "conditionnements",
     label: "Conditionnements",
     type: "conditionnement" as const,
     required: false,
   },
-  // {
-  //   name: 'description',
-  //   label: 'Description',
-  //   type: 'textarea' as const,
-  //   placeholder: 'Description détaillée du produit...',
-  //   required: false
-  // }
 ]);
 
 // Gestion de la soumission
@@ -199,9 +183,9 @@ const handleSubmit = async (data: Record<string, any>) => {
       nom: data.nom,
       code_barre: data.code_barre || undefined,
       categorie_id: data.categorie_id || undefined,
+      unite_id: data.unite_id || undefined,
       prix_achat: data.prix_achat ? Number(data.prix_achat) : undefined,
       prix_vente: Number(data.prix_vente),
-      unite: data.unite || "UNITE",
       marge_min_pourcent: data.marge_min_pourcent
         ? Number(data.marge_min_pourcent)
         : undefined,
@@ -220,7 +204,6 @@ const handleSubmit = async (data: Record<string, any>) => {
     };
 
     // Construction du FormData si nécessaire (si image présente)
-    // On vérifie si data.$files contient 'image'
     const files = data.$files as Record<string, File> | undefined;
     const imageFile = files?.['image'];
     
@@ -228,10 +211,6 @@ const handleSubmit = async (data: Record<string, any>) => {
     const conditionnementFiles: { file: File, index: number, key: string }[] = [];
     if (produitPayload.conditionnements) {
         produitPayload.conditionnements.forEach((c: any, index: number) => {
-            // Retrieve the original file from the input data (which came from ConditionnementField)
-            // Note: produitPayload.conditionnements is derived from data.conditionnements, 
-            // but we need access to the original objects which might hold the file property if we passed it through.
-            // Actually, data.conditionnements IS the array of objects from ConditionnementField.
             const originalItem = data.conditionnements[index];
             if (originalItem && originalItem.image_file) {
                 const key = `cond_img_${index}`;
@@ -240,7 +219,6 @@ const handleSubmit = async (data: Record<string, any>) => {
                     index: index,
                     key: key
                 });
-                // Tag the payload so backend knows to look for this file
                 c.image_key = key; 
             }
         });
@@ -255,7 +233,6 @@ const handleSubmit = async (data: Record<string, any>) => {
         Object.entries(produitPayload).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
                 if (key === 'conditionnements') {
-                     // Stringify conditionnements (which now include image_key markers)
                      formData.append(key, JSON.stringify(value));
                 } else {
                      formData.append(key, String(value));
@@ -263,12 +240,10 @@ const handleSubmit = async (data: Record<string, any>) => {
             }
         });
 
-        // Append main image
         if (imageFile) {
             formData.append('image', imageFile);
         }
 
-        // Append conditionnement images
         conditionnementFiles.forEach(cf => {
             formData.append(cf.key, cf.file);
         });
@@ -292,8 +267,6 @@ const handleSubmit = async (data: Record<string, any>) => {
       life: 3000,
     });
 
-    // Optionnel : Rediriger ou rester sur la page pour ajouter un autre
-    // router.push('/produits');
   } catch (error: any) {
     console.error("Erreur lors de l'enregistrement:", error);
     toast.add({
@@ -315,8 +288,15 @@ const handleCancel = () => {
 
 // Gérer le clic sur le bouton + d'un champ
 const handleAddClick = (field: any) => {
+  console.log("handleAddClick triggered for:", field.name);
   if (field.name === "categorie_id") {
+    console.log("Opening Category Dialog");
     showCategoryDialog.value = true;
+  } else if (field.name === "unite_id") {
+    console.log("Opening Unite Dialog");
+    showUniteDialog.value = true;
+  } else {
+    console.log("Unknown field for add click:", field.name);
   }
 };
 
@@ -351,7 +331,6 @@ const handleCreateCategory = async (data: Record<string, any>) => {
       throw new Error("Échec de la création de la catégorie");
     }
 
-    // Ajouter la nouvelle catégorie à la liste
     categories.value.push(newCategory);
 
     toast.add({
@@ -361,10 +340,8 @@ const handleCreateCategory = async (data: Record<string, any>) => {
       life: 3000,
     });
 
-    // Fermer le dialog
     showCategoryDialog.value = false;
 
-    // Sélectionner automatiquement après un court délai
     await nextTick();
     if (formRef.value && (formRef.value as any).formData) {
       (formRef.value as any).formData.categorie_id = newCategory.id;
@@ -380,5 +357,32 @@ const handleCreateCategory = async (data: Record<string, any>) => {
   } finally {
     loadingCategory.value = false;
   }
+};
+
+// Champs formulaire unité
+const uniteFields = [
+  { name: "nom", label: "Nom de l'unité", type: "text" as const, required: true, placeholder: "Ex: Kilogramme, Litre, Pièce..." }
+];
+
+// Créer une nouvelle unité
+const handleCreateUnite = async (data: Record<string, any>) => {
+    loadingUnite.value = true;
+    try {
+        const newUnite = await createUnite({ nom: data.nom });
+        if (!newUnite) throw new Error("Erreur création unité");
+        
+        unites.value.push(newUnite);
+        toast.add({ severity: "success", summary: "Succès", detail: "Unité créée", life: 3000 });
+        showUniteDialog.value = false;
+        
+        await nextTick();
+        if (formRef.value && (formRef.value as any).formData) {
+            (formRef.value as any).formData.unite_id = newUnite.id;
+        }
+    } catch(e: any) {
+        toast.add({ severity: "error", summary: "Erreur", detail: e.message, life: 3000 });
+    } finally {
+        loadingUnite.value = false;
+    }
 };
 </script>

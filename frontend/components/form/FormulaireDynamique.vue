@@ -252,10 +252,19 @@ const pendingDeletions = ref<Set<string>>(new Set()); // Stocker les champs marq
 const submitted = ref(false);
 const isSubmitting = ref(false); // État de loading interne
 
+// Différentes valeurs par défaut selon le type
+const getDefaultValue = (field: FormField) => {
+    if (field.value !== undefined) return field.value;
+    if (field.type === 'conditionnement' || field.type === 'achat-lines') return [];
+    if (field.type === 'checkbox') return false;
+    if (field.type === 'number') return null; // or 0? usually null for empty input
+    return "";
+};
+
 // Initialiser formData avec les champs
 onMounted(() => {
   props.fields.forEach((field) => {
-    formData.value[field.name] = field.value !== undefined ? field.value : "";
+    formData.value[field.name] = getDefaultValue(field);
   });
 });
 
@@ -267,7 +276,7 @@ watch(
     newFields.forEach((field) => {
       // 1. Initialiser le champ s'il n'existe pas encore dans formData
       if (!(field.name in formData.value)) {
-         formData.value[field.name] = field.value !== undefined ? field.value : "";
+         formData.value[field.name] = getDefaultValue(field);
       }
 
       // 2. Mettre à jour les champs si la valeur change dans les props (binding externe)
@@ -297,6 +306,11 @@ const getFieldClass = (index: number) => {
 
   // Fonction utilitaire pour vérifier si un champ force le "Pleine Largeur"
   const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'achat-lines' || f.type === 'image');
+
+  // 0. Si on a exactement 2 champs, on force chacun à prendre 100% de la largeur
+  if (props.fields.length === 2) {
+    return "md:col-span-2";
+  }
 
   // 1. Si le champ actuel est explicitement Pleine Largeur, on retourne col-span-2
   if (isFullWidthField(field)) {

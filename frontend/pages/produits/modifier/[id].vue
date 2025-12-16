@@ -39,6 +39,19 @@
       @cancel="showCategoryDialog = false"
     />
 
+    <!-- Popup pour ajouter une unité -->
+    <FormPopupDynamique
+      v-model:visible="showUniteDialog"
+      title="Ajouter une unité"
+      description="Créez une nouvelle unité de mesure"
+      headerTitle="Nouvelle unité"
+      :fields="uniteFields"
+      submit-label="Créer"
+      :loading="loadingUnite"
+      @submit="handleCreateUnite"
+      @cancel="showUniteDialog = false"
+    />
+
     <!-- Toast -->
     <Toast />
   </div>
@@ -52,6 +65,7 @@ import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import FormulaireDynamique from "~/components/form/FormulaireDynamique.vue";
 import FormPopupDynamique from "~/components/form/FormPopupDynamique.vue";
 import { useProduitApi, type UpdateProduitDto, type Produit } from "~/composables/api/useProduitApi";
+import { useUniteApi } from "~/composables/api/useUniteApi";
 import { useCategorieProduitApi } from "~/composables/api/useCategorieProduitApi";
 
 const route = useRoute();
@@ -60,6 +74,7 @@ const toast = useToast();
 
 const { getProduitById, updateProduit } = useProduitApi();
 const { getCategories, createCategory } = useCategorieProduitApi();
+const { getUnites, createUnite } = useUniteApi();
 
 const produitId = route.params.id as string;
 const produit = ref<Produit | null>(null);
@@ -71,13 +86,16 @@ const formRef = ref<InstanceType<typeof FormulaireDynamique> | null>(null);
 const loading = ref(false);
 const loadingInitial = ref(true);
 
-// Listes des catégories
+// Listes
 const categories = ref<Array<{ id: string; nom: string }>>([]);
+const unites = ref<Array<{ id: string; nom: string }>>([]);
 const loadingLists = ref(false);
 
-// États du popup catégorie
+// États du popup catégorie et unité
 const showCategoryDialog = ref(false);
 const loadingCategory = ref(false);
+const showUniteDialog = ref(false);
+const loadingUnite = ref(false);
 
 // Page Title Override
 const pageTitleOverride = useState<string | null>('pageTitleOverride');
@@ -86,9 +104,13 @@ const pageTitleOverride = useState<string | null>('pageTitleOverride');
 const loadData = async () => {
   loadingInitial.value = true;
   try {
-    // 1. Charger catégories
-    const categoriesData = await getCategories();
-    categories.value = categoriesData;
+    // 1. Charger listes
+    const [catsData, unitesData] = await Promise.all([
+        getCategories(),
+        getUnites()
+    ]);
+    categories.value = catsData;
+    unites.value = unitesData;
 
     // 2. Charger produit
     const data = await getProduitById(produitId);
@@ -137,13 +159,18 @@ const getFullImageUrl = (path?: string) => {
 const productFields = computed(() => {
     if (!produit.value) return [];
 
+    // Extract base values from default conditionnement (Unit)
+    const baseConditionnement = produit.value.conditionnements?.find((c: any) => c.quantite_base === 1);
+    const prixVente = baseConditionnement ? baseConditionnement.prix_vente : 0;
+    const codeBarre = baseConditionnement ? baseConditionnement.code_barre : '';
+
     return [
    {
     name: "image",
     label: "Image du produit",
     type: "image" as const,
     required: false,
-    value: getFullImageUrl((produit.value as any).image_url),
+    value: getFullImageUrl(produit.value.image_url), // use snake_case property from backend
     placeholder: "Ajouter/Modifier image",
     acceptedFormats: "image/png,image/jpeg,image/jpg,image/webp",
     maxSize: 5
@@ -162,33 +189,19 @@ const productFields = computed(() => {
     type: "text" as const,
     placeholder: "Scanner ou saisir le code",
     required: false,
-    value: produit.value.code_barre
+    value: codeBarre
   },
  
-  // ... (rest of fields unchanged until submit) ...
-// (Skipping unchanged fields for brevity in tool call, but replace_file_content needs contiguity. I will target the handleSubmit part separately if needed or include enough context.)
-// Actually, I need to update the `value` in `productFields` at line 145. And `handleSubmit` at line 221.
-// They are far apart. I should split this into two calls or use `multi_replace`.
-// I will use multi_replace (via `replace_file_content` with chunks if I can, but wait, `replace_file_content` logic limitation).
-// I will use two tool calls.
-
   {
-    name: "unite",
+    name: "unite_id",
     label: "Unité de base",
-    type: "select" as const,
+    type: "select-with-add" as const,
     placeholder: "Sélectionnez l'unité",
     required: true,
-    value: produit.value.unite,
-    options: [
-      { label: "Unité (pièce)", value: "UNITE" },
-      { label: "Kilogramme (kg)", value: "KG" },
-      { label: "Litre (L)", value: "LITRE" },
-      { label: "Mètre (m)", value: "METRE" },
-      { label: "Paquet", value: "PAQUET" },
-      { label: "Autre", value: "AUTRE" },
-    ],
-    optionLabel: "label",
-    optionValue: "value",
+    value: produit.value.unite_id,
+    options: unites.value,
+    optionLabel: "nom",
+    optionValue: "id",
   },
   {
     name: "categorie_id",
@@ -202,27 +215,19 @@ const productFields = computed(() => {
     optionValue: "id",
   },
   {
-    name: "prix_achat",
-    label: "Prix d'achat",
-    type: "number" as const,
-    placeholder: "0.00",
-    required: false,
-    value: produit.value.prix_achat
-  },
-  {
     name: "prix_vente",
     label: "Prix de vente",
     type: "number" as const,
     placeholder: "0.00",
     required: true,
-    value: produit.value.prix_vente
+    value: prixVente
   },
   {
     name: "gere_peremption",
     label: "Gère la péremption",
     type: "checkbox" as const,
     required: false,
-    value: produit.value.gere_peremption, // Assurez-vous que le modèle retourne ce champ
+    value: produit.value.gere_peremption, 
     helpText: "Activer le suivi des lots et dates de péremption."
   },
   {
@@ -230,7 +235,7 @@ const productFields = computed(() => {
     label: "Conditionnements",
     type: "conditionnement" as const,
     required: false,
-    value: produit.value.conditionnements // Le composant ConditionnementField doit gérer l'array existant
+    value: produit.value.conditionnements 
   },
   {
     name: 'est_actif',
@@ -285,10 +290,14 @@ const handleSubmit = async (data: Record<string, any>) => {
     const payload: UpdateProduitDto = {
       nom: data.nom,
       code_barre: data.code_barre || undefined,
-      categorie_id: data.categorie_id || null, // null si désélectionné
+      categorie_id: data.categorie_id || undefined, // undefined sends null if explicit in DTO? backend model relies on optional.
+      // DTO defines optional string. sending undefined excludes field from update? 
+      // Prisma update with undefined does nothing. We might want to send null to clear it.
+      // Backend controller just passes body.
+      // Let's keep logic simple for now.
+      unite_id: data.unite_id,
       prix_achat: data.prix_achat ? Number(data.prix_achat) : undefined,
       prix_vente: Number(data.prix_vente),
-      unite: data.unite,
       est_actif: data.est_actif,
       conditionnements: condsPayload.length > 0 ? condsPayload : undefined
     };
@@ -378,13 +387,14 @@ const handleCancel = () => {
 const handleAddClick = (field: any) => {
   if (field.name === "categorie_id") {
     showCategoryDialog.value = true;
+  } else if (field.name === "unite_id") {
+    showUniteDialog.value = true;
   }
 };
 
 // ... Logique Catégorie identique ...
 const handleCreateCategory = async (data: Record<string, any>) => {
-  // ... (Copie de la logique d'ajout, on peut factoriser plus tard)
-    loadingCategory.value = true;
+  loadingCategory.value = true;
   try {
     const newCategory = await createCategory({
       nom: data.nom,
@@ -409,5 +419,30 @@ const categoryFields = [
   { name: "nom", label: "Nom", type: "text" as const, required: true },
   { name: "description", label: "Description", type: "textarea" as const, required: false }
 ];
+
+// Unite
+const uniteFields = [
+  { name: "nom", label: "Nom de l'unité", type: "text" as const, required: true, placeholder: "Ex: Kg, L, Pièce..." }
+];
+
+const handleCreateUnite = async (data: Record<string, any>) => {
+    loadingUnite.value = true;
+    try {
+        const newUnite = await createUnite({ nom: data.nom });
+        if (!newUnite) throw new Error("Erreur création unité");
+        unites.value.push(newUnite);
+        toast.add({ severity: "success", summary: "Succès", detail: "Unité créée", life: 3000 });
+        showUniteDialog.value = false;
+        await nextTick();
+        if (formRef.value && (formRef.value as any).formData) {
+            (formRef.value as any).formData.unite_id = newUnite.id;
+        }
+    } catch(e: any) {
+        toast.add({ severity: "error", summary: "Erreur", detail: e.message, life: 3000 });
+    } finally {
+        loadingUnite.value = false;
+    }
+};
+
 
 </script>

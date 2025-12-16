@@ -1,7 +1,7 @@
 import { useSecureApi } from '~/composables/useSecureApi';
 import type { ApiResponse } from './config';
 
-export type UniteProduit = 'PIECE' | 'KG' | 'LITRE' | 'METRE' | 'CARTON' | 'PALETTE' | 'UNITE' | 'PAQUET' | 'AUTRE';
+// Enum UniteProduit removed
 
 export interface Conditionnement {
   id: string;
@@ -10,6 +10,7 @@ export interface Conditionnement {
   prix_vente: number;
   code_barre?: string;
   est_actif: boolean;
+  image_url?: string; // Ajout pour cohérence
 }
 
 export interface Produit {
@@ -19,7 +20,8 @@ export interface Produit {
   code_barre?: string;
   categorie_id?: string;
   categorie?: { id: string; nom: string };
-  unite: UniteProduit;
+  unite_id?: string;
+  unite?: { id: string; nom: string };
   prix_achat: number;
   prix_vente: number;
   marge_min_pourcent?: number;
@@ -28,6 +30,7 @@ export interface Produit {
   est_actif: boolean;
   date_creation: string;
   conditionnements?: Conditionnement[];
+  image_url?: string;
 }
 
 export interface HistoriquePrix {
@@ -46,7 +49,7 @@ export interface CreateProduitDto {
   description?: string;
   code_barre?: string;
   categorie_id?: string;
-  unite?: UniteProduit;
+  unite_id?: string;
   prix_achat?: number;
   prix_vente: number;
   marge_min_pourcent?: number;
@@ -57,7 +60,11 @@ export interface CreateProduitDto {
     quantite_base: number;
     prix_vente: number;
     code_barre?: string;
+    image_url?: string;
+    image_id?: string;
   }>;
+  image_url?: string;
+  image_id?: string;
 }
 
 export interface UpdateProduitDto {
@@ -65,7 +72,7 @@ export interface UpdateProduitDto {
   description?: string;
   code_barre?: string;
   categorie_id?: string;
-  unite?: UniteProduit;
+  unite_id?: string;
   prix_achat?: number;
   prix_vente?: number;
   marge_min_pourcent?: number;
@@ -78,8 +85,12 @@ export interface UpdateProduitDto {
     quantite_base?: number;
     prix_vente?: number;
     code_barre?: string;
+    image_url?: string;
+    image_id?: string;
     action?: 'create' | 'update' | 'delete';
   }>;
+  image_url?: string;
+  image_id?: string;
 }
 
 export interface ProduitQueryParams {

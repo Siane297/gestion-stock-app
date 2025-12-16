@@ -37,7 +37,7 @@ export interface StockAlertResult {
   quantite: number;
   quantite_minimum: number;
   magasin: { nom: string };
-  produit: { nom: string; code_barre: string | null; unite: string };
+  produit: { nom: string; code_barre: string | null; unite: { nom: string } | null };
   isAlert: boolean;
 }
 

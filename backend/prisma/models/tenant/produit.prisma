@@ -1,10 +1,11 @@
-enum UniteProduit {
-    UNITE
-    KG
-    LITRE
-    METRE
-    PAQUET
-    AUTRE
+model unite_produit {
+    id            String   @id @default(uuid())
+    nom           String   @unique
+    date_creation DateTime @default(now())
+
+    produits produit[]
+
+    @@map("unites_produit")
 }
 
 model categorie_produit {
@@ -19,22 +20,24 @@ model categorie_produit {
 }
 
 model produit {
-    id                 String       @id @default(uuid())
+    id                 String   @id @default(uuid())
     // prix_achat et prix_vente déplacés vers conditionnement_produit
     // code_barre déplacé vers conditionnement_produit
     categorie_id       String?
+    unite_id           String?
     nom                String
     description        String?
-    unite              UniteProduit @default(UNITE)
+    // unite              UniteProduit @default(UNITE)  <- Removed
     marge_min_pourcent Float? // Alerte marge
-    gere_peremption    Boolean      @default(false)
-    est_actif          Boolean      @default(true)
+    gere_peremption    Boolean  @default(false)
+    est_actif          Boolean  @default(true)
     image_url          String?
     image_id           String?
-    date_creation      DateTime     @default(now())
-    date_modification  DateTime     @updatedAt
+    date_creation      DateTime @default(now())
+    date_modification  DateTime @updatedAt
 
     categorie        categorie_produit?        @relation(fields: [categorie_id], references: [id], onDelete: SetNull)
+    unite            unite_produit?            @relation(fields: [unite_id], references: [id], onDelete: SetNull)
     prix_historiques historique_prix[]
     stocks           stock_magasin[]
     mouvements_stock mouvements_stock[]

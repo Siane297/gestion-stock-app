@@ -66,7 +66,7 @@ const loading = ref(false);
 const columns: TableColumn[] = [
     { field: 'nom', header: 'Nom du Produit', sortable: true, customRender: true },
     { field: 'categorie.nom', header: 'Catégorie', sortable: true, type: 'tag' },
-    { field: 'unite', header: 'Unité', sortable: true },
+    { field: 'unite.nom', header: 'Unité', sortable: true },
     { field: 'est_actif', header: 'Statut', sortable: true, customRender: true }, // Utilise le slot #column-est_actif
 ];
 

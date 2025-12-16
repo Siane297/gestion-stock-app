@@ -165,6 +165,7 @@ const baseFields = [
 
 const displayItems = computed(() => {
     // Masquer l'unité de base (quantite_base = 1) car gérée dans le produit principal
+    if (!Array.isArray(items.value)) return [];
     return items.value.filter(item => item.quantite_base !== 1);
 });
 
