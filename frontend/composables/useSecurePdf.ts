@@ -132,15 +132,18 @@ export const useSecurePdf = () => {
    * Générer un ticket de caisse via l'API dédiée
    * Utilise fetch manuellement pour accéder aux headers (Content-Disposition)
    */
-  const generateReceiptPdf = async (venteId: string): Promise<void> => {
+  /**
+   * Générer un ticket de caisse via l'API dédiée
+   * Options: 'download' (défaut), 'print' (ouvre dialog), 'blob' (retourne l'objet)
+   */
+  const generateReceiptPdf = async (venteId: string, action: 'download' | 'print' | 'blob' = 'download'): Promise<Blob | void> => {
       try {
-          console.log(`🧾 [PDF] Demande ticket vente: ${venteId}`);
+          console.log(`🧾 [PDF] Demande ticket vente: ${venteId} [${action}]`);
           
           const { accessToken } = useSecureAuth();
           const config = useRuntimeConfig();
           const apiBase = config.public.apiBase || 'http://localhost:3001';
           
-          // Utilisation de fetch natif pour pouvoir lire les headers (Content-Disposition)
           const response = await fetch(`${apiBase}/api/ventes/${venteId}/pdf`, {
               method: 'GET',
               headers: { 
@@ -162,9 +165,36 @@ export const useSecurePdf = () => {
                const match = contentDisposition.match(/filename="?([^"]+)"?/);
                if (match && match[1]) filename = match[1];
            }
+
+           if (action === 'blob') {
+               return blob;
+           }
            
-           downloadBlob(blob, filename);
-           toast.add({ severity: 'success', summary: 'Succès', detail: `Ticket ${filename} téléchargé`, life: 3000 });
+           if (action === 'download') {
+               downloadBlob(blob, filename);
+               toast.add({ severity: 'success', summary: 'Succès', detail: `Ticket ${filename} téléchargé`, life: 3000 });
+               return;
+           }
+
+           if (action === 'print') {
+               const blobUrl = URL.createObjectURL(blob);
+               // Ouvrir dans un iframe invisible pour imprimer sans popup bloquant ou nouvel onglet si possible
+               // Mais le plus fiable cross-browser est une nouvelle fenêtre
+               const printWindow = window.open(blobUrl);
+               if (printWindow) {
+                   printWindow.onload = () => {
+                       printWindow.print();
+                       // Optionnel: fermer après impression ? Souvent bloqué par sécurité
+                   };
+               } else {
+                   // Fallback si popup bloqué
+                   toast.add({ severity: 'warn', summary: 'Impression', detail: 'Veuillez autoriser les popups pour imprimer', life: 5000 });
+                   window.open(blobUrl, '_blank');
+               }
+               // Note: URL.revokeObjectURL devrait être appelé plus tard, mais difficile de savoir quand la fenêtre a fini de charger
+               setTimeout(() => URL.revokeObjectURL(blobUrl), 60000); 
+               return;
+           }
 
       } catch (err: any) {
           handlePdfError(err);

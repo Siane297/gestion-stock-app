@@ -100,11 +100,14 @@ const companyId = computed(() => {
   return (route.query.companyId as string) || user.value?.company?.id;
 });
 
+const isFinished = ref(false);
+const minTimeElapsed = ref(false);
+
 const checkStatus = async () => {
   if (!companyId.value) {
     progress.value = 100; // Pas d'ID, on suppose terminé ou erreur
     tasks.value.forEach(t => t.completed = true);
-    return true; // Stop polling
+    return true; // Stop polling logic locally (but redirect is managed elsewhere)
   }
 
   try {
@@ -121,44 +124,73 @@ const checkStatus = async () => {
         return false; // Continue polling
       } else if (status === 'TRIAL' || status === 'ACTIVE') {
         // Terminé !
+        isFinished.value = true;
         progress.value = 100;
         tasks.value.forEach(t => t.completed = true);
-        return true; // Stop polling
+        
+        // Si le temps min est écoulé, on redirige
+        if (minTimeElapsed.value) {
+           setTimeout(() => {
+                window.location.href = props.redirectTo;
+           }, 1000);
+           return true; 
+        }
+        // Sinon on attend que le timer minTimeElapsed le déclenche
+        return false; 
       } else if (status === 'FAILED') {
         error.value = "Une erreur est survenue lors de la création de votre espace. Veuillez contacter le support.";
-        return true; // Stop polling
+        return true; 
       }
     }
   } catch (err) {
     console.error("Erreur polling:", err);
-    // On ne stop pas forcément en cas d'erreur réseau temporaire
   }
   return false;
 };
 
 // Polling
 onMounted(async () => {
-  // Attendre un peu que le composable user soit prêt si besoin
-  if (!companyId.value) {
-    // Si on vient d'arriver, user store peut ne pas être hydraté
-    // On attend un peu ou on espère qu'il l'est
-  }
+    // Timer minimum de 3 secondes pour l'UX
+    setTimeout(() => {
+        minTimeElapsed.value = true;
+        // Si c'était déjà fini, on déclenche la redirection maintenant
+        if (isFinished.value) {
+             setTimeout(() => {
+                window.location.href = props.redirectTo;
+             }, 1000);
+        }
+    }, 3000);
 
   const interval = setInterval(async () => {
     if (error.value) {
       clearInterval(interval);
       return;
     }
-
-    const finished = await checkStatus();
-    if (finished) {
-      clearInterval(interval);
-      // Redirection après court délai
-      setTimeout(() => {
-        window.location.href = props.redirectTo;
-      }, 1000);
+    
+    // Si déjà fini et en attente du timer, on ne poll plus l'API inutilement, 
+    // mais on laisse l'interval actif pour checker minTimeElapsed ? 
+    // Non, le setTimeout s'en charge. On peut stop le polling API si isFinished.
+    if (isFinished.value) {
+        // On n'arrête pas l'interval ici car checkStatus gère la redirection
+        // Mais checkStatus retournera false tant que minTimeElapsed est false...
+        // Optimisation: si isFinished, on attend juste le timer.
+        return;
     }
-  }, 2000); // Check toutes les 2 secondes
+
+    const stop = await checkStatus();
+    if (stop && (status === 'FAILED' || !companyId.value)) {
+      clearInterval(interval);
+    }
+    // Note: Si SUCCESS mais pas minTimeElapsed, checkStatus retourne false (ou true avec delai géré)
+    // Ici j'ai modifié checkStatus pour ne renvoyer true (stop) que si redirection lancée ou erreur
+    if (isFinished.value && minTimeElapsed.value) {
+         clearInterval(interval);
+    }
+    
+  }, 1000); // Check toutes les 1 secondes (plus réactif)
+  
+  // Premier check immédiat
+  checkStatus();
 });
 </script>
 

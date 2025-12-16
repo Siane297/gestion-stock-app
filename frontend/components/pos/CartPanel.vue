@@ -131,6 +131,7 @@
     <PaymentModal 
         v-model:visible="showPayment"
         :total="store.cartTotal"
+        :successData="paymentSuccessData"
         @confirm="handlePaymentConfirm"
     />
     <Toast />
@@ -149,6 +150,7 @@ const toast = useToast();
 const { generateReceiptPdf } = useSecurePdf();
 
 const showPayment = ref(false);
+const paymentSuccessData = ref<{ venteId: string; change: number } | null>(null);
 
 const formatPrice = (p: number) => {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'KMF', maximumFractionDigits: 0 }).format(p);
@@ -163,6 +165,7 @@ const handleHold = () => {
 };
 
 const handleCheckoutClick = () => {
+    paymentSuccessData.value = null; // Reset previous success
     showPayment.value = true;
 };
 
@@ -170,23 +173,22 @@ const handlePaymentConfirm = async (paymentData: any) => {
     try {
         const result = await store.submitSale(paymentData);
         if (result && result.venteId) {
-            // Auto-download receipt PDF
-            try {
-                await generateReceiptPdf(result.venteId);
-                console.log('📄 Ticket de caisse téléchargé automatiquement');
-            } catch (pdfError) {
-                console.warn('⚠️  Impossible de télécharger le ticket:', pdfError);
-                // Don't block the sale if PDF download fails
-            }
-
+            // Succès : On passe les données à la modale pour afficher l'écran de succès
+            paymentSuccessData.value = {
+                venteId: result.venteId,
+                change: paymentData.change
+            };
+            
+            // On ne ferme PAS la modale ici via showPayment = false
+            // La modale passera automatiquement à l'étape 'success' grâce au watcher sur successData
+            
             toast.add({ 
                 severity: 'success', 
                 summary: 'Vente terminée', 
                 detail: `Monnaie à rendre : ${formatPrice(paymentData.change)}`, 
                 life: 5000 
             });
-            showPayment.value = false;
-            store.clearCart();
+            // Le panier est déjà vidé par store.clearCart() dans submitSale
         }
     } catch (e: any) {
         console.error('Erreur validation vente:', e);

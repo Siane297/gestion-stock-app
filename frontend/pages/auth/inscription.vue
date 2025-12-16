@@ -10,7 +10,6 @@
 <script setup lang="ts">
 import StepperInscription from '~/components/stepper/StepperInscription.vue';
 import { useSecureAuth } from '~/composables/useSecureAuth';
-import { useCurrentUser } from '~/composables/api/useUserApi';
 
 // Désactiver le layout
 definePageMeta({
@@ -204,14 +203,6 @@ const handleRegister = async (data: Record<string, any>) => {
     });
 
     if (response.success) {
-      // Charger immédiatement les informations utilisateur afin que user.company.schemaName
-      // soit disponible avant la première navigation (x-tenant-id envoyé dès le départ)
-      const { fetchUser } = useCurrentUser();
-      try {
-        await fetchUser();
-      } catch (e) {
-        console.warn('[inscription] Impossible de charger l\'utilisateur juste après inscription', e);
-      }
       // Rediriger vers la page de préparation avec l'ID company si disponible
       const companyId = response.data?.company?.id;
       await navigateTo(`/auth/preparation${companyId ? '?companyId=' + companyId : ''}`);
