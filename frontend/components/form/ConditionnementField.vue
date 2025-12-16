@@ -269,7 +269,7 @@ try {
 
 const getFullImageUrl = (path?: string) => {
     if (!path) return undefined;
-    if (path.startsWith('http')) return path;
+    if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) return path;
     return `${serverUrl}${path}`;
 };
 </script>
