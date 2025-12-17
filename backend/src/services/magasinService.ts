@@ -76,6 +76,8 @@ export class MagasinService {
 
     if (filters?.est_actif !== undefined) {
       where.est_actif = filters.est_actif;
+    } else {
+        where.est_actif = true;
     }
 
     return this.prisma.magasin.findMany({
@@ -206,22 +208,13 @@ export class MagasinService {
       throw new Error('Impossible de supprimer un magasin contenant du stock');
     }
 
-    // Vérifier mouvements historiques
-    const hasMovements = await this.prisma.mouvements_stock.count({ where: { magasin_id: id } });
+    // Force Soft Delete (Demande utilisateur: rien n'est supprimé en base)
+    await this.prisma.magasin.update({
+      where: { id },
+      data: { est_actif: false }
+    });
 
-    if (hasMovements > 0) {
-      // Soft delete
-      await this.prisma.magasin.update({
-        where: { id },
-        data: { est_actif: false }
-      });
-      logger.info(`Magasin désactivé (historique existant): ${id}`);
-      return { deleted: false, message: 'Magasin désactivé (contient historique de mouvements)' };
-    }
-
-    // Hard delete
-    await this.prisma.magasin.delete({ where: { id } });
-    logger.info(`Magasin supprimé: ${id}`);
+    logger.info(`Magasin désactivé (soft delete forcé): ${id}`);
     return { deleted: true, message: 'Magasin supprimé avec succès' };
   }
 

@@ -1,6 +1,9 @@
 import type { Request, Response } from 'express';
 import { ProduitService } from '../services/produitService.js';
 import { logger } from '../config/logger.js';
+import { CloudinaryService } from '../services/CloudinaryService.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 /**
  * Récupère tous les produits
@@ -63,27 +66,46 @@ export const createProduit = async (req: Request, res: Response) => {
     const produitService = new ProduitService(req.tenantPrisma);
     const productData = req.body;
 
-    // Gestion des uploads (Multi-files)
+    // Map pour stocker les fichiers uploadés : filename -> { url, public_id }
+    const uploadedFiles: Record<string, { url: string, public_id: string }> = {};
+
+    // Gestion des uploads (Multi-files) -> Cloudinary
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       const companyName = req.companyName || 'default';
-      
       const files = req.files as Express.Multer.File[];
       
-      files.forEach(file => {
-          const imageUrl = `/uploads/images/${companyName}/products/${file.filename}`;
-          
-          if (file.fieldname === 'image') {
-              // Image principale du produit
-              productData.image_url = imageUrl;
-              productData.image_id = file.filename;
-          } else {
-              // Vérifier si c'est une image de conditionnement (via image_key)
-              // Le parsing des conditionnements se fait plus bas, mais on peut préparer une map ou le faire après parsing.
-              // Le plus simple : on parse d'abord, ensuite on assigne.
-              // Mais ici on est AVANT le parsing JSON des conditionnements.
-              // Sauf que le file upload est déjà fait.
+      for (const file of files) {
+          try {
+              // Générer un ID public basé sur le nom de fichier généré par Multer (contient déjà un timestamp)
+              const publicId = `${companyName}-product-${path.parse(file.filename).name}`;
+              
+              const result = await CloudinaryService.uploadImage(
+                  file.path,
+                  'products',
+                  publicId
+              );
+
+              uploadedFiles[file.filename] = {
+                  url: result.secure_url,
+                  public_id: result.public_id
+              };
+
+              // Supprimer le fichier local temporaire
+              await fs.unlink(file.path).catch(err => logger.warn(`Impossible de supprimer le fichier temp ${file.path}`, err));
+          } catch (error) {
+              logger.error(`Erreur upload Cloudinary pour ${file.originalname}:`, error);
           }
-      });
+      }
+
+      // Assigner l'image principale
+      const mainImage = files.find(f => f.fieldname === 'image');
+      if (mainImage) {
+          const uploadedMain = uploadedFiles[mainImage.filename];
+          if (uploadedMain) {
+              productData.image_url = uploadedMain.url;
+              productData.image_id = uploadedMain.public_id;
+          }
+      }
     }
 
     // Parsing nécessaire car FormData envoie tout en string
@@ -95,18 +117,19 @@ export const createProduit = async (req: Request, res: Response) => {
         }
     }
     
-    // Assignation des images aux conditionnements après parsing
+    // Assignation des images aux conditionnements
     if (req.files && Array.isArray(req.files) && productData.conditionnements && Array.isArray(productData.conditionnements)) {
-        const companyName = req.companyName || 'default';
         const files = req.files as Express.Multer.File[];
         
         productData.conditionnements.forEach((cond: any) => {
             if (cond.image_key) {
                 const file = files.find(f => f.fieldname === cond.image_key);
                 if (file) {
-                    cond.image_url = `/uploads/images/${companyName}/products/${file.filename}`;
-                    // cond.image_id = file.filename; // si besoin
-                    delete cond.image_key; // Nettoyage
+                    const uploadedCond = uploadedFiles[file.filename];
+                    if (uploadedCond) {
+                        cond.image_url = uploadedCond.url;
+                        delete cond.image_key;
+                    }
                 }
             }
         });
@@ -151,19 +174,44 @@ export const updateProduit = async (req: Request, res: Response) => {
     const produitService = new ProduitService(req.tenantPrisma);
     const productData = req.body;
 
-    // Gestion des uploads (Multi-files)
+    // Map pour stocker les fichiers uploadés
+    const uploadedFiles: Record<string, { url: string, public_id: string }> = {};
+
+    // Gestion des uploads (Multi-files) -> Cloudinary
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       const companyName = req.companyName || 'default';
       const files = req.files as Express.Multer.File[];
       
-      files.forEach(file => {
-          const imageUrl = `/uploads/images/${companyName}/products/${file.filename}`;
-          
-          if (file.fieldname === 'image') {
-              productData.image_url = imageUrl;
-              productData.image_id = file.filename;
+      for (const file of files) {
+          try {
+              const publicId = `${companyName}-product-${path.parse(file.filename).name}`;
+              
+              const result = await CloudinaryService.uploadImage(
+                  file.path,
+                  'products',
+                  publicId
+              );
+
+              uploadedFiles[file.filename] = {
+                  url: result.secure_url,
+                  public_id: result.public_id
+              };
+
+              await fs.unlink(file.path).catch(err => logger.warn(`Impossible de supprimer le fichier temp ${file.path}`, err)); // Delete local
+          } catch (error) {
+               logger.error(`Erreur upload Cloudinary update pour ${file.originalname}:`, error);
           }
-      });
+      }
+
+      // Image principale
+      const mainImage = files.find(f => f.fieldname === 'image');
+      if (mainImage) {
+          const uploadedMain = uploadedFiles[mainImage.filename];
+          if (uploadedMain) {
+              productData.image_url = uploadedMain.url;
+              productData.image_id = uploadedMain.public_id;
+          }
+      }
     }
 
     // Parsing et typage (FormData)
@@ -175,17 +223,19 @@ export const updateProduit = async (req: Request, res: Response) => {
         }
     }
 
-    // Assignation des images aux conditionnements après parsing
+    // Assignation des images aux conditionnements
     if (req.files && Array.isArray(req.files) && productData.conditionnements && Array.isArray(productData.conditionnements)) {
-        const companyName = req.companyName || 'default';
         const files = req.files as Express.Multer.File[];
         
         productData.conditionnements.forEach((cond: any) => {
             if (cond.image_key) {
                 const file = files.find(f => f.fieldname === cond.image_key);
                 if (file) {
-                    cond.image_url = `/uploads/images/${companyName}/products/${file.filename}`;
-                    delete cond.image_key;
+                    const uploadedCond = uploadedFiles[file.filename];
+                    if (uploadedCond) {
+                        cond.image_url = uploadedCond.url;
+                        delete cond.image_key;
+                    }
                 }
             }
         });

@@ -105,23 +105,23 @@
         <div
           v-if="activeMenuId !== null"
           :style="dropdownStyle"
-          class="fixed z-[9999] w-52 bg-white rounded-xl shadow-lg border border-gris p-2"
+          class="fixed z-[9999] w-[180px] bg-white rounded-2xl shadow-lg border border-gris p-2"
         >
              <!-- Voir Détails -->
              <button
                @click="handleMenuAction('view', activeMenuData)"
-               class="w-full flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors text-left text-gray-600"
+               class="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-bleu/40 transition-colors text-left text-gray-600"
              >
-               <Icon icon="lucide:eye" class="w-5 h-auto text-blue-600" />
+               <Icon icon="tabler:eye" class="w-5 h-auto" />
                <span class="text-sm font-medium">Voir Détails</span>
              </button>
 
              <!-- Modifier -->
              <button
                @click="handleMenuAction('edit', activeMenuData)"
-               class="w-full flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-orange-50 transition-colors text-left text-gray-600"
+               class="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-bleu/40 transition-colors text-left text-gray-600"
              >
-               <Icon icon="lucide:edit" class="w-5 h-auto text-orange-600" />
+               <Icon icon="tabler:edit" class="w-5 h-auto" />
                <span class="text-sm font-medium">Modifier</span>
              </button>
 
@@ -130,9 +130,9 @@
              <!-- Supprimer -->
              <button
                @click="handleMenuAction('delete', activeMenuData)"
-               class="w-full flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors text-left text-red-600"
+               class="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-red-50 transition-colors text-left text-red-600"
              >
-               <Icon icon="lucide:trash-2" class="w-5 h-auto text-red-600" />
+               <Icon icon="tabler:trash" class="w-5 h-auto text-red-600" />
                <span class="text-sm font-medium">Supprimer</span>
              </button>
         </div>

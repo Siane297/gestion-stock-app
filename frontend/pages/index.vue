@@ -1,28 +1,22 @@
 <template>
-  <div class="min-h-screen w-full flex flex-col items-center justify-center bg-[#061141] gap-10 relative overflow-hidden">
+  <div class="min-h-screen w-full flex flex-col items-center justify-center bg-side2 gap-10 relative overflow-hidden">
     
-    <!-- Bordure rectangle en haut à droite -->
-    <div class="glass-corner top-right"></div>
-
-    <!-- Bordure rectangle en bas à gauche -->
-    <div class="glass-corner bottom-left"></div>
-
     <!-- Logo en haut -->
     <div class="relative z-10">
-      <AppLogo size="lg" />
+       <img src="~/assets/images/logo-white.png" alt="Logo" class=" w-[150px] h-auto object-contain" />
     </div>
 
     <!-- Contenu centré -->
     <div class="relative z-10">
       <div class="flex flex-col items-center justify-center">
         <!-- Icone de chargement -->
-        <div class="mb-8">
+        <div class="mb-2">
           <Icon icon="mdi:loading" class="text-6xl text-white animate-spin" />
         </div>
         
         <!-- Loading Text -->
         <h1 class="text-3xl font-bold text-white mb-4">
-          Gestionnaire de Présence
+          ZawadiCom
         </h1>
         <p class="text-lg text-white animate-pulse">
           Vérification de votre session...
@@ -35,7 +29,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
 import { useSecureAuth } from '~/composables/useSecureAuth';
-import AppLogo from '~/components/logo/AppLogo.vue';
 
 // Désactiver le layout pour prendre tout l'écran
 definePageMeta({
@@ -90,8 +83,8 @@ onMounted(async () => {
     const { user: authUser, isAuthenticated, checkAuth } = useSecureAuth();
     
     // Vérifier d'abord si l'utilisateur est déjà authentifié en mémoire
-    console.log('🔍 État initial - User:', authUser.value);
-    console.log('🔍 État initial - isAuthenticated:', isAuthenticated.value);
+    // console.log('🔍 État initial - User:', authUser.value);
+    // console.log('🔍 État initial - isAuthenticated:', isAuthenticated.value);
     
     // Si pas encore authentifié en mémoire, essayer avec le refresh token
     if (!isAuthenticated.value) {
@@ -99,13 +92,13 @@ onMounted(async () => {
       await checkAuth();
     }
     
-    console.log('🔍 Après checkAuth - User:', authUser.value);
-    console.log('🔍 Après checkAuth - isAuthenticated:', isAuthenticated.value);
+    // console.log('🔍 Après checkAuth - User:', authUser.value);
+    // console.log('🔍 Après checkAuth - isAuthenticated:', isAuthenticated.value);
 
     if (authUser.value && isAuthenticated.value) {
       // Utilisateur connecté -> Rediriger vers la première page accessible
       const targetRoute = getFirstAccessibleRoute(authUser.value);
-      console.log('✅ Utilisateur connecté, redirection vers:', targetRoute);
+      // console.log('✅ Utilisateur connecté, redirection vers:', targetRoute);
       await navigateTo(targetRoute, { replace: true });
     } else {
       // Non connecté -> Connexion

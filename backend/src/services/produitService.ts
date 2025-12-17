@@ -379,22 +379,13 @@ export class ProduitService {
       throw new Error('Impossible de supprimer un produit qui a du stock positif');
     }
 
-    // Vérifier mouvements historiques
-    const hasMovements = await this.prisma.mouvements_stock.count({ where: { produit_id: id } });
-
-    if (hasMovements > 0) {
-      // Soft delete
-      await this.prisma.produit.update({
-        where: { id },
-        data: { est_actif: false }
-      });
-      logger.info(`Produit désactivé (historique existant): ${id}`);
-      return { deleted: false, message: 'Produit désactivé (possède un historique de stock)' };
-    }
-
-    // Hard delete
-    await this.prisma.produit.delete({ where: { id } });
-    logger.info(`Produit supprimé: ${id}`);
+    // Force Soft Delete (Demange utilisateur: rien n'est supprimé en base)
+    await this.prisma.produit.update({
+      where: { id },
+      data: { est_actif: false }
+    });
+    
+    logger.info(`Produit désactivé (soft delete forcé): ${id}`);
     return { deleted: true, message: 'Produit supprimé avec succès' };
   }
 

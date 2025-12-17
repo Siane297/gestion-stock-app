@@ -93,6 +93,8 @@ export class ClientService {
 
     if (filters?.est_actif !== undefined) {
       where.est_actif = filters.est_actif;
+    } else {
+        where.est_actif = true;
     }
 
     if (filters?.search) {
@@ -199,22 +201,13 @@ export class ClientService {
       throw new Error('Client non trouvé');
     }
 
-    // Vérifier les ventes liées
-    const hasSales = await this.prisma.vente.count({ where: { client_id: id } });
-
-    if (hasSales > 0) {
-      // Soft delete
-      await this.prisma.client.update({
-        where: { id },
-        data: { est_actif: false }
-      });
-      logger.info(`Client désactivé (ventes existantes): ${id}`);
-      return { deleted: false, message: 'Client désactivé (ne peut pas être supprimé car possède des ventes)' };
-    }
-
-    // Hard delete
-    await this.prisma.client.delete({ where: { id } });
-    logger.info(`Client supprimé: ${id}`);
+    // Force Soft Delete (Demande utilisateur: rien n'est supprimé en base)
+    await this.prisma.client.update({
+      where: { id },
+      data: { est_actif: false }
+    });
+    
+    logger.info(`Client désactivé (soft delete forcé): ${id}`);
     return { deleted: true, message: 'Client supprimé avec succès' };
   }
 

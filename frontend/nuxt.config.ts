@@ -126,11 +126,11 @@ export default defineNuxtConfig({
   
   app: {
     head: {
-      title: 'Gestionnaire de Présence',
+      title: 'Gestionnaire de Stock et Vente',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Application de gestion de présence avec QR codes' }
+        { name: 'description', content: 'Application de gestion de Stock et Vente' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }

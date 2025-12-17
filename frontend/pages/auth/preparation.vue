@@ -1,13 +1,8 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center bg-[#061141] relative overflow-hidden">
+    class="min-h-screen flex items-center justify-center bg-side2 relative overflow-hidden">
     
     <!-- Bordure rectangle en haut à droite -->
-    <div class="glass-corner top-right"></div>
-
-    <!-- Bordure rectangle en bas à gauche -->
-    <div class="glass-corner bottom-left"></div>
-
     <div class="text-center space-y-6 p-8 relative z-10">
       <!-- Logo ou icône -->
       <div class="flex justify-center">

@@ -73,6 +73,8 @@ export class FournisseurService {
 
     if (filters?.est_actif !== undefined) {
       where.est_actif = filters.est_actif;
+    } else {
+        where.est_actif = true;
     }
 
     if (filters?.search) {
@@ -169,22 +171,13 @@ export class FournisseurService {
       throw new Error('Fournisseur non trouvé');
     }
 
-    // Vérifier les achats liés
-    const hasPurchases = await this.prisma.achat.count({ where: { fournisseur_id: id } });
+    // Force Soft Delete (Demande utilisateur: rien n'est supprimé en base)
+    await this.prisma.fournisseur.update({
+      where: { id },
+      data: { est_actif: false }
+    });
 
-    if (hasPurchases > 0) {
-      // Soft delete
-      await this.prisma.fournisseur.update({
-        where: { id },
-        data: { est_actif: false }
-      });
-      logger.info(`Fournisseur désactivé (achats existants): ${id}`);
-      return { deleted: false, message: 'Fournisseur désactivé (possède des achats liés)' };
-    }
-
-    // Hard delete
-    await this.prisma.fournisseur.delete({ where: { id } });
-    logger.info(`Fournisseur supprimé: ${id}`);
+    logger.info(`Fournisseur désactivé (soft delete forcé): ${id}`);
     return { deleted: true, message: 'Fournisseur supprimé avec succès' };
   }
 
