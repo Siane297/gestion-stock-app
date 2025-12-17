@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full flex flex-col items-center justify-center bg-side2 gap-10 relative overflow-hidden">
+  <div class="min-h-screen w-full flex flex-col items-center justify-center bg-side2  relative overflow-hidden">
     
     <!-- Logo en haut -->
     <div class="relative z-10">
@@ -11,7 +11,7 @@
       <div class="flex flex-col items-center justify-center">
         <!-- Icone de chargement -->
         <div class="mb-2">
-          <Icon icon="mdi:loading" class="text-6xl text-white animate-spin" />
+          <Icon icon="tabler:loader-2" class="text-6xl mb-3 text-white animate-spin" />
         </div>
         
         <!-- Loading Text -->

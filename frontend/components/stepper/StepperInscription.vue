@@ -110,7 +110,7 @@
                       (s) => !s.isSummary
                     )" :key="stepIndex" class="bg-bleu/20 border-2 border-[#a7d2e1] rounded-lg p-6">
                       <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <div class="bg-white border-2 border-[#a7d2e1] p-3 text-center mr-3 shadow-3d-icon">
+                        <div class="bg-white border-2 border-gris/40 rounded-lg p-3 text-center mr-3 shadow-3d-icon">
                           <Icon icon="mdi:check-circle" class="text-green-500" />
                         </div>
                         {{ step.title }}
@@ -174,7 +174,7 @@
 .shadow-3d-icon {
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.033),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 2px 4px -1px rgba(174, 174, 174, 0.06),
     inset 0 -2px 4px rgba(0, 0, 0, 0.1),
     inset 0 2px 4px rgba(255, 255, 255, 0.4);
 }
