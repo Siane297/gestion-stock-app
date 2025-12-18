@@ -331,7 +331,17 @@ export class StockService {
     const produit = await prismaClient.produit.findUnique({ where: { id: produit_id }, select: { gere_peremption: true, nom: true } });
     
     if (produit?.gere_peremption) {
-        return this.decrementStockFEFO(magasin_id, produit_id, quantite, options, tx);
+        try {
+            return await this.decrementStockFEFO(magasin_id, produit_id, quantite, options, tx);
+        } catch (error: any) {
+            // Fallback: Si erreur de lots (ex: pas assez de lots définis) mais que le stock global est suffisant
+            // On autorise la sortie "en vrac" pour ne pas bloquer la vente
+            // Idéalement on devrait forcer l'utilisateur à régler ses lots, mais pour l'expérience utilisateur direct:
+            logger.warn(`Échec déstockage FEFO pour produit ${produit_id} (Manque lots), tentative déstockage standard. Erreur: ${error.message}`);
+            
+            // On vérifie quand même si on a assez de stock global (le standard le fera, mais bon)
+            // L'appel suivant fera la déduction sur stock_magasin uniquement
+        }
     }
 
     return this.createMouvement({

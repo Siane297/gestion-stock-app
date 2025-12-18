@@ -27,7 +27,7 @@
       </div>
 
       <!-- Image de fond -->
-      <img src="~/assets/images/img-connect-2.png" alt="Connexion" class="w-[600px] max-w-2xl object-contain relative bottom-10 z-10 drop-shadow-2xl" />
+      <img src="~/assets/images/image-dash.png" alt="Connexion" class="w-[600px] max-w-2xl object-contain relative bottom-10 z-10 drop-shadow-2xl" />
 
       <!-- Contenu texte -->
       <div class="absolute bottom-10 left-10 right-10 p-8 z-20 bg-white/90 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl text-left">

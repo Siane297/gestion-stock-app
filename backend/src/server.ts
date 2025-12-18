@@ -31,6 +31,7 @@ import stockRoutes from './routes/stockRoutes.js';
 import achatRoutes from './routes/achatRoutes.js';
 import venteRoutes from './routes/venteRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -180,6 +181,7 @@ app.use('/api/stock', identifyTenant, requireTenant, stockRoutes);
 app.use('/api/achats', identifyTenant, requireTenant, achatRoutes);
 app.use('/api/ventes', identifyTenant, requireTenant, venteRoutes);
 app.use('/api/audit', identifyTenant, requireTenant, auditRoutes);
+app.use('/api/dashboard', identifyTenant, requireTenant, dashboardRoutes);
 
 // Route de base
 app.get('/', (req, res) => {

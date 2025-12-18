@@ -60,7 +60,7 @@
             <hr class="my-2 border-gris" />
             <button @click="handleLogout"
               class="w-full flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors text-red-600">
-              <Icon icon="lucide:log-out" class="w-6 h-auto" />
+              <Icon icon="tabler:logout" class="w-6 h-auto" />
               <span class="text-sm font-medium">Déconnexion</span>
             </button>
           </div>
@@ -73,7 +73,7 @@
         </button>
         <!-- Menu Burger (Mobile/Tablet uniquement) -->
         <button class="bg-white p-2 rounded-full transition-colors" @click="$emit('toggle-sidebar')">
-          <Icon icon="lucide:menu" class="text-2xl text-noir" />
+          <Icon icon="tabler:menu-3" class="text-2xl text-noir" />
         </button>
       </div>
     </div>
@@ -185,12 +185,12 @@ const isNotificationsOpen = ref(false);
 const menuItems = [
   {
     label: 'Mon profil',
-    icon: 'lucide:circle-user',
+    icon: 'tabler:user',
     link: '/profile',
   },
   {
     label: 'Paramètres',
-    icon: 'lucide:settings-2',
+    icon: 'tabler:settings',
     link: '/parametre',
   },
 ];

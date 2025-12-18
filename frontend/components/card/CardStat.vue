@@ -18,7 +18,7 @@
                 <div>
                     <!-- Value -->
                     <div class="mb-1">
-                        <h3 class="text-3xl font-bold text-noir">{{ value }}</h3>
+                        <h3 class="text-2xl font-extrabold text-noir">{{ value }}</h3>
                     </div>
 
                     <!-- Label -->
