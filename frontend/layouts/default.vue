@@ -1,5 +1,5 @@
 <template>
-  <SpeedInsights />
+
   <div class="h-screen overflow-hidden bg-slot">
     <!-- Sidebar -->
     <AppSidebar :is-open="isSidebarOpen" @close="closeSidebar" />
@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { SpeedInsights } from '@vercel/speed-insights/vue';
+
 import AppSidebar from '~/components/sidebar/AppSidebar.vue';
 import AppHeader from '~/components/header/AppHeader.vue';
 import AppBreadcrumb from '~/components/common/AppBreadcrumb.vue'; // Import Breadcrumb

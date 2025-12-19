@@ -56,25 +56,25 @@ const inscriptionSteps = [
     ],
   },
   {
-    title: "Boutique/Magasin",
+    title: "Boutique/Magasin Principal",
     fields: [
       {
         name: 'companyName',
-        label: "Nom de la boutique",
+        label: "Nom de la boutique/magasin",
         type: 'text' as const,
-        placeholder: 'Ma boutique',
+        placeholder: 'ex: Nom de votre boutique/Magasin',
         required: true,
       },
       {
         name: 'emailOrganisation',
-        label: "Email de la boutique",
+        label: "Email Pro (Boutique/Magasin)",
         type: 'email' as const,
         placeholder: 'contact@boutique.com',
         required: true,
       },
       {
         name: 'telephoneOrganisation',
-        label: "Téléphone de la boutique",
+        label: "Téléphone Pro (Boutique/Magasin)",
         type: 'tel' as const,
         placeholder: '+269 123 45 67',
         required: true,

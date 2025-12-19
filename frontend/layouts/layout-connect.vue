@@ -1,5 +1,5 @@
 <template>
-  <SpeedInsights />
+
   <div class="min-h-screen flex flex-col md:flex-row">
     <!-- Section gauche - Formulaire -->
     <div class="min-h-screen md:w-[40%] flex items-center justify-center bg-white px-6 py-8 sm:px-8 sm:py-10 lg:px-8">
@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { SpeedInsights } from '@vercel/speed-insights/vue';
+
 import AppLogo from '~/components/logo/AppLogo.vue';
 
 // Ce layout est utilisé pour les pages de connexion 
