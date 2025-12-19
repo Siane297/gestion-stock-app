@@ -39,7 +39,7 @@
           </div>
           <div class="flex justify-between">
             <span>Prix Vente:</span>
-            <span class="font-medium font-mono bg-green-50 text-green-700 px-1 rounded">{{ item.prix_vente }}</span>
+            <span class="font-medium font-mono bg-green-50 text-green-700 px-1 rounded">{{ formatPrice(item.prix_vente) }}</span>
           </div>
           <div v-if="item.code_barre" class="flex justify-between">
             <span>Code Barre:</span>
@@ -78,6 +78,7 @@
       :submit-label="editingIndex !== null ? 'Mettre à jour' : 'Ajouter'"
       @submit="handlePopupSubmit"
       @cancel="resetPopup"
+      
     />
   </div>
 </template>
@@ -85,6 +86,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
+import { useCurrency } from '~/composables/useCurrency';
 
 export interface ConditionnementItem {
   id?: string;
@@ -110,6 +112,8 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:modelValue': [value: ConditionnementItem[]];
 }>();
+
+const { formatPrice } = useCurrency();
 
 const showPopup = ref(false);
 const editingIndex = ref<number | null>(null);
@@ -141,7 +145,7 @@ const baseFields = [
   {
     name: 'prix_vente',
     label: 'Prix de Vente',
-    type: 'number' as const,
+    type: 'currency' as const,
     placeholder: '0.00',
     required: true,
     value: ''

@@ -1,10 +1,13 @@
 import { BasePdfService, PdfGenerationOptions } from './BasePdfService.js';
+import { getCurrencyByCode, getCurrencyByCountry } from '../../utils/countryCurrency.js';
 
 interface CompanyInfo {
   name: string;
   address?: string;
   phone?: string;
   logo?: string;
+  currency?: string;
+  country?: string;
 }
 
 /**
@@ -21,13 +24,21 @@ export class ReceiptPdfService extends BasePdfService {
   ): Promise<Buffer> {
     console.log('🧾 [ReceiptPDF] Début génération ticket de caisse');
 
+    // Déterminer la devise
+    const currency = companyInfo.currency 
+      ? getCurrencyByCode(companyInfo.currency) 
+      : getCurrencyByCountry(companyInfo.country || 'Comoros');
+    
+    const currencySymbol = currency?.symbol || 'KMF';
+
     // Préparer les données pour le template
     const data = {
       company: {
         name: companyInfo.name,
         address: companyInfo.address || '',
         phone: companyInfo.phone || '',
-        logo: companyInfo.logo || ''
+        logo: companyInfo.logo || '',
+        currencySymbol
       },
       vente: {
         numeroVente: vente.numero_vente || `VENTE-${vente.id.substring(0, 8)}`,
@@ -49,7 +60,8 @@ export class ReceiptPdfService extends BasePdfService {
         montantTotal: vente.montant_total.toFixed(2),
         montantPaye: vente.montant_paye?.toFixed(2) || vente.montant_total.toFixed(2),
         rendu: vente.montant_rendu?.toFixed(2) || '0.00',
-        modePaiement: this.formatModePaiement(vente.methode_paiement)
+        modePaiement: this.formatModePaiement(vente.methode_paiement),
+        currencySymbol
       }
     };
 

@@ -19,6 +19,7 @@ import pdfRoutes from './routes/pdfRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import companyRoutes from './routes/companyRoutes.js';
+import currencyRoutes from './routes/currencyRoutes.js';
 
 // Routes Stock
 import clientRoutes from './routes/clientRoutes.js';
@@ -178,6 +179,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes); // Super admin only
 app.use('/api/subscriptions', subscriptionRoutes); // Super admin only
+app.use('/api/currencies', currencyRoutes); // Devises - partiellement public
 
 // Route publique de scan QR (avant les middlewares tenant)
 

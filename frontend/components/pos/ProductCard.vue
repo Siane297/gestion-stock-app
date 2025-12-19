@@ -59,12 +59,15 @@
 
 <script setup lang="ts">
 import type { PosProductItem } from '~/composables/api/usePos';
+import { useCurrency } from '~/composables/useCurrency';
 
 const props = defineProps<{
   item: PosProductItem
 }>();
 
 const emit = defineEmits(['add']);
+
+const { formatPrice } = useCurrency();
 
 const isOutOfStock = computed(() => {
     return (props.item.stockAvailable || 0) <= 0;
@@ -74,9 +77,5 @@ const handleClick = () => {
     if (!isOutOfStock.value) {
         emit('add', props.item);
     }
-};
-
-const formatPrice = (p: number) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'KMF', maximumFractionDigits: 0 }).format(p);
 };
 </script>

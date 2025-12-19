@@ -90,6 +90,12 @@
                           :placeholder="field.placeholder" rows="3" class="w-full"
                           :class="{ 'p-invalid': errors[field.name] }" />
 
+                        <!-- Currency/Info Display (Read only) -->
+                        <div v-else-if="field.type === 'currency'" class="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+                          <span class="text-sm text-gray-600">{{ field.placeholder || 'Devise détectée' }}</span>
+                          <span class="font-bold text-primary">{{ formData[field.name] || '---' }}</span>
+                        </div>
+
                         <!-- Messages de validation mot de passe -->
                         <PasswordValidation v-if="
                           field.type === 'password' &&
@@ -200,7 +206,7 @@ import { z } from "zod";
 interface StepField {
   name: string;
   label: string;
-  type: "text" | "email" | "tel" | "password" | "textarea" | "select";
+  type: "text" | "email" | "tel" | "password" | "textarea" | "select" | "currency";
   placeholder?: string;
   required?: boolean;
   fullWidth?: boolean;
@@ -210,6 +216,7 @@ interface StepField {
   optionValue?: string;
   filter?: boolean;
   showFlag?: boolean;
+  info?: string; // Texte informatif supplémentaire
 }
 
 interface Step {
@@ -232,8 +239,16 @@ const props = withDefaults(defineProps<Props>(), {
   headerDescription: "Créez votre compte en quelques étapes",
 });
 
+const emit = defineEmits(['update:formData', 'change']);
+
 const activeStep = ref(1);
 const formData = ref<Record<string, any>>({});
+
+// Synchroniser avec le parent si nécessaire (optionnel car on utilise formData interne)
+watch(formData, (newVal) => {
+  emit('update:formData', newVal);
+  emit('change', newVal);
+}, { deep: true });
 const errors = ref<Record<string, string>>({});
 const errorMessage = ref("");
 const isLoading = ref(false);

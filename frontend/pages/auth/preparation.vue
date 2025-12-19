@@ -70,7 +70,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: 'Préparation de votre espace de gestion de présence',
   message: 'Configuration de votre environnement en cours...',
   duration: 7000,
-  redirectTo: '/accueil?onboarding=true',
+  redirectTo: '/accueil',
 });
 
 // Désactiver le layout

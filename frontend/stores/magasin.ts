@@ -19,16 +19,23 @@ export const useMagasinStore = defineStore('magasin', () => {
     try {
       magasins.value = await getMagasins({ est_actif: true });
       
-      // Initialiser la sélection si non définie
-      if (!currentMagasinId.value && magasins.value.length > 0) {
-        // Tenter de récupérer du localStorage
+      // Si aucun magasin n'est sélectionné OU si le magasin sélectionné n'existe plus dans la liste
+      const isCurrentValid = currentMagasinId.value && magasins.value.some(m => m.id === currentMagasinId.value);
+      
+      if (!isCurrentValid && magasins.value.length > 0) {
+        // Tenter de récupérer du localStorage (déjà fait dans initialize, mais au cas où)
         const storedId = localStorage.getItem('selected_magasin_id');
         if (storedId && magasins.value.some(m => m.id === storedId)) {
           currentMagasinId.value = storedId;
         } else {
           // Par défaut : le premier ou celui marqué "principal"
           const principal = magasins.value.find(m => m.nom.toLowerCase().includes('principal'));
-          currentMagasinId.value = principal ? principal.id : (magasins.value[0]?.id || null);
+          currentMagasinId.value = principal ? principal.id : magasins.value[0]?.id || null;
+          
+          // Sauvegarder le nouveau choix par défaut
+          if (currentMagasinId.value) {
+            localStorage.setItem('selected_magasin_id', currentMagasinId.value);
+          }
         }
       }
     } catch (error) {

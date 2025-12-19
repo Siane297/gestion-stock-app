@@ -1,6 +1,6 @@
 <template>
   <header
-    class="fixed top-0 left-0 lg:left-64 right-0 py-4 bg-white/90 backdrop-blur-sm border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 z-40 transition-all duration-300">
+    class="fixed top-0 left-0 lg:left-64 right-0 py-2.5 bg-white/90 backdrop-blur-sm border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 z-40 transition-all duration-300">
     <!-- Left Section: Logo + Page Title -->
     <div class="flex items-center gap-3 flex-1">
       <!-- Logo (Mobile/Tablet uniquement) -->

@@ -164,6 +164,7 @@ import InputIcon from 'primevue/inputicon';
 import AppButton from '~/components/button/AppButton.vue';
 import ConfirmationDialog from '~/components/dialog/ConfirmationDialog.vue';
 import { useRouter } from 'vue-router';
+import { useCurrency } from '~/composables/useCurrency';
 
 // --- Types ---
 
@@ -226,9 +227,11 @@ const getNestedValue = (obj: any, path: string) => {
   return path.split('.').reduce((acc, part) => acc && acc[part], obj);
 };
 
+const { formatPrice: globalFormatPrice } = useCurrency();
+
 const formatPrice = (value: any) => {
     if (value === undefined || value === null) return '-';
-    return Number(value).toLocaleString('fr-Fr') + ' FCFA'; // ou KMF selon préfs
+    return globalFormatPrice(value);
 };
 
 // --- Actions Globales ---

@@ -1,5 +1,5 @@
 <template>
-  <div class="px-4 pt-3">
+  <div class="px-4 py-3">
     <div class="relative" ref="selectorRef">
       <button 
         @click="isOpen = !isOpen"
@@ -63,12 +63,15 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { Icon } from '@iconify/vue';
 import { useMagasinStore } from '~/stores/magasin';
+import { useSecureAuth } from '~/composables/useSecureAuth';
 
 const store = useMagasinStore();
 const { magasins, currentMagasin, currentMagasinId } = storeToRefs(store);
 
 const isOpen = ref(false);
 const selectorRef = ref<HTMLElement | null>(null);
+
+const { user, isAuthenticated } = useSecureAuth();
 
 const selectMagasin = (id: string) => {
     store.setMagasin(id);
@@ -84,12 +87,15 @@ const handleClickOutside = (event: MouseEvent) => {
     }
 };
 
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
-    // Initialiser le store si ce n'est pas déjà fait
-    if (magasins.value.length === 0) {
+// Réagir à l'authentification
+watch(isAuthenticated, (newVal) => {
+    if (newVal && magasins.value.length === 0) {
         store.initialize();
     }
+}, { immediate: true });
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {

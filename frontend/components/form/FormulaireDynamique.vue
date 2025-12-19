@@ -2,16 +2,11 @@
   <!-- Formulaire -->
   <div class="flex flex-col gap-4">
     <!-- Bannière -->
-    <div v-if="showHeader" class="bg-[#064654] shadow-sm rounded-xl py-5 px-8">
-      <div class="container mx-auto">
-        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">
-          {{ title }}
-        </h1>
-        <p class="text-white/50">
-          {{ description }}
-        </p>
-      </div>
-    </div>
+    <SimplePageHeader 
+      v-if="showHeader" 
+      :title="title" 
+      :description="description" 
+    />
 
     <!-- Formulaire -->
     <div class="">
@@ -75,6 +70,24 @@
               <InputNumber v-else-if="field.type === 'number'" :id="field.name" v-model="formData[field.name]"
                 :placeholder="field.placeholder" :invalid="submitted && field.required && !formData[field.name]"
                 :min="field.min" :max="field.max" class="w-full" />
+
+              <!-- Currency Field (Basique & Dynamique) -->
+              <InputGroup v-else-if="field.type === 'currency'">
+                <InputGroupAddon v-if="currentCurrency?.symbolPosition === 'before'" 
+                  class="font-bold text-gray-600 bg-gray-50 border-r-0">
+                  {{ currentCurrency?.symbol }}
+                </InputGroupAddon>
+                
+                <InputNumber :id="field.name" v-model="formData[field.name]"
+                  :useGrouping="false" :maxFractionDigits="currencyDecimals"
+                  :placeholder="field.placeholder" :invalid="submitted && field.required && !formData[field.name]"
+                  :min="field.min" :max="field.max" class="w-full" />
+                
+                <InputGroupAddon v-if="currentCurrency?.symbolPosition !== 'before'" 
+                  class="font-bold text-gray-600 bg-gray-50 border-l-0">
+                  {{ currentCurrency?.symbol }}
+                </InputGroupAddon>
+              </InputGroup>
 
               <!-- DatePicker -->
               <DatePicker v-else-if="field.type === 'date'" :id="field.name" v-model="formData[field.name]"
@@ -163,6 +176,7 @@
 
 <script setup lang="ts">
 import InputText from "primevue/inputtext";
+import SimplePageHeader from "~/components/banner/SimplePageHeader.vue";
 import Select from "primevue/select";
 import { Icon } from "@iconify/vue";
 import InputMask from "primevue/inputmask";
@@ -177,7 +191,10 @@ import ColorPickerField from "~/components/form/ColorPickerField.vue";
 import ConditionnementField from "~/components/form/ConditionnementField.vue";
 import AchatLinesField from "~/components/form/AchatLinesField.vue";
 import Checkbox from 'primevue/checkbox';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
 import { useCountryFlags } from "~/composables/useCountryFlags";
+import { useCurrency } from "~/composables/useCurrency";
 
 interface FormField {
   name: string;
@@ -192,11 +209,10 @@ interface FormField {
   | "time"
   | "textarea"
   | "image"
-  | "image"
-  | "color"
   | "color"
   | "conditionnement"
   | "checkbox"
+  | "currency"
   | "achat-lines";
   placeholder?: string;
   required?: boolean;
@@ -250,6 +266,11 @@ const emit = defineEmits<{
 
 // Utiliser le composable pour les drapeaux
 const { getFlagClass } = useCountryFlags();
+const { currentCurrency } = useCurrency();
+
+const currencyCode = computed(() => currentCurrency.value?.code || 'KMF');
+const currencySuffix = computed(() => ` ${currentCurrency.value?.symbol || 'KMF'}`);
+const currencyDecimals = computed(() => currentCurrency.value?.decimalPlaces ?? 0);
 
 const showConfirmDialog = ref(false);
 const formData = ref<Record<string, any>>({});

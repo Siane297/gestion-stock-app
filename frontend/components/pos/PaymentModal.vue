@@ -37,18 +37,29 @@
       <div class="space-y-4">
         <div class="flex flex-col gap-2">
           <label class="font-semibold text-gray-700">Montant Reçu</label>
-          <InputNumber 
-            v-model="amountReceived" 
-            mode="currency" 
-            currency="KMF" 
-            locale="fr-FR"
-            class="w-full text-lg"
-            :class="{ 'p-invalid': amountReceived < localTotal }"
-            inputClass="text-center font-bold text-xl"
-            autofocus
-            @keyup.enter="handlePayment"
-            @input="(e) => amountReceived = Number(e.value) || 0"
-          />
+          <InputGroup>
+            <InputGroupAddon v-if="currentCurrency?.symbolPosition === 'before'" 
+              class="font-bold text-gray-600 bg-gray-50 border-r-0">
+              {{ currentCurrency?.symbol }}
+            </InputGroupAddon>
+
+            <InputNumber 
+              v-model="amountReceived" 
+              locale="fr-FR"
+              :useGrouping="false" :maxFractionDigits="currencyDecimals"
+              class="w-full text-lg"
+              :class="{ 'p-invalid': amountReceived < localTotal }"
+              inputClass="text-center font-bold text-xl"
+              autofocus
+              @keyup.enter="handlePayment"
+              @input="(e) => amountReceived = Number(e.value) || 0"
+            />
+
+            <InputGroupAddon v-if="currentCurrency?.symbolPosition !== 'before'" 
+              class="font-bold text-gray-600 bg-gray-50 border-l-0">
+              {{ currentCurrency?.symbol }}
+            </InputGroupAddon>
+          </InputGroup>
         </div>
 
         <div v-if="changeAmount >= 0" class="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-100">
@@ -135,6 +146,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import AppButton from '~/components/button/AppButton.vue';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
+import { useCurrency } from '~/composables/useCurrency';
 
 const props = defineProps<{
   visible: boolean;
@@ -145,6 +159,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:visible', 'confirm']);
 
 const { generateReceiptPdf } = useSecurePdf();
+const { currentCurrency, formatPrice } = useCurrency();
 
 const paymentMethods = [
   { id: 'ESPECES', label: 'Espèces', icon: 'pi pi-money-bill' },
@@ -183,13 +198,10 @@ watch(() => props.visible, (newVal) => {
   }
 });
 
-const formatPrice = (amount: number) => {
-  return new Intl.NumberFormat('fr-FR', { 
-    style: 'currency', 
-    currency: 'KMF',
-    minimumFractionDigits: 0 
-  }).format(amount);
-};
+const currencyCode = computed(() => currentCurrency.value?.code || 'KMF');
+const currencySuffix = computed(() => ` ${currentCurrency.value?.symbol || 'KMF'}`);
+const currencyDecimals = computed(() => currentCurrency.value?.decimalPlaces ?? 0);
+
 
 const handlePayment = () => {
   if (amountReceived.value < localTotal.value) return;

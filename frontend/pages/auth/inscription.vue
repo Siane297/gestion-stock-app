@@ -1,5 +1,6 @@
 <template>
   <StepperInscription
+    v-model:formData="currentFormData"
     :steps="inscriptionSteps"
     header-title="Bienvenue sur ZawadiCom"
     header-description="Créez votre espace de gestion en quelques étapes"
@@ -10,6 +11,7 @@
 <script setup lang="ts">
 import StepperInscription from '~/components/stepper/StepperInscription.vue';
 import { useSecureAuth } from '~/composables/useSecureAuth';
+import { useCurrencyApi } from '~/composables/api/useCurrencyApi';
 
 // Désactiver le layout
 definePageMeta({
@@ -17,6 +19,33 @@ definePageMeta({
 });
 
 const { register } = useSecureAuth();
+const { getCurrencyByCountry } = useCurrencyApi();
+
+const currentFormData = ref<Record<string, any>>({});
+const detectedCurrency = ref<string>('');
+
+// Surveiller les changements de pays pour mettre à jour la devise
+watch(() => currentFormData.value.country, async (newCountry) => {
+  if (newCountry) {
+    try {
+      const currency = await getCurrencyByCountry(newCountry);
+      if (currency) {
+        detectedCurrency.value = `${currency.symbol} (${currency.nameFr})`;
+        // Mettre à jour la devise dans le formData pour qu'elle soit affichée
+        currentFormData.value.currencyDisplay = detectedCurrency.value;
+      } else {
+        detectedCurrency.value = 'Non détectée';
+        currentFormData.value.currencyDisplay = 'Non détectée';
+      }
+    } catch (error) {
+      console.error('Erreur lors de la détection de la devise:', error);
+      detectedCurrency.value = 'Erreur';
+    }
+  } else {
+    detectedCurrency.value = '';
+    currentFormData.value.currencyDisplay = '';
+  }
+});
 
 // Configuration des étapes du stepper
 const inscriptionSteps = [
@@ -56,25 +85,25 @@ const inscriptionSteps = [
     ],
   },
   {
-    title: "Boutique/Magasin Principal",
+    title: "Boutique Principal",
     fields: [
       {
         name: 'companyName',
-        label: "Nom de la boutique/magasin",
+        label: "Nom de la boutique",
         type: 'text' as const,
-        placeholder: 'ex: Nom de votre boutique/Magasin',
+        placeholder: 'ex: Nom de votre boutique',
         required: true,
       },
       {
         name: 'emailOrganisation',
-        label: "Email Pro (Boutique/Magasin)",
+        label: "Email Pro (Boutique)",
         type: 'email' as const,
         placeholder: 'contact@boutique.com',
         required: true,
       },
       {
         name: 'telephoneOrganisation',
-        label: "Téléphone Pro (Boutique/Magasin)",
+        label: "Téléphone Pro (Boutique)",
         type: 'tel' as const,
         placeholder: '+269 123 45 67',
         required: true,
@@ -171,6 +200,13 @@ const inscriptionSteps = [
           { label: 'Australia', value: 'Australia', code: 'au' },
           { label: 'New Zealand', value: 'New Zealand', code: 'nz' },
         ],
+      },
+      {
+        name: 'currencyDisplay',
+        label: 'Devise monétaire',
+        type: 'currency' as const,
+        placeholder: 'Devise utilisée par votre pays',
+        fullWidth: true,
       },
       {
         name: 'address',

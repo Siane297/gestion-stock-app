@@ -139,7 +139,7 @@
           <span>{{vente.vendeur}}</span>
         </div>
         <div class="receipt-line">
-          <span>Magasin:</span>
+          <span>Boutique:</span>
           <span>{{vente.magasin}}</span>
         </div>
         {{#if (ne vente.client.nom "Client anonyme")}}
@@ -162,8 +162,8 @@
             ({{this.conditionnement}}) {{/if}}
           </div>
           <div class="item-details">
-            <span>{{this.quantite}} x {{this.prixUnitaire}} KMF</span>
-            <strong>{{this.total}} KMF</strong>
+            <span>{{this.quantite}} x {{this.prixUnitaire}} {{../vente.currencySymbol}}</span>
+            <strong>{{this.total}} {{../vente.currencySymbol}}</strong>
           </div>
         </div>
         {{/each}}
@@ -173,7 +173,7 @@
       <div class="receipt-total">
         <div class="total-line grand-total">
           <span>TOTAL:</span>
-          <strong>{{vente.montantTotal}} KMF</strong>
+          <strong>{{vente.montantTotal}} {{vente.currencySymbol}}</strong>
         </div>
 
         <div
@@ -187,12 +187,12 @@
         </div>
         <div class="total-line" style="font-size: 12px">
           <span>Montant payé:</span>
-          <span>{{vente.montantPaye}} KMF</span>
+          <span>{{vente.montantPaye}} {{vente.currencySymbol}}</span>
         </div>
         {{#if (gt vente.rendu 0)}}
         <div class="total-line" style="font-size: 12px">
           <span>Rendu:</span>
-          <strong>{{vente.rendu}} KMF</strong>
+          <strong>{{vente.rendu}} {{vente.currencySymbol}}</strong>
         </div>
         {{/if}}
       </div>

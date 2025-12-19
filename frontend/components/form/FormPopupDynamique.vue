@@ -39,7 +39,7 @@ import FormulaireDynamique from '~/components/form/FormulaireDynamique.vue';
 interface FormField {
   name: string;
   label: string;
-  type: "text" | "email" | "select" | "select-with-add" | "number" | "date" | "time" | "textarea" | "image" | "color" | "conditionnement" | "checkbox" | "achat-lines";
+  type: "text" | "email" | "select" | "select-with-add" | "number" | "date" | "time" | "textarea" | "image" | "color" | "conditionnement" | "checkbox" | "currency" | "achat-lines";
   placeholder?: string;
   required?: boolean;
   options?: string[] | any[];

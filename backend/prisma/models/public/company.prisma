@@ -19,6 +19,7 @@ model Company {
   emailOrganisation     String
   telephoneOrganisation String
   country               String
+  currency              String? // Code ISO 4217 optionnel (ex: "EUR"), override auto-détection par pays
   address               String?
   logo                  String?
   pdfHeader             String?

@@ -79,22 +79,10 @@ const trendIcon = computed(() => {
 const displayValue = computed(() => {
     // If value is already a string (e.g., formatted currency), return as-is
     if (typeof props.value === 'string') {
-        // Try to extract number from string (e.g., "170500 KMF")
-        const match = props.value.match(/([\d\s]+)/);
-        if (!match || !match[1]) return props.value;
-        
-        const numStr = match[1].replace(/\s/g, '');
-        const num = parseFloat(numStr);
-        
-        if (isNaN(num)) return props.value;
-        
-        // Extract currency suffix if present
-        const suffix = props.value.replace(/[\d\s,]+/, '').trim();
-        
-        return formatCompactNumber(num) + (suffix ? ' ' + suffix : '');
+        return props.value;
     }
     
-    // If value is a number
+    // If value is a number, use compact formatting
     return formatCompactNumber(props.value as number);
 });
 
@@ -154,20 +142,37 @@ const iconColorClass = computed(() => {
 // Extract number and currency from displayValue
 const displayNumber = computed(() => {
     const val = displayValue.value;
-    // Extract everything except the currency at the end
-    const match = val.match(/^(.+?)\s*([A-Z]{2,4})$/);
-    if (match && match[1]) {
-        return match[1].trim();
+    
+    // Check for suffix (ex: "0.00 E£")
+    const suffixMatch = val.match(/^(.+?)\s*([A-Z$€£¥]{1,5})$/);
+    if (suffixMatch && suffixMatch[1]) {
+        return suffixMatch[1].trim();
     }
+    
+    // Check for prefix (ex: "E£ 0.00")
+    const prefixMatch = val.match(/^([A-Z$€£¥]{1,5})\s*(.+?)$/);
+    if (prefixMatch && prefixMatch[2]) {
+        return prefixMatch[2].trim();
+    }
+    
     return val;
 });
 
+
 const displayCurrency = computed(() => {
     const val = displayValue.value;
-    // Extract currency code at the end (2-4 uppercase letters)
-    const match = val.match(/([A-Z]{2,4})$/);
-    return match && match[1] ? match[1] : null;
+    
+    // Try suffix match
+    const suffixMatch = val.match(/([A-Z$€£¥]{1,5})$/);
+    if (suffixMatch && suffixMatch[1]) return suffixMatch[1];
+    
+    // Try prefix match
+    const prefixMatch = val.match(/^([A-Z$€£¥]{1,5})/);
+    if (prefixMatch && prefixMatch[1]) return prefixMatch[1];
+    
+    return null;
 });
+
 
 const currencyColorClass = computed(() => {
     const colorClasses: Record<string, string> = {

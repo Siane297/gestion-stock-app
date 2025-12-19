@@ -154,7 +154,7 @@ const productFields = computed(() => [
   {
     name: "prix_vente",
     label: "Prix de vente",
-    type: "number" as const,
+    type: "currency" as const,
     placeholder: "0.00",
     required: true,
   },

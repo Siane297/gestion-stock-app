@@ -142,19 +142,17 @@
 import { ref } from 'vue';
 import { usePos } from '~/composables/api/usePos';
 import { useToast } from 'primevue/usetoast';
+import { useCurrency } from '~/composables/useCurrency';
 import AppButton from '~/components/button/AppButton.vue';
 import PaymentModal from '~/components/pos/PaymentModal.vue';
 
 const store = usePos();
 const toast = useToast();
 const { generateReceiptPdf } = useSecurePdf();
+const { formatPrice } = useCurrency();
 
 const showPayment = ref(false);
 const paymentSuccessData = ref<{ venteId: string; change: number } | null>(null);
-
-const formatPrice = (p: number) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'KMF', maximumFractionDigits: 0 }).format(p);
-};
 
 const handleHold = () => {
     if (store.cart.length === 0) return;

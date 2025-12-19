@@ -29,7 +29,7 @@
       
       <!-- KPI Cards Grid -->
       <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <CardStat :label="`Chiffre d'Affaires (${periodLabel})`" :value="formatCurrency(stats.revenue.value)" 
+        <CardStat :label="`Chiffre d'Affaires (${periodLabel})`" :value="formatPrice(stats.revenue.value)" 
           icon="tabler:coin" variant="primary" :loading="loading" 
           :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
           
@@ -66,6 +66,7 @@ import SalesEvolutionChart from '~/components/chart/SalesEvolutionChart.vue';
 import TopProductsList from '~/components/TopProductsList.vue';
 import { useMagasinStore } from '~/stores/magasin';
 import { useDashboardApi } from '~/composables/api/useDashboardApi';
+import { useCurrency } from '~/composables/useCurrency';
 
 // Initialiser les valeurs par défaut avec la nouvelle structure
 const stats = ref({
@@ -102,12 +103,9 @@ const loading = ref(true);
 const store = useMagasinStore();
 const { currentMagasinId } = storeToRefs(store);
 const { getDashboardStats } = useDashboardApi();
+const { formatPrice } = useCurrency();
 
 // Methods
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'KMF', maximumFractionDigits: 0 }).format(value);
-};
-
 const fetchDashboardStats = async () => {
   if (!currentMagasinId.value) return;
 

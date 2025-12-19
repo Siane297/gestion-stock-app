@@ -761,7 +761,9 @@ export class PdfController {
               name: true, 
               address: true, 
               telephoneOrganisation: true, 
-              logo: true 
+              logo: true,
+              currency: true,
+              country: true
             }
           }),
           new Promise((_, reject) => 
@@ -782,7 +784,9 @@ export class PdfController {
         name: company?.name || 'Entreprise',
         address: company?.address,
         phone: company?.telephoneOrganisation,
-        logo: company?.logo
+        logo: company?.logo,
+        currency: company?.currency,
+        country: company?.country || 'Comoros'
       };
 
       // Générer le PDF
