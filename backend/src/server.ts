@@ -77,6 +77,27 @@ console.log('CORS: Origines autorisées:', allowedOrigins);
 // Middleware de sécurité
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  // Content Security Policy explicite pour protection XSS
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'", "https:", "data:"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+  // Protection XSS navigateur
+  xXssProtection: true,
+  // Empêcher le sniffing MIME
+  xContentTypeOptions: true,
+  // Empêcher le clickjacking
+  xFrameOptions: { action: 'deny' },
 }));
 app.use(cors({
   origin: (origin, callback) => {
