@@ -1,8 +1,14 @@
 <template>
   <div class="space-y-6">
     <!-- Header & Filtres -->
-    <div class="flex flex-col bg-side p-5 rounded-lg justify-between gap-4">
-      <div class="flex items-center justify-between">
+    <div class="flex flex-col relative overflow-hidden bg-side p-5 rounded-lg justify-between gap-4">
+      <!-- Background Abstract -->
+      <div class="absolute inset-0 z-0">
+         <img src="~/assets/images/dashboard-header-bg.png" alt="Background" class="w-full h-full object-cover opacity-40" />
+         <div class="absolute inset-0 bg-gradient-to-r from-side/50 to-side/40"></div>
+      </div>
+
+      <div class="flex items-center justify-between relative z-10">
         <div>
           <h1 class="text-2xl font-bold text-white">Tableau de bord</h1>
           <p class="text-white/70 text-sm">Vue d'ensemble de votre activité</p>
@@ -36,7 +42,7 @@
         </div>
       </div>
       <!-- KPI Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 z-40 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <CardStat label="Chiffre d'Affaires (J)" :value="formatCurrency(stats.revenue_today)" icon="tabler:coin"
           variant="primary" :loading="loading" />
         <CardStat label="Ventes (J)" :value="stats.sales_count_today" icon="tabler:shopping-cart" variant="success"
@@ -47,9 +53,6 @@
           :loading="loading" />
       </div>
     </div>
-
-
-
     <!-- Charts & Tables Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
