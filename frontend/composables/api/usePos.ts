@@ -2,8 +2,8 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useProduitApi } from './useProduitApi';
 import { useVenteApi, type CreateVenteDto, type MethodePaiement } from './useVenteApi';
-import { useMagasinApi } from './useMagasinApi';
 import { useClientApi } from './useClientApi';
+import { useMagasinStore } from '~/stores/magasin';
 
 // Types pour le POS
 export interface PosProductItem {
@@ -37,8 +37,8 @@ export interface CartItem {
 export const usePos = defineStore('pos', () => {
   const { getProduits } = useProduitApi();
   const { createVente } = useVenteApi();
-  const { getMagasins } = useMagasinApi();
   const { getClients } = useClientApi();
+  const magasinStore = useMagasinStore(); 
   
   // State
   const allProducts = ref<any[]>([]);
@@ -47,8 +47,10 @@ export const usePos = defineStore('pos', () => {
   const searchQuery = ref('');
   const selectedCategory = ref<string | null>(null);
   const loading = ref(false);
-  const currentMagasinId = ref<string | null>(null);
-  const currentMagasin = ref<{ id: string, nom: string } | null>(null);
+  // On utilise le store global pour l'ID magasin
+  const currentMagasinId = computed(() => magasinStore.currentMagasinId);
+  const currentMagasin = computed(() => magasinStore.currentMagasin); 
+  
   const clients = ref<any[]>([]);
   const selectedClientId = ref<string | null>(null);
 
@@ -83,16 +85,9 @@ export const usePos = defineStore('pos', () => {
   const initPos = async () => {
     loading.value = true;
     try {
-      // 1. Charger le magasin (pour l'instant le premier trouvé, ou default)
-      if (!currentMagasinId.value) {
-         const magasins = await getMagasins({ est_actif: true });
-         if (magasins && magasins.length > 0) {
-             const principal = magasins.find(m => m.nom.toLowerCase().includes('principal')) || magasins[0];
-             if (principal) {
-                 currentMagasinId.value = principal.id;
-                 currentMagasin.value = principal;
-             }
-         }
+      // 1. S'assurer que le magasin est chargé via le store global
+      if (!magasinStore.currentMagasinId) {
+         await magasinStore.initialize();
       }
 
       // 2. Charger les clients

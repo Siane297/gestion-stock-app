@@ -21,7 +21,7 @@
         </button>
       </div>
       <!-- KPI Cards Grid -->
-      <div class="grid grid-cols-1 z-40 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <CardStat label="Chiffre d'Affaires (J)" :value="formatCurrency(stats.revenue_today)" icon="tabler:coin"
           variant="primary" :loading="loading" />
         <CardStat label="Ventes (J)" :value="stats.sales_count_today" icon="tabler:shopping-cart" variant="success"

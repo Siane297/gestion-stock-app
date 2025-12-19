@@ -6,8 +6,8 @@
         class="w-full flex items-center justify-between bg-white/10 hover:bg-white/15 transition-colors text-white rounded-lg p-3 group border border-white/5"
       >
         <div class="flex items-center gap-3 overflow-visible">
-          <div class="w-8 h-8 rounded-md bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform">
-            <Icon icon="tabler:building-store" class="text-white text-lg" />
+          <div class="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+            <Icon icon="tabler:building-store" class="text-noir text-lg" />
           </div>
           <div class="flex flex-col items-start overflow-hidden">
              <span class="text-xs text-white/50 font-medium uppercase tracking-wider">Boutique active</span>
@@ -73,6 +73,8 @@ const selectorRef = ref<HTMLElement | null>(null);
 const selectMagasin = (id: string) => {
     store.setMagasin(id);
     isOpen.value = false;
+    // Rafraîchir l'application pour appliquer le contexte partout
+    window.location.reload();
 };
 
 // Fermer le dropdown si on clique ailleurs

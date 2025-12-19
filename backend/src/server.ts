@@ -187,7 +187,7 @@ app.use('/api/dashboard', identifyTenant, requireTenant, dashboardRoutes);
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'API de Gestion de Présence - Backend',
+    message: 'API de Gestion de Stock et vente - Backend',
     version: '1.0.0',
     endpoints: {
       auth: '/api/auth',

@@ -9,7 +9,7 @@
       <AppHeader @toggle-sidebar="toggleSidebar" />
 
       <!-- Page Content (scrollable) -->
-      <main class="flex-1 overflow-y-auto mt-24 p-4 lg:px-9 lg:py-6">
+      <main class="flex-1 overflow-y-auto mt-[90px]  p-4 lg:px-9 lg:py-6">
         <AppBreadcrumb v-if="!isAccueilPage" />
         <slot />
       </main>

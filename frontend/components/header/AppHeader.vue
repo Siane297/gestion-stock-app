@@ -1,11 +1,11 @@
 <template>
   <header
-    class="fixed top-0 left-0 lg:left-64 right-0 py-2.5 max-md:p-4 bg-white  shadow flex items-center justify-between px-4 lg:px-6 z-30 ">
+    class="fixed top-0 left-0 lg:left-64 right-0 py-4 bg-white/90 backdrop-blur-sm border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 z-40 transition-all duration-300">
     <!-- Left Section: Logo + Page Title -->
     <div class="flex items-center gap-3 flex-1">
       <!-- Logo (Mobile/Tablet uniquement) -->
       <div class="lg:hidden flex items-center gap-2">
-        <AppLogo size="xs" />
+        <img src="~/assets/images/logo-2.png" alt="Logo" class=" w-16 h-auto object-contain" />
         <!-- <span class="font-bold text-base text-noir hidden sm:inline">Pointage App</span> -->
       </div>
 
@@ -24,7 +24,7 @@
     <!-- Right Section: Search, Notifications, Profile -->
     <div class="flex items-center gap-4">
       <!-- Search Bar (optional) -->
-      <div class="hidden md:flex items-center gap-2 bg-bleu border border-[#a7d2e1] px-4 py-2.5 rounded-full">
+      <div class="hidden md:flex items-center gap-2 bg-primary/10 border border-[#a7d2e1] px-4 py-2.5 rounded-full">
         <Icon icon="lucide:search" class="text-gray-400 text-lg" />
         <input type="text" placeholder="Rechercher..."
           class="bg-transparent border-none outline-none text-sm text-noir placeholder-gray-400 w-64" />
@@ -34,7 +34,7 @@
       <div class="relative">
         <!-- Desktop: Avatar + Nom + Rôle -->
         <button @click="toggleUserMenu"
-          class="hidden lg:flex items-center gap-6 px-2 py-2 bg-slot rounded-full transition-colors">
+          class="hidden lg:flex items-center gap-6 px-2 py-2 bg-bleu/50 rounded-full transition-colors">
           <AvatarInitials :name="userName" :subtitle="userRole" size="md" :show-name="true" />
           <Icon icon="lucide:chevron-down" class="text-noir w-5 h-auto transition-transform"
             :class="{ 'rotate-180': isUserMenuOpen }" />
@@ -45,7 +45,7 @@
         <!-- User Dropdown Menu -->
         <Transition name="dropdown">
           <div v-if="isUserMenuOpen"
-            class="absolute right-0 mt-4 w-56 bg-white rounded-xl shadow-lg border border-gris p-2">
+            class="absolute right-0 z-50 mt-4 w-56 bg-white rounded-xl shadow-lg border border-gris p-2">
             <!-- Infos user (Mobile uniquement) -->
             <div class="lg:hidden px-4 py-3 border-b border-gris">
               <AvatarInitials :name="userName" :subtitle="userRole" size="lg" :show-name="true" />

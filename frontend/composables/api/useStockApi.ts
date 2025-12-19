@@ -58,16 +58,28 @@ export interface MouvementQueryParams {
   limit?: number;
 }
 
+import { useMagasinStore } from '~/stores/magasin';
+
 export const useStockApi = () => {
   const { get, post } = useSecureApi();
 
   const getStocks = async (params?: StockQueryParams): Promise<StockMagasin[]> => {
-    const response = await get<ApiResponse<StockMagasin[]>>('/api/stock', { params });
+    const store = useMagasinStore();
+    const finalParams = {
+        ...params,
+        magasin_id: params?.magasin_id || store.currentMagasinId || undefined
+    };
+    const response = await get<ApiResponse<StockMagasin[]>>('/api/stock', { params: finalParams });
     return response.data || [];
   };
 
   const getMouvements = async (params?: MouvementQueryParams): Promise<MouvementStock[]> => {
-    const response = await get<ApiResponse<MouvementStock[]>>('/api/stock/mouvements', { params });
+    const store = useMagasinStore();
+    const finalParams = {
+        ...params,
+        magasin_id: params?.magasin_id || store.currentMagasinId || undefined
+    };
+    const response = await get<ApiResponse<MouvementStock[]>>('/api/stock/mouvements', { params: finalParams });
     return response.data || [];
   };
 

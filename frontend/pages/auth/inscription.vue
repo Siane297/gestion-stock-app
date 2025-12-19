@@ -27,14 +27,14 @@ const inscriptionSteps = [
         name: 'name',
         label: 'Nom complet',
         type: 'text' as const,
-        placeholder: 'Jean Dupont',
+        placeholder: 'ex: Ahmed Mohamed',
         required: true,
       },
       {
         name: 'email',
         label: 'Email',
         type: 'email' as const,
-        placeholder: 'votre@email.com',
+        placeholder: 'ex: votre@email.com',
         required: true,
       },
       {
@@ -56,25 +56,25 @@ const inscriptionSteps = [
     ],
   },
   {
-    title: "Organisation",
+    title: "Boutique/Magasin",
     fields: [
       {
         name: 'companyName',
-        label: "Nom de l'organisation",
+        label: "Nom de la boutique",
         type: 'text' as const,
-        placeholder: 'Ma Société',
+        placeholder: 'Ma boutique',
         required: true,
       },
       {
         name: 'emailOrganisation',
-        label: "Email de l'organisation",
+        label: "Email de la boutique",
         type: 'email' as const,
-        placeholder: 'contact@masociete.com',
+        placeholder: 'contact@boutique.com',
         required: true,
       },
       {
         name: 'telephoneOrganisation',
-        label: "Téléphone de l'organisation",
+        label: "Téléphone de la boutique",
         type: 'tel' as const,
         placeholder: '+269 123 45 67',
         required: true,

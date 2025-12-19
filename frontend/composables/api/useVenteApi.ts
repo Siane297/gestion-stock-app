@@ -88,11 +88,18 @@ export interface VenteStatsParams {
   dateTo?: string;
 }
 
+import { useMagasinStore } from '~/stores/magasin';
+
 export const useVenteApi = () => {
   const { get, post, patch } = useSecureApi();
 
   const getVentes = async (params?: VenteQueryParams): Promise<Vente[]> => {
-    const response = await get<ApiResponse<Vente[]>>('/api/ventes', { params });
+    const store = useMagasinStore();
+    const finalParams = {
+        ...params,
+        magasin_id: params?.magasin_id || store.currentMagasinId || undefined
+    };
+    const response = await get<ApiResponse<Vente[]>>('/api/ventes', { params: finalParams });
     return response.data || [];
   };
 
@@ -102,7 +109,12 @@ export const useVenteApi = () => {
   };
 
   const getVenteStats = async (params?: VenteStatsParams): Promise<VenteStats | null> => {
-    const response = await get<ApiResponse<VenteStats>>('/api/ventes/stats', { params });
+    const store = useMagasinStore();
+    const finalParams = {
+        ...params,
+        magasin_id: params?.magasin_id || store.currentMagasinId || undefined
+    };
+    const response = await get<ApiResponse<VenteStats>>('/api/ventes/stats', { params: finalParams });
     return response.data || null;
   };
 

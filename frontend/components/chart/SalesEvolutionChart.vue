@@ -8,7 +8,9 @@
     </div>
 
     <div class="h-[350px] w-full" v-if="!loading">
-      <apexchart type="area" height="100%" :options="chartOptions" :series="chartSeries"></apexchart>
+      <ClientOnly>
+        <apexchart type="area" height="100%" :options="chartOptions" :series="chartSeries"></apexchart>
+      </ClientOnly>
     </div>
     <div v-else class="h-[350px] w-full flex items-center justify-center bg-gray-50 rounded-lg animate-pulse">
       <span class="text-gray-400">Chargement du graphique...</span>

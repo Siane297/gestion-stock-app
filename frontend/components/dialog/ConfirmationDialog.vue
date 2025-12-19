@@ -25,6 +25,7 @@
           :variant="rejectVariant"
           size="sm"
           class="px-6"
+          icon-left="pi pi-times"
           @click="handleReject"
         />
         <AppButton
@@ -32,6 +33,7 @@
           :variant="acceptVariant"
           size="sm"
           class="px-6"
+          icon-left="pi pi-check"
           @click="handleAccept"
         />
       </div>

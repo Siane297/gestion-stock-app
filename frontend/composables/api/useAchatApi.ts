@@ -57,6 +57,7 @@ export const useAchatApi = () => {
   const { get, post, patch, delete: del } = useSecureApi();
 
   const getAchats = async (): Promise<Achat[]> => {
+    // Les achats sont globaux, pas de filtre par magasin
     const response = await get<ApiResponse<Achat[]>>('/api/achats');
     return response.data || [];
   };

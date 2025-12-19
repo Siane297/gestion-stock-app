@@ -211,12 +211,12 @@ const menuCategories = [
         link: '/comptabilite',
         permission: 'comptabilite',
       },
-      {
-        name: 'Facture',
-        icon: 'tabler:receipt',
-        link: '/facture',
-        permission: 'facture',
-      },
+      // {
+      //   name: 'Facture',
+      //   icon: 'tabler:receipt',
+      //   link: '/facture',
+      //   permission: 'facture',
+      // },
     ]
   },
   {

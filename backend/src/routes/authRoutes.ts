@@ -174,7 +174,7 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
 
         await tenantPrisma.magasin.create({
           data: {
-            nom: "Boutique Principale",
+            nom: companyName,
             localisation: address || null,
             telephone: telephoneOrganisation || null,
             email: emailOrganisation || null,
