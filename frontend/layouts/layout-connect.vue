@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import { SpeedInsights } from "@vercel/speed-insights/nuxt"
 import AppLogo from '~/components/logo/AppLogo.vue';
 
 // Ce layout est utilisé pour les pages de connexion 
