@@ -1,5 +1,6 @@
 <template>
   <div class="min-h-screen flex flex-col md:flex-row">
+    <SpeedInsights />
     <!-- Section gauche - Formulaire -->
     <div class="min-h-screen md:w-[40%] flex items-center justify-center bg-white px-6 py-8 sm:px-8 sm:py-10 lg:px-8">
       <div class="w-full max-w-md">
