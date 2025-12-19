@@ -30,8 +30,8 @@
                      <span :class="getStockColorClass(data.quantite, data.quantite_minimum)" class="font-bold text-lg">
                         {{ data.quantite }}
                      </span>
-                     <span class="text-xs text-gray-400">
-                        {{ data.produit.unite?.nom }}
+                     <span class="">
+                       ({{ data.produit.unite?.nom }})
                      </span>
                      <Tag v-if="data.quantite <= data.quantite_minimum" severity="danger" value="Bas" class="text-xs py-0 px-2" />
                  </div>
@@ -103,7 +103,7 @@ const handleDelete = (s: StockMagasin) => {
 const getStockColorClass = (qty: number, min: number) => {
     if (qty <= min) return 'text-red-600';
     if (qty <= min * 1.5) return 'text-orange-500';
-    return 'text-green-600';
+    return 'text-primary';
 };
 
 onMounted(() => {

@@ -69,7 +69,9 @@
               <!-- InputNumber -->
               <InputNumber v-else-if="field.type === 'number'" :id="field.name" v-model="formData[field.name]"
                 :placeholder="field.placeholder" :invalid="submitted && field.required && !formData[field.name]"
-                :min="field.min" :max="field.max" class="w-full" />
+                :min="field.min" :max="field.max" 
+                :useGrouping="false" :maxFractionDigits="3" :minFractionDigits="0"
+                class="w-full" />
 
               <!-- Currency Field (Basique & Dynamique) -->
               <InputGroup v-else-if="field.type === 'currency'">
@@ -80,6 +82,7 @@
                 
                 <InputNumber :id="field.name" v-model="formData[field.name]"
                   :useGrouping="false" :maxFractionDigits="currencyDecimals"
+                  :minFractionDigits="0"
                   :placeholder="field.placeholder" :invalid="submitted && field.required && !formData[field.name]"
                   :min="field.min" :max="field.max" class="w-full" />
                 
@@ -270,7 +273,9 @@ const { currentCurrency } = useCurrency();
 
 const currencyCode = computed(() => currentCurrency.value?.code || 'KMF');
 const currencySuffix = computed(() => ` ${currentCurrency.value?.symbol || 'KMF'}`);
-const currencyDecimals = computed(() => currentCurrency.value?.decimalPlaces ?? 0);
+const currencyDecimals = computed(() => {
+  return currentCurrency.value !== null ? currentCurrency.value.decimalPlaces : 2;
+});
 
 const showConfirmDialog = ref(false);
 const formData = ref<Record<string, any>>({});

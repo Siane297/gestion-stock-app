@@ -28,6 +28,7 @@
                      <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200 overflow-hidden flex-shrink-0">
                          <img v-if="data.image_url" :src="getFullImageUrl(data.image_url)" :alt="data.nom" class="w-full h-full object-cover" />
                          <i v-else class="pi pi-image text-gray-400 text-lg"></i>
+                          <!-- <span v-else class="text-2xl">📦</span> -->
                      </div>
                      <span class="font-medium text-gray-800">{{ data.nom }}</span>
                  </div>

@@ -210,6 +210,8 @@
               buttonLayout="horizontal"
               :step="1"
               :useGrouping="false"
+              :maxFractionDigits="3"
+              :minFractionDigits="0"
               inputClass="text-center"
               class="w-full"
               @input="(e) => (form.quantite_saisie = Number(e.value) || 0)"
@@ -255,6 +257,7 @@
                 :min="0"
                 :useGrouping="false"
                 :maxFractionDigits="currencyDecimals"
+                :minFractionDigits="0"
                 class="w-full"
                 @input="(e) => (form.prix_saisie = Number(e.value) || 0)"
               />
@@ -455,7 +458,7 @@ const currencySuffix = computed(
   () => ` ${currentCurrency.value?.symbol || "KMF"}`
 );
 const currencyDecimals = computed(
-  () => currentCurrency.value?.decimalPlaces ?? 0
+  () => currentCurrency.value !== null ? currentCurrency.value.decimalPlaces : 2
 );
 
 const items = computed({

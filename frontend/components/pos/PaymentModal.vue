@@ -45,8 +45,8 @@
 
             <InputNumber 
               v-model="amountReceived" 
-              locale="fr-FR"
               :useGrouping="false" :maxFractionDigits="currencyDecimals"
+              :minFractionDigits="0"
               class="w-full text-lg"
               :class="{ 'p-invalid': amountReceived < localTotal }"
               inputClass="text-center font-bold text-xl"
@@ -200,7 +200,9 @@ watch(() => props.visible, (newVal) => {
 
 const currencyCode = computed(() => currentCurrency.value?.code || 'KMF');
 const currencySuffix = computed(() => ` ${currentCurrency.value?.symbol || 'KMF'}`);
-const currencyDecimals = computed(() => currentCurrency.value?.decimalPlaces ?? 0);
+const currencyDecimals = computed(() => {
+    return currentCurrency.value !== null ? currentCurrency.value.decimalPlaces : 2;
+});
 
 
 const handlePayment = () => {

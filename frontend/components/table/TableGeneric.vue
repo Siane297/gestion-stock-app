@@ -63,7 +63,7 @@
         </template>
         
         <template v-else-if="col.type === 'price'" #body="{ data }">
-            <span class="font-mono">{{ formatPrice(getNestedValue(data, col.field)) }}</span>
+            <span class="font-bold text-primary">{{ formatPrice(getNestedValue(data, col.field)) }}</span>
         </template>
 
         <template v-else-if="col.customRender" #body="{ data }">
