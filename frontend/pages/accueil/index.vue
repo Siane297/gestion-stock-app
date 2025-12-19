@@ -14,32 +14,11 @@
           <p class="text-white/70 text-sm">Vue d'ensemble de votre activité</p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <!-- Sélecteur de Magasin -->
-          <div class="relative">
-            <select v-if="magasins.length > 1" v-model="currentMagasinId" @change="fetchDashboardStats"
-              class="appearance-none bg-white border border-gray-300 text-noir py-2 pl-4 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-all hover:bg-gray-50 cursor-pointer">
-              <option v-for="m in magasins" :key="m.id" :value="m.id">
-                {{ m.nom }}
-              </option>
-            </select>
-            <div v-if="magasins.length > 1"
-              class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-              <Icon icon="tabler:chevron-down" class="text-xs" />
-            </div>
-            <div v-else-if="currentMagasin"
-              class="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 shadow-sm flex items-center gap-2">
-              <Icon icon="tabler:building-store" class="text-gray-400" />
-              {{ currentMagasin.nom }}
-            </div>
-          </div>
-
-          <button @click="fetchDashboardStats"
-            class="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
+        <button @click="fetchDashboardStats"
+            class="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors shadow-sm"
             title="Rafraîchir">
             <Icon icon="tabler:refresh" :class="{ 'animate-spin': loading }" />
-          </button>
-        </div>
+        </button>
       </div>
       <!-- KPI Cards Grid -->
       <div class="grid grid-cols-1 z-40 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -66,12 +45,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { Icon } from '@iconify/vue';
 import CardStat from '~/components/card/CardStat.vue';
 import SalesEvolutionChart from '~/components/chart/SalesEvolutionChart.vue';
 import TopProductsList from '~/components/TopProductsList.vue';
-import { useMagasinApi } from '~/composables/api/useMagasinApi';
+import { useMagasinStore } from '~/stores/magasin';
 import { useDashboardApi } from '~/composables/api/useDashboardApi';
 
 // Initialiser les valeurs par défaut
@@ -84,14 +64,11 @@ const stats = ref({
 });
 const topProducts = ref<any[]>([]);
 const salesData = ref<{ date: string, amount: number }[]>([]);
-const magasins = ref<any[]>([]);
-const currentMagasinId = ref<string>('');
 const loading = ref(true);
 
-const { getMagasins } = useMagasinApi();
+const store = useMagasinStore();
+const { currentMagasinId } = storeToRefs(store);
 const { getDashboardStats } = useDashboardApi();
-
-const currentMagasin = computed(() => magasins.value.find(m => m.id === currentMagasinId.value));
 
 // Methods
 const formatCurrency = (value: number) => {
@@ -116,21 +93,15 @@ const fetchDashboardStats = async () => {
   }
 };
 
+// Recharger quand le magasin change
+watch(currentMagasinId, () => {
+    fetchDashboardStats();
+});
+
 onMounted(async () => {
-  try {
-    const mags = await getMagasins({ est_actif: true });
-    magasins.value = mags || [];
-
-    if (magasins.value.length > 0) {
-      // Logique de sélection par défaut (Principal ou 1er)
-      const principal = magasins.value.find(m => m.nom.toLowerCase().includes('principal'));
-      currentMagasinId.value = principal ? principal.id : magasins.value[0].id;
-
-      await fetchDashboardStats();
-    }
-  } catch (e) {
-    console.error("Erreur init dashboard", e);
-    loading.value = false;
+  await store.initialize();
+  if (currentMagasinId.value) {
+    await fetchDashboardStats();
   }
 });
 </script>

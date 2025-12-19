@@ -25,6 +25,9 @@
       </div>
     </div>
 
+    <!-- Store Selector -->
+    <StoreSelector />
+
     <!-- Navigation -->
     <nav class="flex-1 mt-2 overflow-y-auto p-4">
       <ClientOnly>
@@ -66,6 +69,7 @@ import { useRoute } from 'vue-router';
 import { useSecureAuth } from '~/composables/useSecureAuth';
 import SidebarMenuItem from '~/components/sidebar/SidebarMenuItem.vue';
 import AppLogo from '~/components/logo/AppLogo.vue';
+import StoreSelector from '~/components/sidebar/StoreSelector.vue';
 
 interface Props {
   isOpen?: boolean;
