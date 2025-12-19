@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full bg-bleu/40 border-2 rounded-lg p-3 border-gris/40">
+  <div class="flex flex-col h-[600px] bg-bleu/40 border-2 rounded-lg p-3 border-gris/40">
     <!-- Header Panier -->
     <div class="p-4 border-b border-gray-100 rounded-t-lg bg-primary flex justify-between items-center">
       <h2 class="font-bold text-white flex items-center gap-2">

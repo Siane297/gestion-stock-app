@@ -40,6 +40,7 @@ const router = useRouter();
 const toast = useToast();
 
 const { getClientById, updateClient } = useClientApi();
+const { extractErrorMessage } = useErrorHandler();
 
 const clientId = route.params.id as string;
 const client = ref<Client | null>(null);
@@ -152,7 +153,8 @@ const handleSubmit = async (data: any) => {
         
     } catch (error: any) {
         console.error("Erreur modification client", error);
-        toast.add({ severity: 'error', summary: 'Erreur', detail: error.message || 'Impossible de modifier le client', life: 5000 });
+        const errorMsg = extractErrorMessage(error, 'Impossible de modifier le client');
+        toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     } finally {
         loading.value = false;
     }

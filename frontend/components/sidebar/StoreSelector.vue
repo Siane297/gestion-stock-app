@@ -49,7 +49,7 @@
                         :icon="currentMagasinId === magasin.id ? 'tabler:circle-check-filled' : 'tabler:building-store'" 
                         :class="currentMagasinId === magasin.id ? 'text-blue-600' : 'text-gray-400'"
                     />
-                    <span class="font-medium text-sm">{{ magasin.nom }}</span>
+                    <span class="font-medium tracking-wide text-sm">{{ magasin.nom }}</span>
                 </button>
             </div>
         </div>

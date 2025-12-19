@@ -130,6 +130,11 @@
               <small v-if="submitted && field.required && !formData[field.name]" class="text-red-500 block">
                 {{ field.label }} est requis
               </small>
+              
+              <!-- Backend field error (if any) -->
+              <small v-else-if="errors && errors[field.name]" class="text-red-500 block">
+                {{ errors[field.name] }}
+              </small>
 
               <!-- Help Text (Generic) -->
               <small v-if="field.helpText && field.type !== 'checkbox'" class="block text-gray-500 text-xs mt-1">
@@ -223,6 +228,7 @@ interface Props {
   showCancelButton?: boolean;
   showHeader?: boolean;
   loading?: boolean;
+  errors?: Record<string, string>; // Backend validation errors: { fieldName: errorMessage }
 }
 
 const props = withDefaults(defineProps<Props>(), {

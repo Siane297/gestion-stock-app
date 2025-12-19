@@ -61,6 +61,7 @@ const toast = useToast();
 const { getAchatById, updateAchat, updateAchatStatut } = useAchatApi();
 const { getFournisseurs } = useFournisseurApi();
 const { getMagasins } = useMagasinApi();
+const { extractErrorMessage } = useErrorHandler();
 
 const achatId = route.params.id as string;
 const achat = ref<any>(null);
@@ -271,7 +272,8 @@ const handleSubmit = async (data: any) => {
 
     } catch (error: any) {
         console.error("Update Error", error);
-        toast.add({ severity: 'error', summary: 'Erreur', detail: error.message || "Erreur de mise à jour", life: 5000 });
+        const errorMsg = extractErrorMessage(error, "Erreur de mise à jour");
+        toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     } finally {
         saving.value = false;
     }

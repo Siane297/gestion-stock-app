@@ -62,6 +62,7 @@ import Toast from 'primevue/toast';
 import Avatar from 'primevue/avatar';
 
 const { getEmployees, deleteEmployee } = useEmployeeApi();
+const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
 
@@ -98,7 +99,8 @@ const handleDelete = async (emp: any) => {
         toast.add({ severity: 'success', summary: 'Succès', detail: 'Employé supprimé', life: 3000 });
         await loadData();
     } catch (e: any) {
-         toast.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Impossible de supprimer', life: 5000 });
+         const errorMsg = extractErrorMessage(e, 'Impossible de supprimer cet employé');
+         toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     }
 };
 

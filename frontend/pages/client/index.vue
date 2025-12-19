@@ -51,6 +51,7 @@ import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 
 const { getClients, deleteClient } = useClientApi();
+const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
 
@@ -87,7 +88,8 @@ const handleDelete = async (client: Client) => {
         toast.add({ severity: 'success', summary: 'Succès', detail: 'Client supprimé', life: 3000 });
         await loadData();
     } catch (e: any) {
-         toast.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Impossible de supprimer', life: 5000 });
+         const errorMsg = extractErrorMessage(e, 'Impossible de supprimer ce client');
+         toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     }
 };
 

@@ -31,7 +31,7 @@
                         {{ data.quantite }}
                      </span>
                      <span class="text-xs text-gray-400">
-                        {{ data.produit.unite }}
+                        {{ data.produit.unite?.nom }}
                      </span>
                      <Tag v-if="data.quantite <= data.quantite_minimum" severity="danger" value="Bas" class="text-xs py-0 px-2" />
                  </div>

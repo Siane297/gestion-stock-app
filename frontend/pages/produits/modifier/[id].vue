@@ -75,6 +75,7 @@ const toast = useToast();
 const { getProduitById, updateProduit } = useProduitApi();
 const { getCategories, createCategory } = useCategorieProduitApi();
 const { getUnites, createUnite } = useUniteApi();
+const { extractErrorMessage } = useErrorHandler();
 
 const produitId = route.params.id as string;
 const produit = ref<Produit | null>(null);
@@ -369,10 +370,11 @@ const handleSubmit = async (data: Record<string, any>) => {
 
   } catch (error: any) {
     console.error("Erreur enregistrement:", error);
+    const errorMsg = extractErrorMessage(error, "Erreur lors de la modification");
     toast.add({
       severity: "error",
       summary: "Erreur",
-      detail: error.message || "Erreur lors de la modification",
+      detail: errorMsg,
       life: 5000,
     });
   } finally {
@@ -409,7 +411,8 @@ const handleCreateCategory = async (data: Record<string, any>) => {
       (formRef.value as any).formData.categorie_id = newCategory.id;
     }
   } catch (error: any) {
-    toast.add({ severity: "error", summary: "Erreur", detail: error.message, life: 3000 });
+    const errorMsg = extractErrorMessage(error, "Erreur catégorie");
+    toast.add({ severity: "error", summary: "Erreur", detail: errorMsg, life: 3000 });
   } finally {
     loadingCategory.value = false;
   }
@@ -438,7 +441,8 @@ const handleCreateUnite = async (data: Record<string, any>) => {
             (formRef.value as any).formData.unite_id = newUnite.id;
         }
     } catch(e: any) {
-        toast.add({ severity: "error", summary: "Erreur", detail: e.message, life: 3000 });
+        const errorMsg = extractErrorMessage(e, "Erreur unité");
+        toast.add({ severity: "error", summary: "Erreur", detail: errorMsg, life: 3000 });
     } finally {
         loadingUnite.value = false;
     }

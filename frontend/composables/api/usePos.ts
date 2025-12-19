@@ -150,7 +150,7 @@ export const usePos = defineStore('pos', () => {
           name: p.nom,
           price: p.prix_vente,
           isPack: false,
-          packLabel: 'Unité',
+          packLabel: p.unite?.nom,
           quantityInBase: 1,
           stockAvailable: stockProduit,
           categoryName: p.categorie?.nom,

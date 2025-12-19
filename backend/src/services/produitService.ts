@@ -196,6 +196,17 @@ export class ProduitService {
     if (data.code_barre) {
       await this.checkCodeBarreUnique(data.code_barre);
     }
+
+    // Récupérer le nom de l'unité si une unite_id est fournie
+    let defaultConditionnementName = 'Unité'; // Fallback par défaut
+    if (data.unite_id) {
+      const unite = await this.prisma.unite_produit.findUnique({
+        where: { id: data.unite_id }
+      });
+      if (unite && unite.nom) {
+        defaultConditionnementName = unite.nom;
+      }
+    }
     
     return this.prisma.$transaction(async (tx) => {
       // 1. Création du produit (abstrait)
@@ -208,10 +219,10 @@ export class ProduitService {
           marge_min_pourcent: data.marge_min_pourcent !== undefined ? Number(data.marge_min_pourcent) : undefined,
           gere_peremption: data.gere_peremption || false,
           est_actif: data.est_actif !== undefined ? data.est_actif : true,
-          // 2. Création du conditionnement par défaut "Unité"
+          // 2. Création du conditionnement par défaut avec le nom de l'unité
           conditionnements: {
             create: {
-              nom: 'Unité',
+              nom: defaultConditionnementName,
               quantite_base: 1,
               prix_vente: Number(data.prix_vente),
               // Si prix_achat est fourni, on le met sur le conditionnement

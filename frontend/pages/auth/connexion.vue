@@ -3,7 +3,7 @@
     <!-- Titre -->
     <div class="mb-8">
       <h2 class="text-3xl font-bold text-gray-900 mb-2">Connexion</h2>
-      <p class="text-gray-600">Accédez à votre espace de gestion de gestion</p>
+      <p class="text-gray-600">Accédez à votre espace de gestion</p>
     </div>
 
     <!-- Formulaire -->

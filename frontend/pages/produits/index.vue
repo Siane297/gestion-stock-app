@@ -114,7 +114,13 @@ const handleDelete = async (prod: Produit) => {
         toast.add({ severity: 'success', summary: 'Succès', detail: 'Produit supprimé', life: 3000 });
         await loadProduits();
     } catch (e: any) {
-         toast.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Impossible de supprimer', life: 5000 });
+         let errorMessage = 'Impossible de supprimer';
+         if (e.response && e.response._data && e.response._data.message) {
+             errorMessage = e.response._data.message;
+         } else if (e.message) {
+             errorMessage = e.message;
+         }
+         toast.add({ severity: 'error', summary: 'Erreur', detail: errorMessage, life: 5000 });
     }
 };
 

@@ -60,6 +60,7 @@ import { useCategorieProduitApi } from "~/composables/api/useCategorieProduitApi
 const { createProduit } = useProduitApi();
 const { getCategories, createCategory } = useCategorieProduitApi();
 const { getUnites, createUnite } = useUniteApi();
+const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 
 const router = useRouter();
@@ -269,11 +270,11 @@ const handleSubmit = async (data: Record<string, any>) => {
 
   } catch (error: any) {
     console.error("Erreur lors de l'enregistrement:", error);
+    const errorMsg = extractErrorMessage(error, "Une erreur est survenue lors de l'enregistrement");
     toast.add({
       severity: "error",
       summary: "Erreur",
-      detail:
-        error.message || "Une erreur est survenue lors de l'enregistrement",
+      detail: errorMsg,
       life: 5000,
     });
   } finally {
@@ -348,10 +349,11 @@ const handleCreateCategory = async (data: Record<string, any>) => {
     }
   } catch (error: any) {
     console.error("Erreur création catégorie:", error);
+    const errorMsg = extractErrorMessage(error, "Erreur lors de la création de la catégorie");
     toast.add({
       severity: "error",
       summary: "Erreur",
-      detail: error.message || "Erreur lors de la création de la catégorie",
+      detail: errorMsg,
       life: 3000,
     });
   } finally {
@@ -380,7 +382,8 @@ const handleCreateUnite = async (data: Record<string, any>) => {
             (formRef.value as any).formData.unite_id = newUnite.id;
         }
     } catch(e: any) {
-        toast.add({ severity: "error", summary: "Erreur", detail: e.message, life: 3000 });
+        const errorMsg = extractErrorMessage(e, "Erreur création unité");
+        toast.add({ severity: "error", summary: "Erreur", detail: errorMsg, life: 3000 });
     } finally {
         loadingUnite.value = false;
     }

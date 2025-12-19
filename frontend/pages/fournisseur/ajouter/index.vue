@@ -24,6 +24,7 @@ import { useFournisseurApi } from '~/composables/api/useFournisseurApi';
 const router = useRouter();
 const toast = useToast();
 const { createFournisseur } = useFournisseurApi();
+const { extractErrorMessage } = useErrorHandler();
 
 const loading = ref(false);
 
@@ -102,10 +103,11 @@ const handleSubmit = async (data: any) => {
     }
   } catch (error: any) {
     console.error(error);
+    const errorMsg = extractErrorMessage(error, 'Impossible de créer le fournisseur');
     toast.add({
       severity: 'error',
       summary: 'Erreur',
-      detail: error.message || 'Impossible de créer le fournisseur',
+      detail: errorMsg,
       life: 3000
     });
   } finally {

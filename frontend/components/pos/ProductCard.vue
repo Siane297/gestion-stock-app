@@ -35,7 +35,7 @@
             {{ item.name }}
         </h3>
         <p v-if="item.isPack" class="text-xs text-orange-600 font-medium mt-0.5">{{ item.packLabel }} (x{{ item.quantityInBase }})</p>
-        <p v-else class="text-xs text-orange-600 font-medium mt-0.5">Unité</p>
+        <p v-else-if="item.packLabel" class="text-xs text-orange-600 font-medium mt-0.5">{{ item.packLabel }}</p>
       </div>
 
       <div class="mt-2 flex items-end justify-between">

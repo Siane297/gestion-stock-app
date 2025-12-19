@@ -37,6 +37,7 @@ import { useFournisseurApi, type Fournisseur } from '~/composables/api/useFourni
 import Toast from 'primevue/toast';
 
 const { getFournisseurs, deleteFournisseur } = useFournisseurApi();
+const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
 
@@ -78,7 +79,8 @@ const handleDelete = async (f: Fournisseur) => {
         toast.add({ severity: 'success', summary: 'Succès', detail: 'Fournisseur supprimé', life: 3000 });
         await loadFournisseurs();
     } catch (e: any) {
-         toast.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Impossible de supprimer', life: 5000 });
+         const errorMsg = extractErrorMessage(e, 'Impossible de supprimer ce fournisseur');
+         toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     }
 };
 

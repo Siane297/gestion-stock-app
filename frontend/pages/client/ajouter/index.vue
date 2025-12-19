@@ -31,6 +31,7 @@ import { useClientApi, type CreateClientDto } from '~/composables/api/useClientA
 import Toast from 'primevue/toast';
 
 const { createClient } = useClientApi();
+const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
 const loading = ref(false);
@@ -95,7 +96,8 @@ const handleSubmit = async (data: any) => {
         
     } catch (error: any) {
         console.error("Erreur création client", error);
-        toast.add({ severity: 'error', summary: 'Erreur', detail: error.message || 'Impossible de créer le client', life: 5000 });
+        const errorMsg = extractErrorMessage(error, 'Impossible de créer le client');
+        toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg , life: 5000 });
     } finally {
         loading.value = false;
     }

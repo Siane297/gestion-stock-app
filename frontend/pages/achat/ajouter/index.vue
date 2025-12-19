@@ -33,6 +33,7 @@ const toast = useToast();
 const { createAchat, updateAchatStatut } = useAchatApi(); // updateStatutAchat needs to be verified if exposed
 const { getFournisseurs } = useFournisseurApi();
 const { getMagasins } = useMagasinApi();
+const { extractErrorMessage } = useErrorHandler();
 
 const formRef = ref<InstanceType<typeof FormulaireDynamique> | null>(null);
 const loading = ref(false);
@@ -157,7 +158,8 @@ const handleSubmit = async (data: any) => {
 
     } catch (error: any) {
         console.error("Submit Error", error);
-        toast.add({ severity: 'error', summary: 'Erreur', detail: error.message || "Erreur inconnue", life: 5000 });
+        const errorMsg = extractErrorMessage(error, "Erreur inconnue");
+        toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     } finally {
         loading.value = false;
     }

@@ -1,9 +1,6 @@
 <template>
   <div>
-    <SimplePageHeader
-      title="Modifier Employé"
-      description="Mettre à jour les informations du profil"
-    />
+   
 
     <div class="mt-6 bg-white p-6 rounded-xl shadow-sm border border-gris">
         <div v-if="loadingInitial" class="flex justify-center p-8">
@@ -58,6 +55,7 @@ const toast = useToast();
 
 const { getEmployeeById, updateEmployee } = useEmployeeApi();
 const { getPostes, createPoste } = usePosteApi();
+const { extractErrorMessage } = useErrorHandler();
 
 const employeeId = route.params.id as string;
 const employee = ref<any>(null);
@@ -225,7 +223,8 @@ const handleCreatePoste = async (data: any) => {
              }
         }
     } catch (e: any) {
-         toast.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Impossible de créer le poste', life: 5000 });
+         const errorMsg = extractErrorMessage(e, 'Impossible de créer le poste');
+         toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     } finally {
         loadingPoste.value = false;
     }
@@ -255,7 +254,8 @@ const handleSubmit = async (data: any) => {
         
     } catch (error: any) {
         console.error("Erreur modification employé", error);
-        toast.add({ severity: 'error', summary: 'Erreur', detail: error.message || 'Impossible de modifier l\'employé', life: 5000 });
+        const errorMsg = extractErrorMessage(error, 'Impossible de modifier l\'employé');
+        toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     } finally {
         loading.value = false;
     }

@@ -1,9 +1,5 @@
 <template>
   <div>
-    <SimplePageHeader
-      title="Nouvel Employé"
-      description="Créer un nouveau profil employé et générer son accès"
-    />
 
     <div class="mt-6 bg-white p-6 rounded-xl shadow-sm border border-gris">
         <FormulaireDynamique
@@ -49,6 +45,7 @@ import Toast from 'primevue/toast';
 
 const { createEmployee } = useEmployeeApi();
 const { getPostes, createPoste } = usePosteApi();
+const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
 const loading = ref(false);
@@ -179,7 +176,8 @@ const handleCreatePoste = async (data: any) => {
             }
         }
     } catch (e: any) {
-         toast.add({ severity: 'error', summary: 'Erreur', detail: e.message || 'Impossible de créer le poste', life: 5000 });
+         const errorMsg = extractErrorMessage(e, 'Impossible de créer le poste');
+         toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     } finally {
         loadingPoste.value = false;
     }
@@ -211,7 +209,8 @@ const handleSubmit = async (data: any) => {
         
     } catch (error: any) {
         console.error("Erreur création employé", error);
-        toast.add({ severity: 'error', summary: 'Erreur', detail: error.message || 'Impossible de créer l\'employé', life: 5000 });
+        const errorMsg = extractErrorMessage(error, 'Impossible de créer l\'employé');
+        toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 5000 });
     } finally {
         loading.value = false;
     }
