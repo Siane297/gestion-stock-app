@@ -1,4 +1,5 @@
 <template>
+  <SpeedInsights />
   <div class="h-screen overflow-hidden bg-slot">
     <!-- Sidebar -->
     <AppSidebar :is-open="isSidebarOpen" @close="closeSidebar" />
@@ -11,7 +12,6 @@
       <!-- Page Content (scrollable) -->
       <main class="flex-1 overflow-y-auto mt-[90px]  p-4 lg:px-9 lg:py-6">
         <AppBreadcrumb v-if="!isAccueilPage" />
-        <SpeedInsights />
         <slot />
       </main>
     </div>
@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { SpeedInsights } from "@vercel/speed-insights/nuxt"
+import { SpeedInsights } from '@vercel/speed-insights/vue';
 import AppSidebar from '~/components/sidebar/AppSidebar.vue';
 import AppHeader from '~/components/header/AppHeader.vue';
 import AppBreadcrumb from '~/components/common/AppBreadcrumb.vue'; // Import Breadcrumb
