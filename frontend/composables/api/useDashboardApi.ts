@@ -1,10 +1,15 @@
 import { useSecureApi } from '~/composables/useSecureApi';
 import type { ApiResponse } from './config';
 
+export interface MetricWithTrend {
+  value: number;
+  previous: number;
+  trend: number;
+}
+
 export interface DashboardStats {
-  revenue_today: number;
-  revenue_month: number;
-  sales_count_today: number;
+  revenue: MetricWithTrend;
+  sales_count: MetricWithTrend;
   low_stock_count: number;
   pending_purchases: number;
 }
@@ -29,9 +34,9 @@ export interface DashboardData {
 export const useDashboardApi = () => {
   const { get } = useSecureApi();
 
-  const getDashboardStats = async (magasinId: string): Promise<DashboardData | null> => {
+  const getDashboardStats = async (magasinId: string, period: string = 'DAY'): Promise<DashboardData | null> => {
     if (!magasinId) return null;
-    const response = await get<ApiResponse<DashboardData>>(`/api/dashboard/stats?magasin_id=${magasinId}`);
+    const response = await get<ApiResponse<DashboardData>>(`/api/dashboard/stats?magasin_id=${magasinId}&period=${period}`);
     return response.data || null;
   };
 

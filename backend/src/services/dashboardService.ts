@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+export type DashboardPeriod = 'DAY' | 'WEEK' | 'MONTH';
+
 export class DashboardService {
   private prisma: PrismaClient;
 
@@ -7,73 +9,71 @@ export class DashboardService {
     this.prisma = prisma;
   }
 
-  async getGlobalStats(magasinId: string) {
+  private getDateRanges(period: DashboardPeriod) {
     const now = new Date();
-    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-    const startOfMonth = new Date(new Date().setDate(1));
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    // 1. Chiffre d'Affaires
-    // CA Aujourd'hui
-    const salesToday = await this.prisma.vente.aggregate({
-      where: {
-        magasin_id: magasinId,
-        statut: 'PAYEE',
-        date_creation: { gte: startOfDay }
-      },
-      _sum: { montant_total: true }
-    });
-
-    // CA Mois en cours
-    const salesMonth = await this.prisma.vente.aggregate({
-      where: {
-        magasin_id: magasinId,
-        statut: 'PAYEE',
-        date_creation: { gte: startOfMonth }
-      },
-      _sum: { montant_total: true }
-    });
-
-    // 2. Nombre de Ventes (Aujourd'hui)
-    const countSalesToday = await this.prisma.vente.count({
-      where: {
-        magasin_id: magasinId,
-        statut: 'PAYEE',
-        date_creation: { gte: startOfDay }
-      }
-    });
-
-    // 3. Stock Faible (Alertes)
-    // On compte les stocks où la quantité est <= quantité minimum
-    const lowStockCount = await this.prisma.stock_magasin.count({
-      where: {
-        magasin_id: magasinId,
-        quantite: { lte: this.prisma.stock_magasin.fields.quantite_minimum } 
-        // Note: Prisma comparison with field might need specific syntax or raw query depending on version.
-        // If 'lte: { col: ... }' isn't supported directly in where, we might need a workaround or raw query.
-        // But let's check if we can filters.
-        // Actually, checking field vs field in standard Prisma 'where' is limited.
-        // Let's assume we count distinct products with low stock.
-        // For simplicity in standard Prisma: get all stocks and filter in JS if not too many, 
-        // OR use raw query. Given it's a dashboard, raw query is faster/better.
-      }
-    });
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    // Workaround for field comparison if needed, but let's try to be safe with a raw query or simple fetch.
-    // Let's use a simpler approach: "quantite" <= "quantite_minimum"
-    // Since prisma doesn't support field comparison in where clause easily without extensions,
-    // I will fetch stocks where quantite <= quantite_minimum. 
-    // Actually, let's just fetch all stocks for the store and filter. It's safe for now unless huge inventory.
-    // Improving: USE SQL RAW for best perf.
-    
+    let currentStart: Date;
+    let previousStart: Date;
+    let previousEnd: Date;
+
+    if (period === 'DAY') {
+      currentStart = new Date(today);
+      previousStart = new Date(today);
+      previousStart.setDate(previousStart.getDate() - 1);
+      previousEnd = new Date(today);
+    } else if (period === 'WEEK') {
+      // Start of current week (Monday)
+      const day = today.getDay(); // 0 (Sun) to 6 (Sat)
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+      currentStart = new Date(today.setDate(diff));
+      currentStart.setHours(0, 0, 0, 0);
+
+      previousStart = new Date(currentStart);
+      previousStart.setDate(previousStart.getDate() - 7);
+      previousEnd = new Date(currentStart);
+    } else {
+      // Month
+      currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      previousEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    return { currentStart, previousStart, previousEnd };
+  }
+
+  async getGlobalStats(magasinId: string, period: DashboardPeriod = 'DAY') {
+    const { currentStart, previousStart, previousEnd } = this.getDateRanges(period);
+
+    // 1. Metrics for current period
+    const currentMetrics = await this.prisma.vente.aggregate({
+      where: {
+        magasin_id: magasinId,
+        statut: 'PAYEE',
+        date_creation: { gte: currentStart }
+      },
+      _sum: { montant_total: true },
+      _count: true
+    });
+
+    // 2. Metrics for previous period (for comparison)
+    const previousMetrics = await this.prisma.vente.aggregate({
+      where: {
+        magasin_id: magasinId,
+        statut: 'PAYEE',
+        date_creation: { gte: previousStart, lt: previousEnd }
+      },
+      _sum: { montant_total: true },
+      _count: true
+    });
+
+    // 3. Stock & Purchases (Static for now as requested or general)
     const lowStocks = await this.prisma.stock_magasin.findMany({
         where: { magasin_id: magasinId },
         select: { quantite: true, quantite_minimum: true }
     });
     const minimalStockCount = lowStocks.filter(s => s.quantite <= s.quantite_minimum).length;
 
-
-    // 4. Achats en Attente
     const pendingPurchases = await this.prisma.achat.count({
       where: {
         magasin_id: magasinId,
@@ -81,66 +81,101 @@ export class DashboardService {
       }
     });
 
+    // Calculate trends
+    const calculateTrend = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
     return {
-      revenue_today: salesToday._sum.montant_total || 0,
-      revenue_month: salesMonth._sum.montant_total || 0,
-      sales_count_today: countSalesToday,
+      revenue: {
+        value: currentMetrics._sum.montant_total || 0,
+        previous: previousMetrics._sum.montant_total || 0,
+        trend: calculateTrend(currentMetrics._sum.montant_total || 0, previousMetrics._sum.montant_total || 0)
+      },
+      sales_count: {
+        value: currentMetrics._count || 0,
+        previous: previousMetrics._count || 0,
+        trend: calculateTrend(currentMetrics._count || 0, previousMetrics._count || 0)
+      },
       low_stock_count: minimalStockCount,
       pending_purchases: pendingPurchases
     };
   }
 
-  async getSalesChart(magasinId: string, days: number = 7) {
-    const limitDate = new Date();
-    limitDate.setDate(limitDate.getDate() - days);
-    limitDate.setHours(0,0,0,0);
+  async getSalesChart(magasinId: string, period: DashboardPeriod = 'DAY') {
+    const now = new Date();
+    let startDate: Date;
+    let groupBy: 'day' | 'week' = 'day';
 
-    const sales = await this.prisma.vente.groupBy({
-      by: ['date_creation'],
+    if (period === 'DAY') {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7); // Last 7 days
+    } else if (period === 'WEEK') {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - (4 * 7)); // Last 4 weeks
+      groupBy = 'week';
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1); // Current Month
+    }
+
+    startDate.setHours(0, 0, 0, 0);
+
+    const sales = await this.prisma.vente.findMany({
       where: {
         magasin_id: magasinId,
         statut: 'PAYEE',
-        date_creation: { gte: limitDate }
+        date_creation: { gte: startDate }
       },
-      _sum: { montant_total: true },
+      select: {
+        date_creation: true,
+        montant_total: true
+      },
       orderBy: { date_creation: 'asc' }
     });
 
-    // Need to aggregate by day in JS because Prisma groupBy date returns full timestamp
     const chartData: Record<string, number> = {};
-    
-    // Initialize last 'days' days with 0
-    for(let i=0; i<days; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const parts = d.toISOString().split('T');
-        const key = parts[0] || '';
-        if (key) chartData[key] = 0;
+
+    if (groupBy === 'day') {
+      // Initialize daily slots
+      const end = new Date();
+      let curr = new Date(startDate);
+      while(curr <= end) {
+        chartData[curr.toISOString().split('T')[0] as string] = 0;
+        curr.setDate(curr.getDate() + 1);
+      }
+      
+      sales.forEach(s => {
+        const key = s.date_creation.toISOString().split('T')[0] as string;
+        if (chartData[key] !== undefined) {
+             chartData[key] += s.montant_total;
+        }
+      });
+    } else {
+      // Weekly aggregation
+      sales.forEach(s => {
+        const d = new Date(s.date_creation);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(d.setDate(diff)).toISOString().split('T')[0] as string;
+        chartData[monday] = (chartData[monday] || 0) + s.montant_total;
+      });
     }
 
-    sales.forEach(s => {
-        const dateParts = new Date(s.date_creation).toISOString().split('T');
-        const dateKey = dateParts[0] || ''; 
-        if (dateKey && chartData[dateKey] !== undefined) {
-            chartData[dateKey] += (s._sum.montant_total || 0);
-        }
-    });
-
     return Object.entries(chartData)
-        .sort((a,b) => a[0].localeCompare(b[0]))
-        .map(([date, amount]) => ({ date, amount }));
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, amount]) => ({ date, amount }));
   }
 
-  async getTopProducts(magasinId: string, limit: number = 5) {
-     const startDate = new Date();
-     startDate.setDate(startDate.getDate() - 30);
+  async getTopProducts(magasinId: string, period: DashboardPeriod = 'DAY', limit: number = 5) {
+     const { currentStart } = this.getDateRanges(period);
 
      const details = await this.prisma.vente_detail.findMany({
          where: {
              vente: {
                  magasin_id: magasinId,
                  statut: 'PAYEE',
-                 date_creation: { gte: startDate }
+                 date_creation: { gte: currentStart }
              }
          },
          include: {
@@ -159,7 +194,6 @@ export class DashboardService {
                  image_url: d.produit.image_url || undefined
              };
          }
-         // Safely increment
          const stat = productStats[d.produit_id];
          if (stat) {
              stat.quantity += d.quantite;
@@ -172,3 +206,4 @@ export class DashboardService {
          .slice(0, limit);
   }
 }
+

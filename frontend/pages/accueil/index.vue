@@ -9,34 +9,46 @@
       </div>
 
       <div class="flex items-center justify-between relative z-10">
-        <div>
+        <div class=" space-y-1">
           <h1 class="text-2xl font-bold text-white">Tableau de bord</h1>
           <p class="text-white/70 text-sm">Vue d'ensemble de votre activité</p>
         </div>
 
-        <button @click="fetchDashboardStats"
-            class="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors shadow-sm"
-            title="Rafraîchir">
-            <Icon icon="tabler:refresh" :class="{ 'animate-spin': loading }" />
-        </button>
+        <div class="flex items-center gap-3">
+          <!-- Période Selector (PrimeVue) -->
+          <Dropdown v-model="selectedPeriod" :options="periodOptions" optionLabel="label" optionValue="value"
+            class="w-48" @change="fetchDashboardStats" />
+            
+          <button @click="fetchDashboardStats"
+              class="p-3 bg-white hover:bg-primary border border-white/20 rounded-lg text-noir transition-colors shadow-sm"
+              title="Rafraîchir">
+              <Icon icon="tabler:refresh" :class="{ 'animate-spin': loading }" />
+          </button>
+        </div>
       </div>
+      
       <!-- KPI Cards Grid -->
       <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <CardStat label="Chiffre d'Affaires (J)" :value="formatCurrency(stats.revenue_today)" icon="tabler:coin"
-          variant="primary" :loading="loading" />
-        <CardStat label="Ventes (J)" :value="stats.sales_count_today" icon="tabler:shopping-cart" variant="success"
-          :loading="loading" />
+        <CardStat :label="`Chiffre d'Affaires (${periodLabel})`" :value="formatCurrency(stats.revenue.value)" 
+          icon="tabler:coin" variant="primary" :loading="loading" 
+          :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
+          
+        <CardStat :label="`Ventes (${periodLabel})`" :value="stats.sales_count.value" 
+          icon="tabler:shopping-cart" variant="success" :loading="loading" 
+          :trend="stats.sales_count.trend" :trend-label="trendComparisonLabel" />
+          
         <CardStat label="Achats en Attente" :value="stats.pending_purchases" icon="tabler:truck-delivery"
           variant="warning" :loading="loading" />
+          
         <CardStat label="Stock Faible" :value="stats.low_stock_count" icon="tabler:alert-triangle" variant="danger"
           :loading="loading" />
       </div>
     </div>
+    
     <!-- Charts & Tables Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
       <!-- Main Chart: Sales Evolution -->
-      <SalesEvolutionChart :loading="loading" :sales-data="salesData" />
+      <SalesEvolutionChart :loading="loading" :sales-data="salesData" :period="selectedPeriod" />
 
       <!-- Top Products -->
       <TopProductsList :loading="loading" :products="topProducts" />
@@ -48,20 +60,41 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { Icon } from '@iconify/vue';
+import Dropdown from 'primevue/dropdown';
 import CardStat from '~/components/card/CardStat.vue';
 import SalesEvolutionChart from '~/components/chart/SalesEvolutionChart.vue';
 import TopProductsList from '~/components/TopProductsList.vue';
 import { useMagasinStore } from '~/stores/magasin';
 import { useDashboardApi } from '~/composables/api/useDashboardApi';
 
-// Initialiser les valeurs par défaut
+// Initialiser les valeurs par défaut avec la nouvelle structure
 const stats = ref({
-  revenue_today: 0,
-  revenue_month: 0,
-  sales_count_today: 0,
+  revenue: { value: 0, previous: 0, trend: 0 },
+  sales_count: { value: 0, previous: 0, trend: 0 },
   low_stock_count: 0,
   pending_purchases: 0
 });
+
+const periodOptions = [
+  { label: '7 derniers jours', value: 'DAY' },
+  { label: '4 dernières semaines', value: 'WEEK' },
+  { label: 'Mois en cours', value: 'MONTH' }
+];
+
+const selectedPeriod = ref('DAY');
+
+const periodLabel = computed(() => {
+  if (selectedPeriod.value === 'DAY') return 'Jour';
+  if (selectedPeriod.value === 'WEEK') return 'Semaine';
+  return 'Mois';
+});
+
+const trendComparisonLabel = computed(() => {
+  if (selectedPeriod.value === 'DAY') return 'vs hier';
+  if (selectedPeriod.value === 'WEEK') return 'vs sem. der.';
+  return 'vs mois der.';
+});
+
 const topProducts = ref<any[]>([]);
 const salesData = ref<{ date: string, amount: number }[]>([]);
 const loading = ref(true);
@@ -80,7 +113,7 @@ const fetchDashboardStats = async () => {
 
   loading.value = true;
   try {
-    const data = await getDashboardStats(currentMagasinId.value);
+    const data = await getDashboardStats(currentMagasinId.value, selectedPeriod.value);
     if (data) {
       stats.value = data.stats;
       salesData.value = data.charts.sales;
@@ -105,3 +138,24 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+:deep(.dashboard-dropdown) {
+  
+}
+
+:deep(.dashboard-dropdown .p-dropdown-label) {
+  color: white;
+  font-size: 0.875rem;
+  padding-left: 1rem;
+}
+
+:deep(.dashboard-dropdown .p-dropdown-trigger) {
+  color: white;
+}
+
+:deep(.dashboard-dropdown:hover) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+</style>

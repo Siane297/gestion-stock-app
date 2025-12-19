@@ -4,7 +4,7 @@
       <h3 class="font-semibold text-lg text-noir flex items-center gap-2">
         Évolution des Ventes
       </h3>
-      <span class="text-xs font-medium bg-blue-50 text-blue-600 px-2 py-1 rounded">7 derniers jours</span>
+      <span class="text-xs font-medium bg-blue-50 text-blue-600 px-2 py-1 rounded">{{ periodLabel }}</span>
     </div>
 
     <div class="h-[350px] w-full" v-if="!loading">
@@ -24,10 +24,17 @@ import { computed } from 'vue';
 const props = defineProps<{
   loading: boolean;
   salesData: { date: string; amount: number }[];
+  period?: string; // 'DAY', 'WEEK', 'MONTH'
 }>();
 
+const periodLabel = computed(() => {
+  if (props.period === 'WEEK') return '4 dernières semaines';
+  if (props.period === 'MONTH') return 'Mois en cours';
+  return '7 derniers jours';
+});
+
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'KMF', maximumFractionDigits: 0 }).format(value);
 };
 
 const chartOptions = computed(() => ({
@@ -50,7 +57,14 @@ const chartOptions = computed(() => ({
   dataLabels: { enabled: false },
   stroke: { curve: 'smooth', width: 2 },
   xaxis: {
-    categories: props.salesData.map(d => new Date(d.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })),
+    categories: props.salesData.map(d => {
+      const date = new Date(d.date);
+      if (props.period === 'WEEK') {
+        // Show "Sem. dd/mm"
+        return `Sem. ${date.getDate()}/${date.getMonth() + 1}`;
+      }
+      return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+    }),
     axisBorder: { show: false },
     axisTicks: { show: false },
     labels: { style: { colors: '#9ca3af', fontSize: '11px' } }

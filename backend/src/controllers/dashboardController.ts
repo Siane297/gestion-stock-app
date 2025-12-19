@@ -9,14 +9,11 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     // @ts-ignore - tenantSchema is added by middleware
     const tenantId = (req as any).tenantSchema; 
     const magasinId = req.query.magasin_id as string;
+    const period = (req.query.period as any) || 'DAY';
 
     if (!tenantId) {
       return res.status(400).json({ message: 'Tenant ID (Schema) manquant' });
     }
-    
-    // Si pas de magasin spécifié, on essaie de prendre celui de l'utilisateur ou le premier dispo ?
-    // Pour l'instant on requiert le magasin_id ou on retourne une erreur si multi-magasin n'est pas géré
-    // Mais on peut optionnellement sommer pour tous les magasins si magasinId est null (TODO)
     
     if (!magasinId) {
         return res.status(400).json({ message: 'Magasin ID requis' });
@@ -26,9 +23,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const dashboardService = new DashboardService(prisma);
 
     const [globalStats, salesChart, topProducts] = await Promise.all([
-      dashboardService.getGlobalStats(magasinId),
-      dashboardService.getSalesChart(magasinId),
-      dashboardService.getTopProducts(magasinId)
+      dashboardService.getGlobalStats(magasinId, period),
+      dashboardService.getSalesChart(magasinId, period),
+      dashboardService.getTopProducts(magasinId, period)
     ]);
 
     res.json({
