@@ -11,7 +11,37 @@
           <Icon icon="tabler:cash-register" class="text-4xl text-white" />
         </div>
         <h1 class="text-3xl font-bold text-noir mb-2">Session de Caisse</h1>
-        <p class="text-noir/60">Sélectionnez une caisse et saisissez votre PIN pour commencer</p>
+        <p class="text-noir/60 mb-6">Sélectionnez une caisse et saisissez votre PIN pour commencer</p>
+
+        <!-- Sélecteur de Boutique (Admin/Manager) -->
+        <div v-if="(user?.role === 'ADMIN' || user?.role === 'MANAGER') && step === 'select-caisse'" class="flex justify-center mb-4">
+          <div class="inline-flex flex-col items-center gap-2 p-1.5 bg-white/50 backdrop-blur-sm border-2 border-gris/40 rounded-2xl shadow-sm">
+            <Select 
+              v-model="selectedMagasinId"
+              :options="magasins"
+              optionLabel="nom"
+              optionValue="id"
+              placeholder="Toutes les boutiques"
+              class="w-64 !border-0 !bg-transparent !shadow-none font-semibold text-primary"
+              @change="loadCaisses"
+              showClear
+            >
+              <template #value="slotProps">
+                <div v-if="slotProps.value" class="flex items-center gap-2">
+                  <Icon icon="tabler:building-store" class="text-primary" />
+                  <span class="text-primary">{{ magasins.find(m => m.id === slotProps.value)?.nom }}</span>
+                </div>
+                <span v-else class="text-gray-400">Toutes les boutiques</span>
+              </template>
+              <template #option="slotProps">
+                <div class="flex items-center gap-2">
+                  <Icon icon="tabler:building-store" class="text-primary" />
+                  <span>{{ slotProps.option.nom }}</span>
+                </div>
+              </template>
+            </Select>
+          </div>
+        </div>
       </div>
 
       <!-- Étape 1 : Sélection de Caisse -->
@@ -141,8 +171,9 @@ import PinPad from '~/components/pos/PinPad.vue';
 import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
-import AppButton from '~/components/button/AppButton.vue';
 import Badge from 'primevue/badge';
+import Select from 'primevue/select';
+import { useMagasinApi } from '~/composables/api/useMagasinApi';
 
 const { currentCurrency } = useCurrency();
 const { user } = useSecureAuth();
@@ -170,11 +201,22 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const pinPadRef = ref<any>(null);
 
+// Multi-Boutique
+const { getMagasins } = useMagasinApi();
+const magasins = ref<any[]>([]);
+const selectedMagasinId = ref<string | null>(user.value?.magasin_id || null);
+
 // Charger les caisses
 async function loadCaisses() {
   loading.value = true;
   try {
-    const data = await getCaisses();
+    // Si c'est un admin ou manager, on utilise selectedMagasinId (qui peut être null pour "Tout")
+    // Sinon on utilise obligatoirement le magasin_id de l'utilisateur
+    const filterId = (user.value?.role === 'ADMIN' || user.value?.role === 'MANAGER') 
+      ? (selectedMagasinId.value || undefined)
+      : (user.value?.magasin_id || undefined);
+
+    const data = await getCaisses(filterId);
     caisses.value = data.map((c: any) => {
       // Une caisse est OCCUPEE s'il y a une session OUVERTE
       const activeSession = c.sessions?.find((s: any) => s.statut === 'OUVERTE');
@@ -259,7 +301,16 @@ onMounted(async () => {
     console.warn("Erreur vérification session active au démarrage", e);
   }
 
-  // 3. Sinon charger la liste
+  // 3. Charger les boutiques si profil gestion
+  if (user.value?.role === 'ADMIN' || user.value?.role === 'MANAGER') {
+    try {
+      magasins.value = await getMagasins();
+    } catch (err) {
+      console.error('Erreur chargement magasins:', err);
+    }
+  }
+
+  // 4. Sinon charger la liste
   loadCaisses();
 });
 </script>

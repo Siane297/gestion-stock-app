@@ -27,16 +27,24 @@ model TenantUser {
   // Relations
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  lastLoginAt      DateTime?
-  role_stock       role?              @relation(fields: [role_stock_id], references: [id])
-  role_stock_id    String?
-  magasins         magasin[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  role_stock    role?     @relation(fields: [role_stock_id], references: [id])
+  role_stock_id String?
+
+  // Boutique d'affectation (travail)
+  magasin_id String?
+  magasin    magasin? @relation("UserMagasin", fields: [magasin_id], references: [id])
+
+  // Boutiques où l'utilisateur est gérant
+  magasins_geres magasin[] @relation("MagasinGerant")
+
   mouvements_stock mouvements_stock[]
   ventes           vente[]
   audit_logs       audit_log[]
   sessions_caisse  session_caisse[]
+  magasins         magasin[]
 
   @@map("tenant_users")
 }

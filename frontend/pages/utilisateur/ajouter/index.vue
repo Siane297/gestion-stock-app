@@ -75,7 +75,8 @@ const handleSubmit = async (data: any) => {
       password: data.password,
       role: data.role,
       permissions: data.permissions || [],
-      pin: data.pin
+      pin: data.pin,
+      magasin_id: data.magasin_id
     });
 
     toast.add({

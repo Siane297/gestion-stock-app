@@ -39,17 +39,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import { storeToRefs } from 'pinia';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useAchatApi, type Achat, type StatutAchat } from '~/composables/api/useAchatApi';
+import { useMagasinStore } from '~/stores/magasin';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 
 const { getAchats, deleteAchat } = useAchatApi();
 const toast = useToast();
 const router = useRouter();
+
+const magasinStore = useMagasinStore();
+const { currentMagasinId } = storeToRefs(magasinStore);
 
 const achats = ref<Achat[]>([]);
 const loading = ref(false);
@@ -65,7 +70,8 @@ const columns: TableColumn[] = [
 const loadAchats = async () => {
     loading.value = true;
     try {
-        achats.value = await getAchats();
+        // Filtrage par le magasin actif
+        achats.value = await getAchats(currentMagasinId.value || undefined);
     } catch (e: any) {
         console.error("Erreur chargement achats", e);
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les achats', life: 3000 });
@@ -73,6 +79,11 @@ const loadAchats = async () => {
         loading.value = false;
     }
 };
+
+// Recharger quand le magasin change
+watch(currentMagasinId, () => {
+    loadAchats();
+});
 
 const handleView = (a: Achat) => {
     // router.push(`/achat/${a.id}`);

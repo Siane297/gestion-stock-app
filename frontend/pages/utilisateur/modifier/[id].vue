@@ -67,7 +67,8 @@ const userData = computed(() => {
     email: user.value.email,
     role: user.value.role,
     permissions: user.value.permissions || [],
-    pin: user.value.pin || ""
+    pin: user.value.pin || "",
+    magasin_id: user.value.magasin_id || null
   };
 });
 
@@ -115,7 +116,8 @@ const handleSubmit = async (data: any) => {
     const updateData: any = {
       role: data.role,
       permissions: data.permissions || [],
-      pin: data.pin
+      pin: data.pin,
+      magasin_id: data.magasin_id
     };
 
     // Ajouter le mot de passe seulement s'il est fourni

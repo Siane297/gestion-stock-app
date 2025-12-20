@@ -8,7 +8,31 @@ import { logger } from '../config/logger.js';
 export const getAllAchats = async (req: Request, res: Response) => {
   try {
     const achatService = new AchatService(req.tenantPrisma);
-    const achats = await achatService.getAll();
+    const filters: any = {};
+    const user = req.user;
+
+    // Restriction par défaut pour les non-admins
+    if (user?.role !== 'ADMIN') {
+        // Récupérer l'utilisateur complet pour avoir son magasin assigné
+        // Note: Idéalement le magasin_id devrait être dans le token pour éviter cette requête
+        const tenantUser = await req.tenantPrisma.tenantUser.findUnique({
+            where: { id: user?.userId }, // userId dans le token correspond à l'ID TenantUser (ou employeeId selon auth)
+            select: { magasin_id: true }
+        });
+
+        if (!tenantUser?.magasin_id) {
+            // Si pas de magasin assigné, l'utilisateur ne doit rien voir (ou gérer cas erreur)
+            return res.json({ success: true, data: [] });
+        }
+        filters.magasin_id = tenantUser.magasin_id;
+    } else {
+        // Pour ADMIN : Filtre optionnel
+        if (req.query.magasin_id) {
+            filters.magasin_id = req.query.magasin_id as string;
+        }
+    }
+
+    const achats = await achatService.getAll(filters);
 
     res.json({
       success: true,

@@ -11,13 +11,16 @@ model magasin {
     date_creation     DateTime @default(now())
     date_modification DateTime @updatedAt
 
-    gerant           TenantUser?        @relation(fields: [gerant_id], references: [id], onDelete: SetNull)
+    gerant           TenantUser?        @relation("MagasinGerant", fields: [gerant_id], references: [id], onDelete: SetNull)
+    users            TenantUser[]       @relation("UserMagasin")
     stocks           stock_magasin[]
     mouvements_stock mouvements_stock[]
     ventes           vente[]
     achats           achat[]
     stocks_lot       stock_lot[]
     caisses          caisse[]
+    tenantUser       TenantUser?        @relation(fields: [tenantUserId], references: [id])
+    tenantUserId     String?
 
     @@map("magasins")
 }

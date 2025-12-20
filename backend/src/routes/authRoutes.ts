@@ -382,6 +382,7 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
                 position: true,
               },
             },
+            magasin: { select: { id: true, nom: true } },
           },
         });
 
@@ -459,6 +460,8 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
                   email: tenantUser.email,
                   role: tenantUser.role,
                   permissions: tenantUser.permissions,
+                  magasin_id: tenantUser.magasin_id,
+                  magasin: tenantUser.magasin,
                   employee: {
                     id: tenantUser.employee.id,
                     matricule: tenantUser.employee.matricule,
@@ -545,6 +548,7 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
             position: true,
           },
         },
+        magasin: { select: { id: true, nom: true } },
       },
     });
 
@@ -638,6 +642,8 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
           email: tenantUser.email,
           role: tenantUser.role,
           permissions: tenantUser.permissions,
+          magasin_id: tenantUser.magasin_id,
+          magasin: tenantUser.magasin,
           employee: {
             id: tenantUser.employee.id,
             matricule: tenantUser.employee.matricule,

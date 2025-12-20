@@ -34,6 +34,7 @@ export const getAllTenantUsers = async (req: Request, res: Response) => {
             position: { select: { name: true } },
           },
         },
+        magasin: { select: { id: true, nom: true } },
       },
       orderBy: {
         createdAt: 'desc',
@@ -88,6 +89,7 @@ export const getTenantUserById = async (req: Request, res: Response) => {
             position: { select: { name: true } },
           },
         },
+        magasin: { select: { id: true, nom: true } },
       },
     });
 
@@ -117,7 +119,7 @@ export const getTenantUserById = async (req: Request, res: Response) => {
  */
 export const createTenantUser = async (req: Request, res: Response) => {
   try {
-    const { employeeId, password, role, permissions, pin } = req.body;
+    const { employeeId, password, role, permissions, pin, magasin_id } = req.body;
     const tenantPrisma = req.tenantPrisma;
 
     if (!tenantPrisma) {
@@ -173,6 +175,7 @@ export const createTenantUser = async (req: Request, res: Response) => {
         role: role || 'USER',
         permissions: permissions || [],
         pin: pin || null,
+        magasin_id: magasin_id || null,
       },
       include: {
         employee: {
@@ -220,7 +223,7 @@ export const createTenantUser = async (req: Request, res: Response) => {
 export const updateTenantUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { role, permissions, password, pin } = req.body;
+    const { role, permissions, password, pin, magasin_id } = req.body;
     const tenantPrisma = req.tenantPrisma;
 
     if (!tenantPrisma) {
@@ -242,6 +245,7 @@ export const updateTenantUser = async (req: Request, res: Response) => {
     if (role) updateData.role = role;
     if (permissions) updateData.permissions = permissions;
     if (pin !== undefined) updateData.pin = pin || null;
+    if (magasin_id !== undefined) updateData.magasin_id = magasin_id || null;
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }

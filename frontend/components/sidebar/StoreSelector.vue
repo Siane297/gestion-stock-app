@@ -2,21 +2,23 @@
   <div class="px-4 py-3">
     <div class="relative" ref="selectorRef">
       <button 
-        @click="isOpen = !isOpen"
-        class="w-full flex items-center justify-between bg-white/10 hover:bg-white/15 transition-colors text-white rounded-lg p-3 group border border-white/5"
+        @click="toggleDropdown"
+        class="w-full flex items-center justify-between bg-white/10 transition-colors text-white rounded-lg p-3 group border border-white/5"
+        :class="canSwitch ? 'hover:bg-white/15 cursor-pointer' : 'cursor-default'"
       >
         <div class="flex items-center gap-3 overflow-visible">
-          <div class="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+          <div class="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0 shadow-lg" :class="canSwitch ? 'group-hover:scale-105 transition-transform' : ''">
             <Icon icon="tabler:building-store" class="text-noir text-lg" />
           </div>
           <div class="flex flex-col items-start overflow-hidden">
-             <span class="text-xs text-white/50 font-medium uppercase tracking-wider">Boutique active</span>
-             <span class="text-sm font-bold truncate w-full text-left" :title="currentMagasin?.nom || 'Chargement...'">
-                {{ currentMagasin?.nom || 'Chargement...' }}
+              <span class="text-xs text-white/50 font-medium uppercase tracking-wider">Boutique active</span>
+             <span class="text-sm font-bold truncate w-full text-left" :title="currentMagasin?.nom || (currentMagasinId === null ? 'Toutes les boutiques' : 'Chargement...')">
+                {{ currentMagasin?.nom || (currentMagasinId === null ? 'Toutes les boutiques' : 'Chargement...') }}
              </span>
           </div>
         </div>
         <Icon 
+            v-if="canSwitch"
             icon="tabler:chevron-down" 
             class="text-white/50 transition-transform duration-300"
             :class="{ 'rotate-180': isOpen }" 
@@ -38,8 +40,22 @@
             </div>
             
             <div class="max-h-60 overflow-y-auto">
+                <!-- Option 'Toutes les boutiques' pour l'admin -->
                 <button
-                    v-for="magasin in magasins"
+                    v-if="user?.role === 'ADMIN'"
+                    @click="selectMagasin(null)"
+                    class="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors relative border-b border-gray-50"
+                    :class="{ 'bg-blue-50 text-blue-700 font-bold': currentMagasinId === null }"
+                >
+                    <Icon 
+                        :icon="currentMagasinId === null ? 'tabler:circle-check-filled' : 'tabler:world'" 
+                        :class="currentMagasinId === null ? 'text-blue-600' : 'text-gray-400'"
+                    />
+                    <span class="font-medium tracking-wide text-sm">Toutes les boutiques</span>
+                </button>
+
+                <button
+                    v-for="magasin in filteredMagasins"
                     :key="magasin.id"
                     @click="selectMagasin(magasin.id)"
                     class="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors relative"
@@ -59,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { Icon } from '@iconify/vue';
 import { useMagasinStore } from '~/stores/magasin';
@@ -73,7 +89,32 @@ const selectorRef = ref<HTMLElement | null>(null);
 
 const { user, isAuthenticated } = useSecureAuth();
 
-const selectMagasin = (id: string) => {
+// Vérifier si l'utilisateur peut changer de boutique (Seulement ADMIN)
+const canSwitch = computed(() => {
+    if (!user.value) return false;
+    // Si ADMIN, peut changer
+    if (user.value.role === 'ADMIN') return true;
+    // Sinon, non (même si pas de boutique assignée, un utilisateur standard ne devrait pas switcher librement sans droit)
+    return false;
+});
+
+// Liste filtrée (optionnel, mais propre)
+const filteredMagasins = computed(() => {
+    if (canSwitch.value) return magasins.value;
+    // Si pas de droit, on ne montre que le magasin courant (ou assigné)
+    if (currentMagasinId.value) {
+        return magasins.value.filter(m => m.id === currentMagasinId.value);
+    }
+    return [];
+});
+
+const toggleDropdown = () => {
+    if (canSwitch.value) {
+        isOpen.value = !isOpen.value;
+    }
+};
+
+const selectMagasin = (id: string | null) => {
     store.setMagasin(id);
     isOpen.value = false;
     // Rafraîchir l'application pour appliquer le contexte partout

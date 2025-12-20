@@ -59,15 +59,24 @@ export class VenteService {
    * YYYYMMDD = Date
    * XXX = Séquence journalière (remise à zéro chaque jour)
    */
-  private async generateReceiptNumber(magasinId: string): Promise<string> {
+  /**
+   * Génère un numéro de ticket au format TC-STORE-YYYYMMDD-XXX
+   * TC = Ticket de Caisse
+   * STORE = 4 premiers caractères de l'ID magasin
+   * YYYYMMDD = Date
+   * XXX = Séquence journalière (remise à zéro chaque jour)
+   */
+  private async generateReceiptNumber(magasinId: string, tx?: any): Promise<string> {
+    const prisma = tx || this.prisma;
     const today = new Date();
     const dateStr = (today.toISOString().split('T')[0] || '').replace(/-/g, ''); // YYYYMMDD
+    const storePrefix = magasinId.substring(0, 4).toUpperCase();
     
     // Compter les ventes du jour pour ce magasin
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
     const endOfDay = new Date(today.setHours(23, 59, 59, 999));
     
-    const countToday = await this.prisma.vente.count({
+    const countToday = await prisma.vente.count({
       where: {
         magasin_id: magasinId,
         date_creation: {
@@ -80,7 +89,7 @@ export class VenteService {
     // Incrémenter pour la nouvelle vente
     const sequence = (countToday + 1).toString().padStart(3, '0');
     
-    return `TC-${dateStr}-${sequence}`;
+    return `TC-${storePrefix}-${dateStr}-${sequence}`;
   }
 
   /**
@@ -174,8 +183,8 @@ export class VenteService {
 
     // 5. Transaction de création
     return this.prisma.$transaction(async (tx) => {
-      // a. Générer le numéro de ticket
-      const numeroVente = await this.generateReceiptNumber(data.magasin_id);
+      // a. Générer le numéro de ticket (en utilisant tx pour éviter les collisions)
+      const numeroVente = await this.generateReceiptNumber(data.magasin_id, tx);
       
       // b. Créer la vente
       const vente = await tx.vente.create({

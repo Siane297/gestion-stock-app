@@ -273,6 +273,36 @@
               }}</small>
             </div>
 
+            <!-- Boutique d'affectation -->
+            <div class="field">
+              <label
+                for="magasin"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Boutique d'affectation
+              </label>
+              <Select
+                v-model="formData.magasin_id"
+                :options="magasins"
+                optionLabel="nom"
+                optionValue="id"
+                placeholder="Sélectionner une boutique"
+                class="w-full"
+                showClear
+                filter
+              >
+                <template #option="slotProps">
+                  <div class="flex items-center gap-2">
+                    <Icon icon="tabler:building-store" class="text-primary" />
+                    <span>{{ slotProps.option.nom }}</span>
+                  </div>
+                </template>
+              </Select>
+              <small class="text-gray-500 text-xs mt-1">
+                L'utilisateur sera restreint aux caisses et stocks de cette boutique.
+              </small>
+            </div>
+
             <!-- Code PIN (Caisse) -->
             <div class="field">
               <label
@@ -453,6 +483,7 @@ import InputGroupAddon from "primevue/inputgroupaddon";
 import { Icon } from "@iconify/vue";
 import AppButton from "~/components/button/AppButton.vue";
 import ConfirmationDialog from "~/components/dialog/ConfirmationDialog.vue";
+import { useMagasinApi } from "~/composables/api/useMagasinApi";
 
 interface Employee {
   value: string;
@@ -594,6 +625,7 @@ const formData = ref({
   confirmPassword: "",
   permissions: [] as string[],
   pin: "",
+  magasin_id: null as string | null,
 });
 
 // Erreurs de validation
@@ -601,6 +633,18 @@ const errors = ref<Record<string, string>>({});
 
 // Dialog de confirmation
 const showCancelDialog = ref(false);
+
+// Magasins
+const { getMagasins } = useMagasinApi();
+const magasins = ref<any[]>([]);
+
+onMounted(async () => {
+  try {
+    magasins.value = await getMagasins();
+  } catch (error) {
+    console.error("Erreur récupération magasins:", error);
+  }
+});
 
 // Employés disponibles
 const availableEmployees = computed(() => {
@@ -621,6 +665,7 @@ watch(
           ? newData.permissions
           : [],
         pin: newData.pin || "",
+        magasin_id: newData.magasin_id || null,
       };
     }
   },
@@ -714,6 +759,7 @@ const handleSubmit = () => {
     role: formData.value.role,
     permissions: formData.value.permissions,
     pin: formData.value.pin || null,
+    magasin_id: formData.value.magasin_id || null,
   };
 
   // Ajouter le mot de passe seulement si renseigné

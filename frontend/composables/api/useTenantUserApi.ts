@@ -21,6 +21,8 @@ export interface TenantUser {
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
+  magasin_id?: string | null;
+  magasin?: { id: string; nom: string };
 }
 
 export interface CreateTenantUserDto {
@@ -30,13 +32,14 @@ export interface CreateTenantUserDto {
   role: 'ADMIN' | 'MANAGER' | 'USER' | 'RH';
   permissions: string[];
   pin?: string;
+  magasin_id?: string | null;
 }
 
 export interface UpdateTenantUserDto {
   role?: 'ADMIN' | 'MANAGER' | 'USER' | 'RH';
   permissions?: string[];
-  password?: string;
   pin?: string;
+  magasin_id?: string | null;
 }
 
 export const useTenantUserApi = () => {

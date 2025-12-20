@@ -56,9 +56,11 @@ export interface CreateAchatDto {
 export const useAchatApi = () => {
   const { get, post, patch, delete: del } = useSecureApi();
 
-  const getAchats = async (): Promise<Achat[]> => {
-    // Les achats sont globaux, pas de filtre par magasin
-    const response = await get<ApiResponse<Achat[]>>('/api/achats');
+  const getAchats = async (magasin_id?: string): Promise<Achat[]> => {
+    const params: any = {};
+    if (magasin_id) params.magasin_id = magasin_id;
+
+    const response = await get<ApiResponse<Achat[]>>('/api/achats', { params });
     return response.data || [];
   };
 

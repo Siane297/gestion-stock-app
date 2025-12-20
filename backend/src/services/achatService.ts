@@ -97,8 +97,12 @@ export class AchatService {
   /**
    * Récupère tous les achats
    */
-  async getAll(): Promise<any[]> {
+  async getAll(filters?: { magasin_id?: string }): Promise<any[]> {
+    const where: any = {};
+    if (filters?.magasin_id) where.magasin_id = filters.magasin_id;
+
     return this.prisma.achat.findMany({
+      where,
       orderBy: { date_commande: 'desc' },
       include: {
         fournisseur: { select: { nom_entreprise: true } },

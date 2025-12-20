@@ -61,6 +61,7 @@ export interface ProduitFilters {
   search?: string;
   categorie_id?: string;
   est_actif?: boolean;
+  magasin_id?: string;
 }
 
 /**
@@ -145,6 +146,12 @@ export class ProduitService {
       where.categorie_id = filters.categorie_id;
     }
 
+    // Préparation filtre stock
+    const stockWhere: any = {};
+    if (filters?.magasin_id) {
+        stockWhere.magasin_id = filters.magasin_id;
+    }
+
     return this.prisma.produit.findMany({
       where,
       orderBy: { nom: 'asc' },
@@ -153,6 +160,7 @@ export class ProduitService {
         unite: true,
         conditionnements: true,
         stocks: {
+          where: stockWhere,
           include: { magasin: true }
         }
       }

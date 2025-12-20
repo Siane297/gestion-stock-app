@@ -187,12 +187,7 @@ const menuCategories = [
   {
     title: 'Gestion Commerciale',
     items: [
-      {
-        name: 'Caisse',
-        icon: 'tabler:cash-register',
-        link: '/caisse',
-        permission: 'caisse',
-      },
+     
       {
         name: 'Point de vente',
         icon: 'tabler:device-laptop',
@@ -216,6 +211,12 @@ const menuCategories = [
         icon: 'tabler:calculator',
         link: '/comptabilite',
         permission: 'comptabilite',
+      },
+       {
+        name: 'Caisse',
+        icon: 'tabler:cash-register',
+        link: '/caisse',
+        permission: 'caisse',
       },
       // {
       //   name: 'Facture',

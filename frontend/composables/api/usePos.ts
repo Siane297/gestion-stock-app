@@ -143,37 +143,42 @@ export const usePos = defineStore('pos', () => {
 
       // 1. Unité de base (si aucune unité explicite définie)
       if (!hasDefinedUnit && p.prix_vente && p.prix_vente > 0) {
-        items.push({
-          uniqueId: `${p.id}_UNIT`,
-          productId: p.id,
-          conditionnementId: undefined, 
-          name: p.nom,
-          price: p.prix_vente,
-          isPack: false,
-          packLabel: p.unite?.nom,
-          quantityInBase: 1,
-          stockAvailable: stockProduit,
-          categoryName: p.categorie?.nom,
-          image: getFullImageUrl(p.image_url)
-        });
+        if (stockProduit > 0) { // Filtrage Stock POS
+            items.push({
+            uniqueId: `${p.id}_UNIT`,
+            productId: p.id,
+            conditionnementId: undefined, 
+            name: p.nom,
+            price: p.prix_vente,
+            isPack: false,
+            packLabel: p.unite?.nom,
+            quantityInBase: 1,
+            stockAvailable: stockProduit,
+            categoryName: p.categorie?.nom,
+            image: getFullImageUrl(p.image_url)
+            });
+        }
       }
 
       // 2. Conditionnements
       if (p.conditionnements && p.conditionnements.length > 0) {
         p.conditionnements.forEach((c: any) => {
-          items.push({
-             uniqueId: `${p.id}_${c.id}`,
-             productId: p.id,
-             conditionnementId: c.id,
-             name: `${p.nom}`,
-             price: c.prix_vente,
-             isPack: c.quantite_base > 1,
-             packLabel: c.nom, // Sera "Unité", "Pack de 6", etc.
-             quantityInBase: c.quantite_base,
-             stockAvailable: Math.floor(stockProduit / c.quantite_base),
-             categoryName: p.categorie?.nom,
-             image: getFullImageUrl(c.image_url) || getFullImageUrl(p.image_url) // Image spécifique ou fallback produit
-          });
+          const stockCond = Math.floor(stockProduit / c.quantite_base);
+          if (stockCond > 0) { // Filtrage Stock POS
+              items.push({
+                uniqueId: `${p.id}_${c.id}`,
+                productId: p.id,
+                conditionnementId: c.id,
+                name: `${p.nom}`,
+                price: c.prix_vente,
+                isPack: c.quantite_base > 1,
+                packLabel: c.nom, // Sera "Unité", "Pack de 6", etc.
+                quantityInBase: c.quantite_base,
+                stockAvailable: stockCond,
+                categoryName: p.categorie?.nom,
+                image: getFullImageUrl(c.image_url) || getFullImageUrl(p.image_url) // Image spécifique ou fallback produit
+              });
+          }
         });
       }
     });

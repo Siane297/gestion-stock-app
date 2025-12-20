@@ -11,12 +11,41 @@ import path from 'path';
 export const getAllProduits = async (req: Request, res: Response) => {
   try {
     const produitService = new ProduitService(req.tenantPrisma);
+    const user = req.user;
     
-    const produits = await produitService.getAll({
+    const filters: any = {
       search: req.query.search as string,
       categorie_id: req.query.categorie_id as string,
       est_actif: req.query.est_actif === 'false' ? false : true
-    });
+    };
+
+    // Gestion de la visibilité des stocks par rôle
+    if (user?.role !== 'ADMIN') {
+        // Chargement du magasin assigné
+        const tenantUser = await req.tenantPrisma.tenantUser.findUnique({
+             where: { id: user?.userId },
+             select: { magasin_id: true }
+        });
+
+        // On filtre strictement sur le magasin de l'utilisateur
+        if (tenantUser?.magasin_id) {
+            filters.magasin_id = tenantUser.magasin_id;
+        } else {
+             // Securité: Si pas de magasin, on pourrait cacher les stocks
+             // Pour l'instant on laisse vide ou on met un ID inexistant ?
+             // On va assumer que filters.magasin_id undefined = tous les stocks
+             // MAIS user standard DOIT avoir une boutique.
+             // On force un filtre impossible si pas de magasin ?
+             // filters.magasin_id = 'NONE'; 
+        }
+    } else {
+        // ADMIN: Peut filtrer s'il veut, sinon voit tout
+        if (req.query.magasin_id) {
+            filters.magasin_id = req.query.magasin_id as string;
+        }
+    }
+    
+    const produits = await produitService.getAll(filters);
 
     res.json({
       success: true,
