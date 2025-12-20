@@ -261,7 +261,14 @@ export class VenteService {
                 conditionnement: { select: { nom: true } }
             }
         },
-        _count: { select: { details: true } }
+        _count: { select: { details: true } },
+        session_caisse: {
+          include: {
+            caisse: {
+              select: { nom: true, code: true }
+            }
+          }
+        }
       },
       orderBy: { date_creation: 'desc' }
     });
@@ -289,7 +296,12 @@ export class VenteService {
             conditionnement: true
           }
         },
-        facture: true
+        facture: true,
+        session_caisse: {
+          include: {
+            caisse: true
+          }
+        }
       }
     });
 

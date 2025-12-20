@@ -188,6 +188,12 @@ const menuCategories = [
     title: 'Gestion Commerciale',
     items: [
       {
+        name: 'Caisse',
+        icon: 'tabler:device-laptop',
+        link: '/caisse',
+        permission: 'caisse',
+      },
+      {
         name: 'Point de vente',
         icon: 'tabler:device-laptop',
         link: '/point-vente',

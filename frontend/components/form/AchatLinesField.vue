@@ -45,7 +45,7 @@
               📦 {{ item.quantite_conditionnement }} colis ({{
                 item.quantite
               }}
-              unités)
+              {{ getBaseUnitName(item.produit_id) }}s)
               <div
                 v-if="item.quantite_recue !== undefined"
                 class="text-xs font-bold"
@@ -69,7 +69,7 @@
               v-else
               class="text-sm font-medium text-gray-500 bg-gray-100 px-4 py-1 rounded-full inline-block mt-1"
             >
-              🔢 {{ item.quantite }} unités
+              🔢 {{ item.quantite }} {{ getBaseUnitName(item.produit_id) }}s
               <div
                 v-if="item.quantite_recue !== undefined"
                 class="text-xs font-bold mt-1"
@@ -141,16 +141,27 @@
       </div>
     </div>
 
-    <!-- Custom Dialog Form -->
     <Dialog v-model:visible="showPopup" modal
       :style="{ width: '50rem' }"
-      :breakpoints="{ '1199px': '75vw', '575px': '90vw' }" @hide="resetPopup"
-      :showHeader="false" class="p-0 overflow-hidden">
-      <SimplePageHeader 
-        :title="editingIndex !== null ? 'Modifier la ligne' : 'Ajouter un produit'"
-        :description="editingIndex !== null ? 'Ajustez les détails du produit sélectionné.' : 'Sélectionnez un produit et définissez ses quantités.'"
-        class="!rounded-none"
-      />
+      :breakpoints="{ '1199px': '75vw', '575px': '90vw' }" 
+      @hide="resetPopup"
+      class="overflow-hidden"
+      :showHeader="false"
+    >
+      <div class="header-container relative pt-5 pb-0">
+        <SimplePageHeader 
+          :title="editingIndex !== null ? 'Modifier la ligne' : 'Ajouter un produit'"
+          :description="editingIndex !== null ? 'Ajustez les détails du produit sélectionné.' : 'Sélectionnez un produit et définissez ses quantités.'"
+          class="rounded-2xl"
+        />
+        <!-- Bouton fermer manuel car showHeader=false -->
+        <button 
+          @click="showPopup = false" 
+          class="absolute top-8 right-8 text-white/70 hover:text-white transition-colors h-8 w-8 flex items-center justify-center rounded-full hover:bg-white/10 z-20"
+        >
+          <i class="pi pi-times text-lg"></i>
+        </button>
+      </div>
       <div class="flex flex-col gap-4 p-6">
         <!-- 1. Sélection Produit -->
         <div class="flex flex-col gap-2">
@@ -199,7 +210,7 @@
               {{
                 form.conditionnement_id
                   ? "Nombre de Colis"
-                  : "Quantité (Unités)"
+                  : `Quantité (${baseUnitLabel}s)`
               }}
               <span class="text-red-500">*</span>
             </label>
@@ -223,16 +234,14 @@
                 <span class="pi pi-minus" />
               </template>
             </InputNumber>
-            <small
-              v-if="form.conditionnement_id && selectedConditionnement"
-              class="text-gray-500"
-            >
+            <small class="text-gray-500">
               Soit
               <strong>{{
-                (form.quantite_saisie || 0) *
-                selectedConditionnement.quantite_base
+                form.conditionnement_id && selectedConditionnement
+                  ? (form.quantite_saisie || 0) * selectedConditionnement.quantite_base
+                  : (form.quantite_saisie || 0)
               }}</strong>
-              unités en stock.
+              {{ baseUnitLabel }}s en stock.
             </small>
           </div>
 
@@ -240,7 +249,7 @@
           <div class="flex flex-col gap-2">
             <label class="font-semibold text-gray-700">
               {{
-                form.conditionnement_id ? "Prix par Colis" : "Prix Unitaire"
+                form.conditionnement_id ? "Prix par Colis" : `Prix par ${baseUnitLabel}`
               }}
               <span class="text-red-500">*</span>
             </label>
@@ -280,7 +289,7 @@
           <div class="flex flex-col gap-2">
             <label class="font-semibold text-green-800">
               Quantité Reçue ({{
-                form.conditionnement_id ? "Colis" : "Unités"
+                form.conditionnement_id ? "Colis" : `${baseUnitLabel}s`
               }})
             </label>
             <div class="flex items-center gap-3">
@@ -303,7 +312,7 @@
               </InputNumber>
               <span class="text-sm text-green-600 whitespace-nowrap">
                 / {{ form.quantite_saisie }}
-                {{ form.conditionnement_id ? "Colis" : "Unités" }}
+                {{ form.conditionnement_id ? "Colis" : `${baseUnitLabel}s` }}
               </span>
             </div>
             <small class="text-green-600"
@@ -479,6 +488,15 @@ const getProductName = (id: string) => {
   const p = produits.value.find((x) => x.id === id);
   return p ? p.nom : "Produit inconnu";
 };
+
+const getBaseUnitName = (produitId: string) => {
+  const p = produits.value.find((x) => x.id === produitId);
+  return p?.unite?.nom || "unité";
+};
+
+const baseUnitLabel = computed(() => {
+  return selectedProduct.value?.unite?.nom || "unité";
+});
 
 const formatDate = (d: string | Date | undefined) => {
   if (!d) return "-";

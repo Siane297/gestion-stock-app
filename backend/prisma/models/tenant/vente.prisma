@@ -29,18 +29,21 @@ model vente {
     statut            StatutVente
     methode_paiement  MethodePaiement
     notes             String?
+    session_caisse_id String? // Lien vers la session de caisse (optionnel pour retrocompatibilité)
     date_creation     DateTime        @default(now())
     date_modification DateTime        @updatedAt
 
-    magasin     magasin        @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
-    utilisateur TenantUser     @relation(fields: [utilisateur_id], references: [id], onDelete: Restrict)
-    client      client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
-    details     vente_detail[]
-    facture     facture?
+    magasin        magasin         @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    utilisateur    TenantUser      @relation(fields: [utilisateur_id], references: [id], onDelete: Restrict)
+    client         client?         @relation(fields: [client_id], references: [id], onDelete: SetNull)
+    session_caisse session_caisse? @relation(fields: [session_caisse_id], references: [id], onDelete: SetNull)
+    details        vente_detail[]
+    facture        facture?
 
     @@index([magasin_id])
     @@index([utilisateur_id])
     @@index([client_id])
+    @@index([session_caisse_id])
     @@index([date_creation])
     @@map("ventes")
 }

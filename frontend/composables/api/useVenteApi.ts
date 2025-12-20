@@ -45,6 +45,12 @@ export interface Vente {
   utilisateur?: { email: string };
   details?: VenteDetail[];
   facture?: Facture;
+  session_caisse?: {
+    caisse?: {
+      nom: string;
+      code: string;
+    }
+  };
   _count?: { details: number };
 }
 

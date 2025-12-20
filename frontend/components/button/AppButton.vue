@@ -140,7 +140,7 @@ const buttonClasses = computed(() => {
       'text-noir',
       'border-2',
       'border-gris/50',
-      'hover:bg-gris/50',
+      // 'hover:bg-gris/10',
       'focus:ring-gris',
       'shadow-3d-secondary',
     ],

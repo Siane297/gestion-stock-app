@@ -21,6 +21,9 @@ model TenantUser {
   // Permissions d'accès aux pages (JSON array des slugs de pages autorisées)
   permissions Json @default("[]")
 
+  // PIN pour authentification rapide sur caisse (4-6 chiffres)
+  pin String? @unique
+
   // Relations
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
@@ -33,6 +36,7 @@ model TenantUser {
   mouvements_stock mouvements_stock[]
   ventes           vente[]
   audit_logs       audit_log[]
+  sessions_caisse  session_caisse[]
 
   @@map("tenant_users")
 }

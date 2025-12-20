@@ -9,6 +9,7 @@ export interface TenantUser {
   isBlocked: boolean;
   isOwner?: boolean;
   permissions: string[];
+  pin?: string;
   employee?: {
     id: string;
     matricule: string;
@@ -28,12 +29,14 @@ export interface CreateTenantUserDto {
   password: string;
   role: 'ADMIN' | 'MANAGER' | 'USER' | 'RH';
   permissions: string[];
+  pin?: string;
 }
 
 export interface UpdateTenantUserDto {
   role?: 'ADMIN' | 'MANAGER' | 'USER' | 'RH';
   permissions?: string[];
   password?: string;
+  pin?: string;
 }
 
 export const useTenantUserApi = () => {

@@ -15,12 +15,20 @@ export default defineNuxtRouteMiddleware((to) => {
   // Configuration des permissions requises par préfixe de route
   // Les routes sont vérifiées par ordre (plus spécifique en premier)
   const routePermissions: Array<{ path: string; permission: string }> = [
-    { path: '/accueil', permission: 'accueil' },         // Tableau de bord
-    { path: '/employees', permission: 'employees' },     // + sous-routes /employees/*
-    { path: '/pointage', permission: 'pointage' },       // + sous-routes /pointage/*
-    { path: '/historique', permission: 'historique' },   // + sous-routes /historique/*
-    { path: '/parametre', permission: 'parametre' },     // + sous-routes /parametre/*
-    { path: '/utilisateur', permission: 'utilisateur' }, // + sous-routes /utilisateur/*
+    { path: '/accueil', permission: 'accueil' },
+    { path: '/employees', permission: 'employees' },
+    { path: '/produits', permission: 'produits' },
+    { path: '/stock', permission: 'stock' },
+    { path: '/caisse', permission: 'caisse' },
+    { path: '/point-vente', permission: 'point-vente' },
+    { path: '/vente', permission: 'vente' },
+    { path: '/achat', permission: 'achat' },
+    { path: '/client', permission: 'client' },
+    { path: '/fournisseur', permission: 'fournisseur' },
+    { path: '/comptabilite', permission: 'comptabilite' },
+    { path: '/boutique', permission: 'boutique' },
+    { path: '/utilisateur', permission: 'utilisateur' },
+    { path: '/parametre', permission: 'parametre' },
   ];
 
   // Trouver la permission requise pour cette route (y compris sous-routes)

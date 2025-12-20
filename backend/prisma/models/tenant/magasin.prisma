@@ -17,6 +17,7 @@ model magasin {
     ventes           vente[]
     achats           achat[]
     stocks_lot       stock_lot[]
+    caisses          caisse[]
 
     @@map("magasins")
 }

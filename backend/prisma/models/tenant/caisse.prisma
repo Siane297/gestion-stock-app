@@ -1,0 +1,70 @@
+// Modèle Caisse (Terminal de Point de Vente)
+// Permet de gérer plusieurs caisses par magasin
+
+enum StatutCaisse {
+    ACTIVE
+    INACTIVE
+    EN_MAINTENANCE
+}
+
+enum StatutSessionCaisse {
+    OUVERTE
+    FERMEE
+    SUSPENDUE
+}
+
+model caisse {
+    id                String       @id @default(uuid())
+    code              String // Code unique de la caisse (ex: "CAISSE-01")
+    nom               String // Nom affiché (ex: "Caisse Principale")
+    magasin_id        String
+    statut            StatutCaisse @default(ACTIVE)
+    description       String?
+    date_creation     DateTime     @default(now())
+    date_modification DateTime     @updatedAt
+
+    magasin  magasin          @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    sessions session_caisse[]
+
+    @@unique([magasin_id, code]) // Code unique par magasin
+    @@index([magasin_id])
+    @@map("caisses")
+}
+
+model session_caisse {
+    id             String @id @default(uuid())
+    caisse_id      String
+    utilisateur_id String
+
+    // Fonds
+    fond_initial Float  @default(0) // Montant en caisse à l'ouverture
+    fond_final   Float? // Montant compté à la fermeture
+
+    // Totaux calculés par méthode de paiement
+    total_especes Float @default(0)
+    total_carte   Float @default(0)
+    total_mobile  Float @default(0)
+    total_cheque  Float @default(0)
+    total_autre   Float @default(0)
+
+    // Écart de caisse (fond_final - (fond_initial + total_especes))
+    ecart Float?
+
+    // Statut et timestamps
+    statut         StatutSessionCaisse @default(OUVERTE)
+    date_ouverture DateTime            @default(now())
+    date_fermeture DateTime?
+
+    // Commentaires
+    notes_ouverture String?
+    notes_fermeture String?
+
+    caisse      caisse     @relation(fields: [caisse_id], references: [id], onDelete: Cascade)
+    utilisateur TenantUser @relation(fields: [utilisateur_id], references: [id], onDelete: Restrict)
+    ventes      vente[]
+
+    @@index([caisse_id])
+    @@index([utilisateur_id])
+    @@index([date_ouverture])
+    @@map("sessions_caisse")
+}

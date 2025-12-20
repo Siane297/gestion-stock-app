@@ -43,16 +43,16 @@ router.get('/organization', authenticate, async (req: Request, res: Response) =>
   try {
     const user = (req as any).user;
     
-    if (!user?.companyId) {
+    if (!user?.companyId && !user?.tenantId) {
       return res.status(400).json({
         success: false,
         message: 'Aucune organisation associée',
       });
     }
 
-    // Récupérer l'organisation
+    // Récupérer l'organisation (par companyId ou par schemaName pour les TenantUsers)
     const company = await prismaPublic.company.findUnique({
-      where: { id: user.companyId },
+      where: user.companyId ? { id: user.companyId } : { schemaName: user.tenantId },
       select: {
         id: true,
         name: true,

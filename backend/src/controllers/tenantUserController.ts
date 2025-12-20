@@ -12,7 +12,7 @@ export const getAllTenantUsers = async (req: Request, res: Response) => {
     console.log('[👥 TENANT-USERS] Tenant schema:', req.tenantSchema);
     console.log('[👥 TENANT-USERS] User role:', req.userRole);
     
-    // Utiliser le tenantPrisma du middleware plutôt que x-tenant-id
+    // Utiliser le tenantPrisma du middleware
     const tenantPrisma = req.tenantPrisma;
 
     if (!tenantPrisma) {
@@ -31,7 +31,6 @@ export const getAllTenantUsers = async (req: Request, res: Response) => {
             matricule: true,
             fullName: true,
             email: true,
-            // department: { select: { name: true } }, // Relation disabled in schema
             position: { select: { name: true } },
           },
         },
@@ -60,13 +59,13 @@ export const getAllTenantUsers = async (req: Request, res: Response) => {
  */
 export const getTenantUserById = async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
     const { id } = req.params;
+    const tenantPrisma = req.tenantPrisma;
 
-    if (!tenantId) {
+    if (!tenantPrisma) {
       return res.status(400).json({
         success: false,
-        message: 'Tenant ID manquant',
+        message: 'Accès tenant requis',
       });
     }
 
@@ -77,8 +76,6 @@ export const getTenantUserById = async (req: Request, res: Response) => {
       });
     }
 
-    const tenantPrisma = getTenantConnection(tenantId);
-
     const user = await tenantPrisma.tenantUser.findUnique({
       where: { id },
       include: {
@@ -88,7 +85,6 @@ export const getTenantUserById = async (req: Request, res: Response) => {
             matricule: true,
             fullName: true,
             email: true,
-            // department: { select: { name: true } }, // Relation disabled in schema
             position: { select: { name: true } },
           },
         },
@@ -121,13 +117,13 @@ export const getTenantUserById = async (req: Request, res: Response) => {
  */
 export const createTenantUser = async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
-    const { employeeId, password, role, permissions } = req.body;
+    const { employeeId, password, role, permissions, pin } = req.body;
+    const tenantPrisma = req.tenantPrisma;
 
-    if (!tenantId) {
+    if (!tenantPrisma) {
       return res.status(400).json({
         success: false,
-        message: 'Tenant ID manquant',
+        message: 'Accès tenant requis',
       });
     }
 
@@ -137,8 +133,6 @@ export const createTenantUser = async (req: Request, res: Response) => {
         message: 'Employé et mot de passe requis',
       });
     }
-
-    const tenantPrisma = getTenantConnection(tenantId);
 
     // Vérifier que l'employé existe et n'a pas déjà un compte
     const employee = await tenantPrisma.employee.findUnique({
@@ -178,6 +172,7 @@ export const createTenantUser = async (req: Request, res: Response) => {
         password: hashedPassword,
         role: role || 'USER',
         permissions: permissions || [],
+        pin: pin || null,
       },
       include: {
         employee: {
@@ -186,7 +181,6 @@ export const createTenantUser = async (req: Request, res: Response) => {
             matricule: true,
             fullName: true,
             email: true,
-            // department: { select: { name: true } }, // Relation disabled in schema
             position: { select: { name: true } },
           },
         },
@@ -202,6 +196,16 @@ export const createTenantUser = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     logger.error('Erreur lors de la création de l\'utilisateur tenant:', error);
+    
+    // Gérer les erreurs de contrainte unique (ex: PIN déjà utilisé)
+    if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0] || 'champ';
+      return res.status(400).json({
+        success: false,
+        message: field === 'pin' ? 'Ce code PIN est déjà utilisé par un autre utilisateur' : `La valeur pour le champ ${field} est déjà utilisée`,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
@@ -215,14 +219,14 @@ export const createTenantUser = async (req: Request, res: Response) => {
  */
 export const updateTenantUser = async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
     const { id } = req.params;
-    const { role, permissions, password } = req.body;
+    const { role, permissions, password, pin } = req.body;
+    const tenantPrisma = req.tenantPrisma;
 
-    if (!tenantId) {
+    if (!tenantPrisma) {
       return res.status(400).json({
         success: false,
-        message: 'Tenant ID manquant',
+        message: 'Accès tenant requis',
       });
     }
 
@@ -233,12 +237,11 @@ export const updateTenantUser = async (req: Request, res: Response) => {
       });
     }
 
-    const tenantPrisma = getTenantConnection(tenantId);
-
     const updateData: any = {};
 
     if (role) updateData.role = role;
     if (permissions) updateData.permissions = permissions;
+    if (pin !== undefined) updateData.pin = pin || null;
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }
@@ -253,7 +256,6 @@ export const updateTenantUser = async (req: Request, res: Response) => {
             matricule: true,
             fullName: true,
             email: true,
-            // department: { select: { name: true } },
             position: { select: { name: true } },
           },
         },
@@ -269,6 +271,16 @@ export const updateTenantUser = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     logger.error('Erreur lors de la mise à jour de l\'utilisateur tenant:', error);
+
+    // Gérer les erreurs de contrainte unique (ex: PIN déjà utilisé)
+    if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0] || 'champ';
+      return res.status(400).json({
+        success: false,
+        message: field === 'pin' ? 'Ce code PIN est déjà utilisé par un autre utilisateur' : `La valeur pour le champ ${field} est déjà utilisée`,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: 'Erreur serveur',
@@ -282,14 +294,14 @@ export const updateTenantUser = async (req: Request, res: Response) => {
  */
 export const toggleBlockTenantUser = async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
     const { id } = req.params;
     const { isBlocked } = req.body;
+    const tenantPrisma = req.tenantPrisma;
 
-    if (!tenantId) {
+    if (!tenantPrisma) {
       return res.status(400).json({
         success: false,
-        message: 'Tenant ID manquant',
+        message: 'Accès tenant requis',
       });
     }
 
@@ -299,8 +311,6 @@ export const toggleBlockTenantUser = async (req: Request, res: Response) => {
         message: 'ID utilisateur manquant',
       });
     }
-
-    const tenantPrisma = getTenantConnection(tenantId);
 
     // Vérifier si c'est le propriétaire
     const user = await tenantPrisma.tenantUser.findUnique({
@@ -360,13 +370,13 @@ export const toggleBlockTenantUser = async (req: Request, res: Response) => {
  */
 export const deleteTenantUser = async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
     const { id } = req.params;
+    const tenantPrisma = req.tenantPrisma;
 
-    if (!tenantId) {
+    if (!tenantPrisma) {
       return res.status(400).json({
         success: false,
-        message: 'Tenant ID manquant',
+        message: 'Accès tenant requis',
       });
     }
 
@@ -376,8 +386,6 @@ export const deleteTenantUser = async (req: Request, res: Response) => {
         message: 'ID utilisateur manquant',
       });
     }
-
-    const tenantPrisma = getTenantConnection(tenantId);
 
     // Vérifier si c'est le propriétaire
     const user = await tenantPrisma.tenantUser.findUnique({

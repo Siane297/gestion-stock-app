@@ -87,7 +87,7 @@
                   :min="field.min" :max="field.max" class="w-full" />
                 
                 <InputGroupAddon v-if="currentCurrency?.symbolPosition !== 'before'" 
-                  class="font-bold text-gray-600 bg-gray-50 border-l-0">
+                  class="font-bold !text-gray-600 !bg-gray-50 !border-l-0">
                   {{ currentCurrency?.symbol }}
                 </InputGroupAddon>
               </InputGroup>
@@ -199,7 +199,7 @@ import InputGroupAddon from 'primevue/inputgroupaddon';
 import { useCountryFlags } from "~/composables/useCountryFlags";
 import { useCurrency } from "~/composables/useCurrency";
 
-interface FormField {
+export interface FormField {
   name: string;
   label: string;
   type:

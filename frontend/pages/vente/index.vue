@@ -45,9 +45,17 @@
           <Tag :value="((data as unknown) as Vente).methode_paiement" severity="secondary" />
         </template>
   
-          <!-- Custom rendering for Date -->
           <template #column-date_creation="{ data }">
               {{ new Date(((data as unknown) as Vente).date_creation).toLocaleString('fr-FR') }}
+          </template>
+
+          <!-- Custom rendering for Caisse -->
+          <template #column-session_caisse="{ data }">
+              <div v-if="((data as unknown) as Vente).session_caisse?.caisse" class="flex flex-col">
+                  <span class="font-medium text-gray-800">{{ ((data as unknown) as Vente).session_caisse?.caisse?.nom }}</span>
+                  <span class="text-xs text-gray-500">{{ ((data as unknown) as Vente).session_caisse?.caisse?.code }}</span>
+              </div>
+              <span v-else class="text-gray-400 italic">Back Office</span>
           </template>
       </TableGeneric>
     </div>
@@ -72,8 +80,8 @@ const ventes = ref<Vente[]>([]);
 const loading = ref(false);
 
 const columns: TableColumn[] = [
-  { field: 'date_creation', header: 'Date', sortable: true, customRender: true }, // Using customRender to format date
-//   { field: 'client.nom', header: 'Client', sortable: true },
+  { field: 'date_creation', header: 'Date', sortable: true, customRender: true },
+  { field: 'session_caisse', header: 'Caisse', sortable: true, customRender: true },
   { field: 'produits', header: 'Produits / Cond.', sortable: false, customRender: true },
   { field: 'montant_total', header: 'Total', sortable: true, type: 'price' },
   { field: 'methode_paiement', header: 'Paiement', sortable: true, customRender: true },

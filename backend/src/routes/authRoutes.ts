@@ -418,6 +418,7 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
               email: tenantUser.email,
               role: tenantUser.role,
               tenantId: company.schemaName,
+              companyId: company.id,
               employeeId: tenantUser.employeeId,
             };
 
@@ -592,6 +593,7 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
       email: tenantUser.email,
       role: tenantUser.role,
       tenantId: tenantId,
+      companyId: company.id,
       employeeId: tenantUser.employeeId,
     };
 
@@ -806,7 +808,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
       userId: payload.userId,
       email: payload.email,
       role: payload.role,
-      ...(payload.companyId && { companyId: payload.companyId }),
+      companyId: payload.companyId || (user as any).company?.id,
       ...(payload.tenantId && { tenantId: payload.tenantId }),
       ...(payload.employeeId && { employeeId: payload.employeeId })
     };

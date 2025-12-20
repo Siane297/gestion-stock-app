@@ -67,7 +67,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: 'Préparation de votre espace de gestion de présence',
+  title: 'Préparation de votre espace de gestion ',
   message: 'Configuration de votre environnement en cours...',
   duration: 7000,
   redirectTo: '/accueil',
