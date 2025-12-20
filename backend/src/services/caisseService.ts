@@ -197,16 +197,30 @@ export class CaisseService {
   async deleteCaisse(id: string): Promise<void> {
     const existing = await this.prisma.caisse.findUnique({
       where: { id },
-      include: { sessions: { where: { statut: 'OUVERTE' } } }
+      include: { 
+        sessions: { 
+          include: { _count: { select: { ventes: true } } }
+        } 
+      }
     });
     if (!existing) throw new Error('Caisse non trouvée');
 
     // Ne pas supprimer si une session est ouverte
-    if (existing.sessions.length > 0) {
+    if (existing.sessions.some(s => s.statut === 'OUVERTE')) {
       throw new Error('Impossible de supprimer une caisse avec une session ouverte');
     }
 
-    await this.prisma.caisse.delete({ where: { id } });
+    // Ne pas supprimer si la caisse contient des ventes
+    const hasSales = existing.sessions.some(s => s._count.ventes > 0);
+    if (hasSales) {
+      throw new Error('Impossible de supprimer une caisse contenant des ventes. Veuillez la désactiver à la place.');
+    }
+
+    // Hard delete
+    await this.prisma.caisse.delete({
+      where: { id }
+    });
+    
     logger.info(`Caisse supprimée: ${existing.code}`);
   }
 

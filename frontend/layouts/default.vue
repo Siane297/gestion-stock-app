@@ -11,7 +11,7 @@
 
       <!-- Page Content (scrollable) -->
       <main class="flex-1 overflow-y-auto mt-[90px]  p-4 lg:px-9 lg:py-6">
-        <AppBreadcrumb v-if="!isAccueilPage" />
+        <AppBreadcrumb v-if="showBreadcrumb" />
         <slot />
       </main>
     </div>
@@ -44,7 +44,9 @@ watch(() => route.path, () => {
 });
 
 // Check if current page is 'accueil' to hide breadcrumb
-const isAccueilPage = computed(() => {
-  return route.path === '/accueil' || route.path === '/';
+const showBreadcrumb = computed(() => {
+  const isAccueil = route.path === '/accueil' || route.path === '/';
+  const explicitlyHidden = route.meta.hideBreadcrumb === true;
+  return !isAccueil && !explicitlyHidden;
 });
 </script>

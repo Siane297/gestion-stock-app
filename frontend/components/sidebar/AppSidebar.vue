@@ -189,7 +189,7 @@ const menuCategories = [
     items: [
       {
         name: 'Caisse',
-        icon: 'tabler:device-laptop',
+        icon: 'tabler:cash-register',
         link: '/caisse',
         permission: 'caisse',
       },

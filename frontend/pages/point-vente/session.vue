@@ -6,9 +6,9 @@
 
     <div class="w-full relative z-10" :class="step === 'select-caisse' ? 'max-w-4xl' : 'max-w-lg'">
       <!-- Header -->
-      <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white shadow-xl mb-4">
-          <Icon icon="tabler:device-laptop" class="text-4xl text-primary" />
+      <div v-if="caisses.length > 0 || loading" class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary shadow-sm mb-4">
+          <Icon icon="tabler:cash-register" class="text-4xl text-white" />
         </div>
         <h1 class="text-3xl font-bold text-noir mb-2">Session de Caisse</h1>
         <p class="text-noir/60">Sélectionnez une caisse et saisissez votre PIN pour commencer</p>
@@ -16,17 +16,18 @@
 
       <!-- Étape 1 : Sélection de Caisse -->
       <div v-if="step === 'select-caisse'" class="animate-fade-in">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Grille des caisses -->
+        <div v-if="caisses.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div 
             v-for="caisse in caisses" 
             :key="caisse.id"
-            class="caisse-card"
+            class="caisse-card border-2 border-gris/40"
             :class="{ 'opacity-60 cursor-not-allowed': caisse.displayStatut === 'OCCUPEE' && !caisse.isMySession }"
             @click="(caisse.displayStatut !== 'OCCUPEE' || caisse.isMySession) ? selectCaisse(caisse) : null"
           >
             <div class="flex items-center gap-4">
               <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Icon icon="tabler:device-laptop" class="text-2xl text-primary" />
+                <Icon icon="tabler:cash-register" class="text-2xl text-primary" />
               </div>
               <div class="flex-1">
                 <h3 class="font-bold text-gray-800">{{ caisse.nom }}</h3>
@@ -46,11 +47,23 @@
               </div>
             </div>
           </div>
+        </div>
           
-          <div v-if="caisses.length === 0 && !loading" class="text-center p-8 bg-white/5 rounded-3xl border border-white/10">
-              <Icon icon="tabler:exclamation-circle" class="text-4xl text-white/40 mb-2 mx-auto" />
-              <p class="text-white/60">Aucune caisse configurée pour votre organisation.</p>
-          </div>
+        <!-- État Vide -->
+        <div v-else-if="!loading" class="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border-2 border-gris/40  animate-fade-in max-w-2xl mx-auto w-full">
+            <img src="~/assets/images/caisse.png" alt="Aucune caisse" class="w-64 h-auto mb-2 drop-shadow-xl" />
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Prêt à encaisser ?</h2>
+            <p class="text-gray-500 text-center max-w-sm mb-8 leading-relaxed">
+              Aucune caisse n'est configurée pour votre organisation. Créez votre premier terminal de vente pour commencer à servir vos clients.
+            </p>
+            <AppButton 
+              label="Configurer mes caisses"
+              icon="tabler:settings"
+              variant="primary"
+              size="sm"
+              class="w-full sm:w-auto"
+              @click="router.push('/caisse')"
+            />
         </div>
       </div>
 
@@ -128,6 +141,7 @@ import PinPad from '~/components/pos/PinPad.vue';
 import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
+import AppButton from '~/components/button/AppButton.vue';
 import Badge from 'primevue/badge';
 
 const { currentCurrency } = useCurrency();
@@ -138,8 +152,8 @@ const currencyDecimals = computed(() => {
 
 // Désactiver le layout normal
 definePageMeta({
-//   layout: false,
-  middleware: ['auth']
+  middleware: ['auth'],
+  hideBreadcrumb: true
 });
 
 const { getCaisses, ouvrirSessionParPin } = useCaisseApi();
@@ -256,8 +270,7 @@ onMounted(async () => {
   border-radius: 1.5rem;
   padding: 1.25rem;
   cursor: pointer;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid transparent;
+  /* box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
