@@ -204,7 +204,7 @@ const handleClosureSubmit = async (data: any) => {
 
         // Nettoyer et rediriger
         setTimeout(() => {
-            caisseStore.clearSession();
+            caisseStore.reset();
             router.push('/point-vente/session');
         }, 1500);
 

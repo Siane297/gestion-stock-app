@@ -3,6 +3,8 @@
  * Utilise une approche hybride : HttpOnly cookies + Memory storage
  * Compatible iOS Safari et résistant aux attaques XSS/CSRF
  */
+import { useMagasinStore } from '~/stores/magasin';
+import { useCaisseStore } from '~/stores/caisse';
 
 export interface LoginCredentials {
   email: string;
@@ -207,6 +209,12 @@ export const useSecureAuth = () => {
       accessToken.value = null;
       user.value = null;
       isAuthenticated.value = false;
+
+      // Réinitialiser les stores Pinia
+      const magasinStore = useMagasinStore();
+      const caisseStore = useCaisseStore();
+      magasinStore.reset();
+      caisseStore.reset();
 
       // Arrêter le rafraîchissement automatique
       stopTokenRefresh();

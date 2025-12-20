@@ -7,25 +7,34 @@ export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const { user } = req;
     // @ts-ignore - tenantSchema is added by middleware
-    const tenantId = (req as any).tenantSchema; 
+    const tenantId = req.tenantSchema; 
     const magasinId = req.query.magasin_id as string;
     const period = (req.query.period as any) || 'DAY';
 
-    if (!tenantId) {
-      return res.status(400).json({ message: 'Tenant ID (Schema) manquant' });
+    if (!tenantId || !req.tenantPrisma) {
+      return res.status(400).json({ message: 'Contexte Tenant (Schema) manquant' });
     }
     
-    if (!magasinId) {
-        return res.status(400).json({ message: 'Magasin ID requis' });
+    const dashboardService = new DashboardService(req.tenantPrisma);
+    let finalMagasinId = magasinId;
+
+    // Restriction par rôle
+    if (user?.role !== 'ADMIN') {
+        const tenantUser = await req.tenantPrisma.tenantUser.findUnique({
+             where: { id: (user as any)?.userId },
+             select: { magasin_id: true }
+        });
+
+        if (!tenantUser?.magasin_id) {
+             return res.status(403).json({ message: 'Aucun magasin assigné. Accès refusé au dashboard.' });
+        }
+        finalMagasinId = tenantUser.magasin_id;
     }
 
-    const prisma = await getTenantConnection(tenantId);
-    const dashboardService = new DashboardService(prisma);
-
     const [globalStats, salesChart, topProducts] = await Promise.all([
-      dashboardService.getGlobalStats(magasinId, period),
-      dashboardService.getSalesChart(magasinId, period),
-      dashboardService.getTopProducts(magasinId, period)
+      dashboardService.getGlobalStats(finalMagasinId, period),
+      dashboardService.getSalesChart(finalMagasinId, period),
+      dashboardService.getTopProducts(finalMagasinId, period)
     ]);
 
     res.json({

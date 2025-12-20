@@ -64,9 +64,11 @@ export const useCaisseStore = defineStore('caisse', () => {
   /**
    * Réinitialise le store (déconnexion)
    */
-  function clearSession() {
+  function reset() {
     activeSession.value = null;
     isLocked.value = false;
+    isLoading.value = false;
+    lastError.value = null;
   }
 
   return {
@@ -83,6 +85,6 @@ export const useCaisseStore = defineStore('caisse', () => {
     setSession,
     lock,
     unlock,
-    clearSession
+    reset
   };
 });

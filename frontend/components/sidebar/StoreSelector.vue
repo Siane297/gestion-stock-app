@@ -10,18 +10,30 @@
           <div class="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0 shadow-lg" :class="canSwitch ? 'group-hover:scale-105 transition-transform' : ''">
             <Icon icon="tabler:building-store" class="text-noir text-lg" />
           </div>
-          <div class="flex flex-col items-start overflow-hidden">
-              <span class="text-xs text-white/50 font-medium uppercase tracking-wider">Boutique active</span>
-             <span class="text-sm font-bold truncate w-full text-left" :title="currentMagasin?.nom || (currentMagasinId === null ? 'Toutes les boutiques' : 'Chargement...')">
-                {{ currentMagasin?.nom || (currentMagasinId === null ? 'Toutes les boutiques' : 'Chargement...') }}
-             </span>
+          <div class="flex flex-col items-start overflow-hidden w-full">
+               <span class="text-xs text-white/50 font-medium uppercase tracking-wider">Boutique active</span>
+               
+               <!-- Loading / Skeleton state -->
+               <div v-if="loading || isSwitching" class="space-y-1 w-full mt-0.5">
+                  <div class="h-3.5 bg-white/20 rounded animate-pulse w-3/4"></div>
+               </div>
+               
+               <!-- Info Magasin -->
+               <span v-else class="text-sm font-bold truncate w-full text-left" :title="currentMagasin?.nom || (currentMagasinId === null ? 'Toutes les boutiques' : 'Chargement...')">
+                  {{ currentMagasin?.nom || (currentMagasinId === null ? 'Toutes les boutiques' : 'Chargement...') }}
+               </span>
           </div>
         </div>
         <Icon 
-            v-if="canSwitch"
+            v-if="canSwitch && !loading && !isSwitching"
             icon="tabler:chevron-down" 
             class="text-white/50 transition-transform duration-300"
             :class="{ 'rotate-180': isOpen }" 
+        />
+        <Icon 
+            v-else-if="loading || isSwitching"
+            icon="tabler:loader-2" 
+            class="text-white/50 animate-spin"
         />
       </button>
 
@@ -34,7 +46,7 @@
         leave-from-class="transform scale-100 opacity-100"
         leave-to-class="transform scale-95 opacity-0"
       >
-        <div v-if="isOpen" class="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 overflow-hidden">
+        <div v-if="isOpen" class="absolute px-2  left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 overflow-hidden">
             <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Changer de boutique
             </div>
@@ -45,7 +57,7 @@
                     v-if="user?.role === 'ADMIN'"
                     @click="selectMagasin(null)"
                     class="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors relative border-b border-gray-50"
-                    :class="{ 'bg-blue-50 text-blue-700 font-bold': currentMagasinId === null }"
+                    :class="{ 'bg-blue-50  text-blue-700 font-bold': currentMagasinId === null }"
                 >
                     <Icon 
                         :icon="currentMagasinId === null ? 'tabler:circle-check-filled' : 'tabler:world'" 
@@ -82,9 +94,10 @@ import { useMagasinStore } from '~/stores/magasin';
 import { useSecureAuth } from '~/composables/useSecureAuth';
 
 const store = useMagasinStore();
-const { magasins, currentMagasin, currentMagasinId } = storeToRefs(store);
+const { magasins, currentMagasin, currentMagasinId, loading } = storeToRefs(store);
 
 const isOpen = ref(false);
+const isSwitching = ref(false);
 const selectorRef = ref<HTMLElement | null>(null);
 
 const { user, isAuthenticated } = useSecureAuth();
@@ -115,10 +128,14 @@ const toggleDropdown = () => {
 };
 
 const selectMagasin = (id: string | null) => {
+    isSwitching.value = true;
     store.setMagasin(id);
     isOpen.value = false;
-    // Rafraîchir l'application pour appliquer le contexte partout
-    window.location.reload();
+    
+    // Rafraîchir l'application après un court délai pour montrer le chargement
+    setTimeout(() => {
+        window.location.reload();
+    }, 300);
 };
 
 // Fermer le dropdown si on clique ailleurs

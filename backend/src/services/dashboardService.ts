@@ -42,43 +42,52 @@ export class DashboardService {
     return { currentStart, previousStart, previousEnd };
   }
 
-  async getGlobalStats(magasinId: string, period: DashboardPeriod = 'DAY') {
+  async getGlobalStats(magasinId?: string, period: DashboardPeriod = 'DAY') {
     const { currentStart, previousStart, previousEnd } = this.getDateRanges(period);
+    
+    const where: any = {
+      statut: 'PAYEE',
+      date_creation: { gte: currentStart }
+    };
+    if (magasinId) where.magasin_id = magasinId;
+
+    const previousWhere: any = {
+      statut: 'PAYEE',
+      date_creation: { gte: previousStart, lt: previousEnd }
+    };
+    if (magasinId) previousWhere.magasin_id = magasinId;
 
     // 1. Metrics for current period
     const currentMetrics = await this.prisma.vente.aggregate({
-      where: {
-        magasin_id: magasinId,
-        statut: 'PAYEE',
-        date_creation: { gte: currentStart }
-      },
+      where,
       _sum: { montant_total: true },
       _count: true
     });
 
     // 2. Metrics for previous period (for comparison)
     const previousMetrics = await this.prisma.vente.aggregate({
-      where: {
-        magasin_id: magasinId,
-        statut: 'PAYEE',
-        date_creation: { gte: previousStart, lt: previousEnd }
-      },
+      where: previousWhere,
       _sum: { montant_total: true },
       _count: true
     });
 
-    // 3. Stock & Purchases (Static for now as requested or general)
+    // 3. Stock & Purchases
+    const stockWhere: any = {};
+    if (magasinId) stockWhere.magasin_id = magasinId;
+
     const lowStocks = await this.prisma.stock_magasin.findMany({
-        where: { magasin_id: magasinId },
+        where: stockWhere,
         select: { quantite: true, quantite_minimum: true }
     });
     const minimalStockCount = lowStocks.filter(s => s.quantite <= s.quantite_minimum).length;
 
-    const pendingPurchases = await this.prisma.achat.count({
-      where: {
-        magasin_id: magasinId,
+    const achatWhere: any = {
         statut: { in: ['COMMANDE', 'RECU_PARTIELLEMENT'] }
-      }
+    };
+    if (magasinId) achatWhere.magasin_id = magasinId;
+
+    const pendingPurchases = await this.prisma.achat.count({
+      where: achatWhere
     });
 
     // Calculate trends
@@ -103,7 +112,7 @@ export class DashboardService {
     };
   }
 
-  async getSalesChart(magasinId: string, period: DashboardPeriod = 'DAY') {
+  async getSalesChart(magasinId?: string, period: DashboardPeriod = 'DAY') {
     const now = new Date();
     let startDate: Date;
     let groupBy: 'day' | 'week' = 'day';
@@ -121,12 +130,14 @@ export class DashboardService {
 
     startDate.setHours(0, 0, 0, 0);
 
+    const where: any = {
+      statut: 'PAYEE',
+      date_creation: { gte: startDate }
+    };
+    if (magasinId) where.magasin_id = magasinId;
+
     const sales = await this.prisma.vente.findMany({
-      where: {
-        magasin_id: magasinId,
-        statut: 'PAYEE',
-        date_creation: { gte: startDate }
-      },
+      where,
       select: {
         date_creation: true,
         montant_total: true
@@ -167,17 +178,19 @@ export class DashboardService {
       .map(([date, amount]) => ({ date, amount }));
   }
 
-  async getTopProducts(magasinId: string, period: DashboardPeriod = 'DAY', limit: number = 5) {
+  async getTopProducts(magasinId?: string, period: DashboardPeriod = 'DAY', limit: number = 5) {
      const { currentStart } = this.getDateRanges(period);
 
+     const where: any = {
+         vente: {
+             statut: 'PAYEE',
+             date_creation: { gte: currentStart }
+         }
+     };
+     if (magasinId) where.vente.magasin_id = magasinId;
+
      const details = await this.prisma.vente_detail.findMany({
-         where: {
-             vente: {
-                 magasin_id: magasinId,
-                 statut: 'PAYEE',
-                 date_creation: { gte: currentStart }
-             }
-         },
+         where,
          include: {
              produit: { select: { nom: true, image_url: true } }
          }

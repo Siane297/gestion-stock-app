@@ -236,18 +236,15 @@ const handleLogout = () => {
   showLogoutConfirmation.value = true;
 };
 
+const { logout } = useSecureAuth();
 const confirmLogout = async () => {
   try {
-    // Appeler l'API de déconnexion
-    await $fetch(`${config.public.apiBase}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    router.push('/auth/connexion');
+    await logout();
+    // Utiliser window.location pour un "hard reset" de l'état global/Pinia
+    window.location.href = '/auth/connexion';
   } catch (error) {
     console.error('Erreur de déconnexion:', error);
-    // Rediriger quand même
-    router.push('/auth/connexion');
+    window.location.href = '/auth/connexion';
   }
 };
 </script>

@@ -94,6 +94,12 @@ export const useMagasinStore = defineStore('magasin', () => {
     }
   };
 
+  const reset = () => {
+    magasins.value = [];
+    currentMagasinId.value = null;
+    localStorage.removeItem('selected_magasin_id');
+  };
+
   const initialize = async () => {
     // On laisse fetchMagasins gérer la logique de priorité
     await fetchMagasins();
@@ -106,6 +112,7 @@ export const useMagasinStore = defineStore('magasin', () => {
     currentMagasin,
     fetchMagasins,
     setMagasin,
+    reset,
     initialize
   };
 });

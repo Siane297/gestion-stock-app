@@ -34,9 +34,13 @@ export interface DashboardData {
 export const useDashboardApi = () => {
   const { get } = useSecureApi();
 
-  const getDashboardStats = async (magasinId: string, period: string = 'DAY'): Promise<DashboardData | null> => {
-    if (!magasinId) return null;
-    const response = await get<ApiResponse<DashboardData>>(`/api/dashboard/stats?magasin_id=${magasinId}&period=${period}`);
+  const getDashboardStats = async (magasinId?: string, period: string = 'DAY'): Promise<DashboardData | null> => {
+    let url = `/api/dashboard/stats?period=${period}`;
+    if (magasinId) {
+        url += `&magasin_id=${magasinId}`;
+    }
+    
+    const response = await get<ApiResponse<DashboardData>>(url);
     return response.data || null;
   };
 

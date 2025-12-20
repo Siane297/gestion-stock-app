@@ -107,11 +107,9 @@ const { formatPrice } = useCurrency();
 
 // Methods
 const fetchDashboardStats = async () => {
-  if (!currentMagasinId.value) return;
-
   loading.value = true;
   try {
-    const data = await getDashboardStats(currentMagasinId.value, selectedPeriod.value);
+    const data = await getDashboardStats(currentMagasinId.value || undefined, selectedPeriod.value);
     if (data) {
       stats.value = data.stats;
       salesData.value = data.charts.sales;
@@ -131,9 +129,7 @@ watch(currentMagasinId, () => {
 
 onMounted(async () => {
   await store.initialize();
-  if (currentMagasinId.value) {
-    await fetchDashboardStats();
-  }
+  await fetchDashboardStats();
 });
 </script>
 
