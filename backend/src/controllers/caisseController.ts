@@ -11,11 +11,28 @@ import { logger } from '../config/logger.js';
  */
 export const getAllCaisses = async (req: Request, res: Response) => {
   try {
-    const magasinId = req.query.magasin_id as string | undefined;
+    const user = req.user;
+    let finalMagasinId = req.query.magasin_id as string | undefined;
 
     const caisseService = new CaisseService(req.tenantPrisma);
-    const caisses = magasinId 
-      ? await caisseService.getCaissesByMagasin(magasinId)
+
+    // Restriction par rôle
+    if (user?.role !== 'ADMIN') {
+        // Récupérer l'utilisateur complet pour avoir son magasin assigné
+        const tenantUser = await req.tenantPrisma.tenantUser.findUnique({
+            where: { id: user?.userId },
+            select: { magasin_id: true }
+        });
+
+        if (!tenantUser?.magasin_id) {
+            // Si pas de magasin assigné, l'utilisateur ne voit aucune caisse
+            return res.json({ success: true, data: [] });
+        }
+        finalMagasinId = tenantUser.magasin_id;
+    }
+
+    const caisses = finalMagasinId 
+      ? await caisseService.getCaissesByMagasin(finalMagasinId)
       : await caisseService.getAllCaisses();
 
     res.json({ success: true, data: caisses });

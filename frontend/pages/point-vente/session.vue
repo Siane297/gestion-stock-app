@@ -174,9 +174,12 @@ import InputGroupAddon from 'primevue/inputgroupaddon';
 import Badge from 'primevue/badge';
 import Select from 'primevue/select';
 import { useMagasinApi } from '~/composables/api/useMagasinApi';
+import { useMagasinStore } from '~/stores/magasin';
 
 const { currentCurrency } = useCurrency();
 const { user } = useSecureAuth();
+const magasinStore = useMagasinStore();
+
 const currencyDecimals = computed(() => {
   return currentCurrency.value !== null ? currentCurrency.value.decimalPlaces : 0;
 });
@@ -204,7 +207,8 @@ const pinPadRef = ref<any>(null);
 // Multi-Boutique
 const { getMagasins } = useMagasinApi();
 const magasins = ref<any[]>([]);
-const selectedMagasinId = ref<string | null>(user.value?.magasin_id || null);
+// Initialiser avec le magasin courant du store (choisi dans la sidebar) ou celui de l'utilisateur
+const selectedMagasinId = ref<string | null>(magasinStore.currentMagasinId || user.value?.magasin_id || null);
 
 // Charger les caisses
 async function loadCaisses() {
