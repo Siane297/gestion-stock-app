@@ -201,10 +201,56 @@ export const useSecurePdf = () => {
       }
   };
 
+  /**
+   * Générer une facture proforma PDF
+   */
+  const generateProformaPdf = async (venteId: string, action: 'download' | 'print' = 'download'): Promise<void> => {
+      try {
+          console.log(`📄 [PDF] Demande proforma vente: ${venteId} [${action}]`);
+          
+          const { accessToken } = useSecureAuth();
+          const config = useRuntimeConfig();
+          const apiBase = config.public.apiBase || 'http://localhost:3001';
+          
+          const response = await fetch(`${apiBase}/api/ventes/${venteId}/proforma`, {
+              method: 'GET',
+              headers: { 
+                  'Authorization': `Bearer ${accessToken.value}`,
+                  'Content-Type': 'application/json'
+              }
+          });
+          
+           if (!response.ok) {
+             throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+           }
+           
+           const blob = await response.blob();
+           let filename = `Proforma-${venteId.substring(0, 8)}.pdf`;
+           
+           const contentDisposition = response.headers.get('Content-Disposition');
+           if (contentDisposition) {
+               const match = contentDisposition.match(/filename="?([^"]+)"?/);
+               if (match && match[1]) filename = match[1];
+           }
+
+           if (action === 'download') {
+               downloadBlob(blob, filename);
+               toast.add({ severity: 'success', summary: 'Succès', detail: `Proforma ${filename} téléchargée`, life: 3000 });
+           } else {
+               const blobUrl = URL.createObjectURL(blob);
+               window.open(blobUrl, '_blank');
+           }
+
+      } catch (err: any) {
+          handlePdfError(err);
+      }
+  };
+
   return {
     generatePdf,
     generateEmployeesPdf,
     generateUsersPdf,
-    generateReceiptPdf
+    generateReceiptPdf,
+    generateProformaPdf
   };
 };

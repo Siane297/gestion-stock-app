@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Facture Proforma</title>
+    <style>
+        :root {
+            --primary-color: #064654;
+            --secondary-color: #000;
+            --border-color: #1e1d1d;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container { padding: 40px; }
+        
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 20px;
+        }
+        .company-logo {
+            max-width: 180px;
+            max-height: 90px;
+            object-fit: contain;
+        }
+        .company-info { text-align: right; }
+        .company-name {
+            font-size: 18pt;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        .company-details {
+            font-size: 9pt;
+            color: var(--secondary-color);
+        }
+
+        /* Title */
+        .document-title {
+            text-align: left;
+            margin: 30px 0;
+            font-size: 20pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--primary-color);
+        }
+
+        /* Info blocks */
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        .info-box { width: 45%; }
+        .info-label {
+            font-weight: bold;
+            font-size: 10pt;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .info-content { 
+            font-size: 11pt; 
+            color: var(--secondary-color);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: left;
+            padding: 12px;
+            font-size: 10pt;
+            text-transform: uppercase;
+            border-bottom: none;
+        }
+        td {
+            padding: 12px;
+            color: #000;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .text-right { text-align: right; }
+        .qty-col { width: 60px; text-align: center; }
+        .price-col { width: 120px; text-align: right; }
+
+        /* Totals */
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .totals-box { width: 250px; }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .total-row.grand-total {
+            border-bottom: none;
+            font-size: 14pt;
+            font-weight: bold;
+            color: var(--primary-color);
+            background-color: #f8f8f8;
+            padding: 15px 10px;
+            margin-top: 5px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            font-size: 9pt;
+            color: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-box">
+                {{#if company.logo}}
+                <img src="{{company.logo}}" alt="Logo" class="company-logo">
+                {{/if}}
+            </div>
+            <div class="company-info">
+                <div class="company-name">{{company.name}}</div>
+                <div class="company-details">
+                    {{#if company.address}}{{company.address}}<br>{{/if}}
+                    {{#if company.phone}}Tél: {{company.phone}}<br>{{/if}}
+                    {{#if company.email}}{{company.email}}{{/if}}
+                </div>
+            </div>
+        </div>
+
+        <div class="document-title">Facture Proforma</div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-box">
+                <div class="info-label">Client</div>
+                <div class="info-content">
+                    <strong>{{vente.client.nom}}</strong><br>
+                    {{#if vente.client.adresse}}{{vente.client.adresse}}<br>{{/if}}
+                    {{#if vente.client.telephone}}Tél: {{vente.client.telephone}}{{/if}}
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">Détails de la facture</div>
+                <div class="info-content">
+                    Numéro : <strong>{{vente.numeroVente}}</strong><br>
+                    Date : {{formatDate vente.date}}<br>
+                    Vendeur : {{vente.vendeur}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Désignation</th>
+                    <th class="qty-col">Qté</th>
+                    <th class="price-col">P.U</th>
+                    <th class="price-col">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each vente.details}}
+                <tr>
+                    <td style="vertical-align: top;">
+                        <div style="font-weight: bold; color: #000000;">{{this.produit}}</div>
+                        <div style="font-size: 8.5pt; color: #064654; margin-top: 2px;">{{this.conditionnement}}</div>
+                    </td>
+                    <td class="qty-col">{{this.quantite}}</td>
+                    <td class="price-col">{{this.prixUnitaire}} {{../company.currencySymbol}}</td>
+                    <td class="price-col">{{this.total}} {{../company.currencySymbol}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div class="totals-section">
+            <div class="totals-box">
+                <div class="total-row grand-total">
+                    <span>TOTAL</span>
+                    <span>{{vente.montantTotal}} {{company.currencySymbol}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            Cette facture proforma est valable pour une période limitée.<br>
+            Merci de votre confiance !
+        </div>
+    </div>
+</body>
+</html>

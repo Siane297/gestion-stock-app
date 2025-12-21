@@ -62,6 +62,12 @@ export abstract class BasePdfService {
       orientation: 'portrait',
       width: '80mm',
       margins: { top: '2mm', right: '2mm', bottom: '2mm', left: '2mm' }
+    },
+    // Format A4 pour facture proforma
+    proforma: {
+      orientation: 'portrait',
+      format: 'A4',
+      margins: { top: '10mm', right: '10mm', bottom: '15mm', left: '10mm' }
     }
   };
 

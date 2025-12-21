@@ -17,6 +17,7 @@ router.get('/', getAllVentes);
 router.get('/stats', getVenteStats);
 router.get('/:id', getVenteById);
 router.get('/:id/pdf', PdfController.generateReceiptPdf);
+router.get('/:id/proforma', PdfController.generateProformaPdf);
 router.post('/', createVente);
 router.patch('/:id/statut', updateVenteStatut);
 

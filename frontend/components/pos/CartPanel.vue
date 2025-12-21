@@ -160,8 +160,8 @@ import { usePos } from '~/composables/api/usePos';
 import { useToast } from 'primevue/usetoast';
 import { useCurrency } from '~/composables/useCurrency';
 import AppButton from '~/components/button/AppButton.vue';
-import PaymentModal from '~/components/pos/PaymentModal.vue';
-import HeldOrdersModal from '~/components/pos/HeldOrdersModal.vue';
+import PaymentModal from './PaymentModal.vue';
+import HeldOrdersModal from './HeldOrdersModal.vue';
 
 const store = usePos();
 const toast = useToast();
