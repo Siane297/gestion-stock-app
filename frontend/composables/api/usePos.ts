@@ -4,12 +4,13 @@ import { useProduitApi } from './useProduitApi';
 import { useVenteApi, type CreateVenteDto, type MethodePaiement } from './useVenteApi';
 import { useClientApi } from './useClientApi';
 import { useMagasinStore } from '~/stores/magasin';
+import { useCaisseStore } from '~/stores/caisse';
 
 // Types pour le POS
 export interface PosProductItem {
   uniqueId: string;
   productId: string;
-  conditionnementId?: string; // ID du conditionnement spécifique
+  conditionnementId?: string;
   name: string;
   price: number;
   isPack: boolean;
@@ -34,11 +35,20 @@ export interface CartItem {
   total: number;
 }
 
+export interface HeldOrder {
+  id: string;
+  cart: CartItem[];
+  clientId?: string | null;
+  total: number;
+  timestamp: string;
+}
+
 export const usePos = defineStore('pos', () => {
   const { getProduits } = useProduitApi();
   const { createVente } = useVenteApi();
   const { getClients } = useClientApi();
   const magasinStore = useMagasinStore(); 
+  const caisseStore = useCaisseStore();
   
   // State
   const allProducts = ref<any[]>([]);
@@ -47,56 +57,60 @@ export const usePos = defineStore('pos', () => {
   const searchQuery = ref('');
   const selectedCategory = ref<string | null>(null);
   const loading = ref(false);
-  // On utilise le store global pour l'ID magasin
   const currentMagasinId = computed(() => magasinStore.currentMagasinId);
   const currentMagasin = computed(() => magasinStore.currentMagasin); 
   
   const clients = ref<any[]>([]);
   const selectedClientId = ref<string | null>(null);
 
+  // Commandes en attente
+  const heldOrders = ref<HeldOrder[]>([]);
+
   // Getters
   const filteredItems = computed(() => {
     let items = posItems.value;
-
     if (selectedCategory.value) {
-      items = items.filter(i => i.categoryName === selectedCategory.value);
+      items = items.filter((i: PosProductItem) => i.categoryName === selectedCategory.value);
     }
-
     if (searchQuery.value) {
       const q = searchQuery.value.toLowerCase();
-      items = items.filter(i => 
+      items = items.filter((i: PosProductItem) => 
         i.name.toLowerCase().includes(q) || 
         (i.packLabel && i.packLabel.toLowerCase().includes(q))
       );
     }
-
     return items;
   });
 
   const cartTotal = computed(() => {
-    return cart.value.reduce((sum, item) => sum + item.total, 0);
+    return cart.value.reduce((sum: number, item: CartItem) => sum + item.total, 0);
   });
 
   const cartCount = computed(() => {
-    return cart.value.reduce((sum, item) => sum + item.quantity, 0);
+    return cart.value.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
   });
 
   // Actions
   const initPos = async () => {
     loading.value = true;
     try {
-      // 1. S'assurer que le magasin est chargé via le store global
       if (!magasinStore.currentMagasinId) {
          await magasinStore.initialize();
       }
-
-      // 2. Charger les clients
       const clientsList = await getClients({ est_actif: true });
       clients.value = clientsList;
-
-      // 3. Charger les produits
       allProducts.value = await getProduits();
       flattenCatalog();
+      
+      // Charger les commandes en attente depuis localStorage
+      const saved = localStorage.getItem('pos_held_orders');
+      if (saved) {
+          try {
+              heldOrders.value = JSON.parse(saved);
+          } catch (e) {
+              console.error("Erreur parsing held orders", e);
+          }
+      }
     } catch (error) {
       console.error("Erreur chargement POS:", error);
     } finally {
@@ -104,14 +118,18 @@ export const usePos = defineStore('pos', () => {
     }
   };
 
-  const loadCatalog = initPos; // Alias pour compatibilité
+  const loadCatalog = initPos;
+
+  // Persister les commandes en attente au changement
+  watch(heldOrders, (val) => {
+      localStorage.setItem('pos_held_orders', JSON.stringify(val));
+  }, { deep: true });
 
   const flattenCatalog = () => {
     const items: PosProductItem[] = [];
     const magId = currentMagasinId.value;
 
     allProducts.value.forEach(p => {
-      // Calcul du stock global (pour la boutique courante)
       let stockProduit = 0;
       if (p.stocks && magId) {
           const stockEntry = p.stocks.find((s: any) => s.magasin_id === magId);
@@ -119,31 +137,24 @@ export const usePos = defineStore('pos', () => {
       }
 
       const config = useRuntimeConfig();
-      const apiBase = config.public.apiBase as string; // ex: http://localhost:3001/api
-      // Extraire l'origine (http://localhost:3001)
+      const apiBase = config.public.apiBase as string;
       let serverUrl = '';
       try {
           if (apiBase.startsWith('http')) {
               serverUrl = new URL(apiBase).origin;
-          } else {
-             // Fallback si chemin relatif (rare en dev nuxt proxy)
-             serverUrl = ''; 
           }
-      } catch (e) {
-          console.error("Erreur parsing API Base URL", e);
-      }
+      } catch (e) {}
 
       const getFullImageUrl = (path?: string) => {
           if (!path) return undefined;
-          if (path.startsWith('http')) return path; // Déjà absolu (ex: google drive old)
+          if (path.startsWith('http')) return path;
           return `${serverUrl}${path}`;
       };
 
       const hasDefinedUnit = p.conditionnements?.some((c: any) => c.quantite_base === 1);
 
-      // 1. Unité de base (si aucune unité explicite définie)
       if (!hasDefinedUnit && p.prix_vente && p.prix_vente > 0) {
-        if (stockProduit > 0) { // Filtrage Stock POS
+        if (stockProduit > 0) {
             items.push({
             uniqueId: `${p.id}_UNIT`,
             productId: p.id,
@@ -160,11 +171,10 @@ export const usePos = defineStore('pos', () => {
         }
       }
 
-      // 2. Conditionnements
       if (p.conditionnements && p.conditionnements.length > 0) {
         p.conditionnements.forEach((c: any) => {
           const stockCond = Math.floor(stockProduit / c.quantite_base);
-          if (stockCond > 0) { // Filtrage Stock POS
+          if (stockCond > 0) {
               items.push({
                 uniqueId: `${p.id}_${c.id}`,
                 productId: p.id,
@@ -172,11 +182,11 @@ export const usePos = defineStore('pos', () => {
                 name: `${p.nom}`,
                 price: c.prix_vente,
                 isPack: c.quantite_base > 1,
-                packLabel: c.nom, // Sera "Unité", "Pack de 6", etc.
+                packLabel: c.nom,
                 quantityInBase: c.quantite_base,
                 stockAvailable: stockCond,
                 categoryName: p.categorie?.nom,
-                image: getFullImageUrl(c.image_url) || getFullImageUrl(p.image_url) // Image spécifique ou fallback produit
+                image: getFullImageUrl(c.image_url) || getFullImageUrl(p.image_url)
               });
           }
         });
@@ -188,7 +198,6 @@ export const usePos = defineStore('pos', () => {
 
   const addToCart = (item: PosProductItem) => {
     const existing = cart.value.find(i => i.uniqueId === item.uniqueId);
-    
     if (existing) {
       existing.quantity++;
       existing.total = existing.quantity * existing.price;
@@ -229,7 +238,41 @@ export const usePos = defineStore('pos', () => {
 
   const clearCart = () => {
     cart.value = [];
-    selectedClientId.value = null; // Reinit client
+    selectedClientId.value = null;
+  };
+
+  // --- Actions "En attente" ---
+  const holdCurrentCart = () => {
+      if (cart.value.length === 0) return;
+      
+      const newOrder: HeldOrder = {
+          id: Math.random().toString(36).substring(2, 9), // Simple ID
+          cart: [...cart.value],
+          clientId: selectedClientId.value,
+          total: cartTotal.value,
+          timestamp: new Date().toISOString()
+      };
+      
+      heldOrders.value.unshift(newOrder); // Plus récent en premier
+      clearCart();
+  };
+
+  const resumeHeldOrder = (orderId: string) => {
+      const order = heldOrders.value.find(o => o.id === orderId);
+      if (!order) return;
+      
+      cart.value = [...order.cart];
+      selectedClientId.value = order.clientId || null;
+      
+      // Retirer de la liste après reprise
+      removeHeldOrder(orderId);
+  };
+
+  const removeHeldOrder = (orderId: string) => {
+      const index = heldOrders.value.findIndex(o => o.id === orderId);
+      if (index !== -1) {
+          heldOrders.value.splice(index, 1);
+      }
   };
 
   const submitSale = async (paymentData: { method: MethodePaiement, amountReceived: number, change: number }): Promise<{ venteId: string } | null> => {
@@ -245,7 +288,8 @@ export const usePos = defineStore('pos', () => {
          montant_total: cartTotal.value,
          montant_paye: paymentData.amountReceived,
          montant_rendu: paymentData.change,
-         details: cart.value.map(item => ({
+         session_caisse_id: caisseStore.activeSession?.id,
+         details: cart.value.map((item: CartItem) => ({
              produit_id: item.productId,
              conditionnement_id: item.conditionnementId,
              quantite: item.quantity,
@@ -258,7 +302,6 @@ export const usePos = defineStore('pos', () => {
          const result = await createVente(payload);
          if (result && result.id) {
             clearCart(); 
-            // Recharger le catalogue pour mettre à jour les stocks
             await loadCatalog();
             return { venteId: result.id };
          }
@@ -271,8 +314,9 @@ export const usePos = defineStore('pos', () => {
 
   return {
     posItems, cart, searchQuery, selectedCategory, loading, currentMagasin,
-    clients, selectedClientId,
+    clients, selectedClientId, heldOrders,
     filteredItems, cartTotal, cartCount,
-    loadCatalog, addToCart, removeFromCart, updateQuantity, clearCart, submitSale
+    loadCatalog, addToCart, removeFromCart, updateQuantity, clearCart, 
+    submitSale, holdCurrentCart, resumeHeldOrder, removeHeldOrder
   };
 });

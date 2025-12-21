@@ -102,6 +102,17 @@
 
     <!-- Footer Totaux -->
     <div class="p-4 bg-white rounded-lg border-2 border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] z-10">
+      <div v-if="store.heldOrders.length > 0" class="mb-3">
+          <AppButton 
+            :label="`Commandes en attente (${store.heldOrders.length})`"
+            variant="outline"
+            icon="pi pi-list"
+            size="sm"
+            class="w-full !border-primary/30 !text-primary hover:!bg-primary/5"
+            @click="showHeldOrders = true"
+          />
+      </div>
+
       <div class="flex justify-between items-end mb-4">
         <span class="text-noir text-sm">Total à payer</span>
         <span class="text-xl font-bold text-primary leading-none">{{ formatPrice(store.cartTotal) }}</span>
@@ -134,6 +145,11 @@
         :successData="paymentSuccessData"
         @confirm="handlePaymentConfirm"
     />
+
+    <HeldOrdersModal 
+        v-model:visible="showHeldOrders"
+    />
+
     <Toast />
   </div>
 </template>
@@ -145,21 +161,26 @@ import { useToast } from 'primevue/usetoast';
 import { useCurrency } from '~/composables/useCurrency';
 import AppButton from '~/components/button/AppButton.vue';
 import PaymentModal from '~/components/pos/PaymentModal.vue';
+import HeldOrdersModal from '~/components/pos/HeldOrdersModal.vue';
 
 const store = usePos();
 const toast = useToast();
-const { generateReceiptPdf } = useSecurePdf();
 const { formatPrice } = useCurrency();
 
 const showPayment = ref(false);
+const showHeldOrders = ref(false);
 const paymentSuccessData = ref<{ venteId: string; change: number } | null>(null);
 
 const handleHold = () => {
     if (store.cart.length === 0) return;
-    // TODO: Implement actual Hold logic (save to local storage or backend)
-    // For now, just simulate
-    toast.add({ severity: 'info', summary: 'Mis en attente', detail: 'La commande a été mise de côté', life: 3000 });
-    store.clearCart();
+    
+    store.holdCurrentCart();
+    toast.add({ 
+        severity: 'info', 
+        summary: 'Mis en attente', 
+        detail: 'La commande a été mise de côté pour plus tard', 
+        life: 3000 
+    });
 };
 
 const handleCheckoutClick = () => {

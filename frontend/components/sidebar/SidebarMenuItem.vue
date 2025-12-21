@@ -6,7 +6,7 @@
       class="w-full flex items-center tracking-wide justify-between gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group border-2"
       :class="isActiveParent 
         ? 'bg-primary text-white border-primary/20 shadow-3d-sidebar-active' 
-        : 'text-white hover:bg-white/10 hover:text-white border-transparent hover:border-white/10 '"
+        : 'text-white hover:bg-[#016278]/20 hover:text-white border-transparent hover:border-white/10 '"
     >
       <div class="flex items-center gap-3">
         <Icon 
@@ -30,14 +30,15 @@
             v-if="child.link"
             :to="child.link"
             class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 group border-2"
-            :class="isActive(child.link) 
+            :class="isActive(child.link, true) 
               ? 'bg-white/20 text-white border-white/30' 
               : 'text-white/70 hover:bg-white/10 hover:text-white border-transparent hover:border-white/10'"
           >
-            <Icon 
-              :icon="child.icon" 
-              class="text-lg transition-transform group-hover:scale-110"
-            />
+            <!-- Point au lieu de l'icône -->
+            <div 
+              class="w-1.5 h-1.5 rounded-full transition-all duration-200"
+              :class="isActive(child.link, true) ? 'bg-white scale-125 shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'bg-white/40 group-hover:bg-white/60'"
+            ></div>
             <span class="font-medium text-sm">{{ child.name }}</span>
           </NuxtLink>
         </li>
@@ -51,8 +52,9 @@
     :to="item.link"
     class="flex items-center tracking-wide gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 group border-2"
     :class="isActive(item.link) 
-      ? 'bg-[#016278] text-white border-white/10 ' 
-      : 'text-white hover:bg-[#016278]/20 hover:text-white border-transparent hover:border-white/10 '"
+      ? 'bg-primary text-white border-primary/20 shadow-3d-sidebar-active ' 
+      : 'text-white hover:bg-[#016278]/20 hover:text-white border-transparent hover:border-white/10 '
+    "
   >
     <Icon 
       :icon="item.icon" 
@@ -90,14 +92,18 @@ defineEmits<{
 const route = useRoute();
 
 // Vérifier si la route est active
-const isActive = (link: string) => {
+// exact = true pour les sous-menus afin d'éviter les faux positifs (ex: /caisse actif sur /caisse/sessions)
+const isActive = (link: string, exact: boolean = false) => {
+  if (exact) {
+    return route.path === link;
+  }
   return route.path === link || route.path.startsWith(link + '/');
 };
 
 // Vérifier si un parent est actif (un de ses enfants est actif)
 const isActiveParent = computed(() => {
   if (!props.item.children) return false;
-  return props.item.children.some((child) => child.link && isActive(child.link));
+  return props.item.children.some((child) => child.link && isActive(child.link, true));
 });
 </script>
 

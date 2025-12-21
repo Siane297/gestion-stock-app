@@ -26,6 +26,7 @@ export interface CreateVenteDto {
   montant_tva?: number;
   montant_paye?: number; // Montant effectivement payé par le client
   montant_rendu?: number; // Monnaie rendue au client
+  session_caisse_id?: string; // ID de la session de caisse associée
 }
 
 export interface UpdateVenteStatutDto {
@@ -201,6 +202,7 @@ export class VenteService {
           statut: data.statut || 'PAYEE',
           methode_paiement: data.methode_paiement,
           notes: data.notes,
+          session_caisse_id: data.session_caisse_id,
           details: {
             create: detailsVente
           }
@@ -322,30 +324,79 @@ export class VenteService {
    * Met à jour le statut d'une vente
    */
   async updateStatut(id: string, data: UpdateVenteStatutDto): Promise<any> {
-    const existing = await this.prisma.vente.findUnique({ where: { id } });
-    if (!existing) throw new Error('Vente non trouvée');
-
-    // TODO: Gérer l'annulation et le re-stockage si statut passe à ANNULEE
-    // Pour l'instant on fait juste l'update statut simple
-    
-    if (data.statut === 'ANNULEE' && existing.statut !== 'ANNULEE') {
-        // Logique d'annulation (remettre le stock)
-        // À implémenter avec précaution
-    }
-
-    const vente = await this.prisma.vente.update({
+    const existing = await this.prisma.vente.findUnique({ 
       where: { id },
-      data: { statut: data.statut }
+      include: {
+        details: {
+          include: {
+            conditionnement: true
+          }
+        }
+      }
     });
 
-    return vente;
+    if (!existing) throw new Error('Vente non trouvée');
+    if (existing.statut === data.statut) return existing;
+
+    // Transaction pour garantir la cohérence (statut + stock)
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Si on annule une vente qui était payée ou en attente, on rend le stock
+      if (data.statut === 'ANNULEE' && (existing.statut === 'PAYEE' || existing.statut === 'EN_ATTENTE')) {
+        const stockServiceTx = new StockService(tx as any);
+        
+        for (const detail of existing.details) {
+          // Calcul de la quantité en unité de base
+          const quantiteBase = detail.conditionnement?.quantite_base || 1;
+          const quantiteARendre = detail.quantite * quantiteBase;
+
+          await stockServiceTx.incrementStock(
+            existing.magasin_id,
+            detail.produit_id,
+            quantiteARendre,
+            {
+              utilisateur_id: data.utilisateur_id || existing.utilisateur_id,
+              vente_id: existing.id,
+              raison: `Annulation vente ${existing.numero_vente}`
+            },
+            tx
+          );
+        }
+      }
+
+      // 2. Mise à jour du statut
+      const updatedVente = await tx.vente.update({
+        where: { id },
+        data: { statut: data.statut },
+        include: {
+          client: { select: { nom: true } },
+          utilisateur: { 
+            select: { 
+              email: true,
+              employee: { select: { fullName: true } } 
+            } 
+          },
+          details: {
+            include: {
+              produit: { select: { nom: true } },
+              conditionnement: { select: { nom: true } }
+            }
+          }
+        }
+      });
+
+      logger.info(`Statut vente ${id} mis à jour: ${existing.statut} -> ${data.statut}`);
+      return updatedVente;
+    });
   }
 
   /**
    * Statistiques des ventes
    */
   async getStats(filters: { magasin_id?: string, dateFrom?: Date, dateTo?: Date }): Promise<any> {
-    const where: any = {};
+    const where: any = {
+      statut: 'PAYEE' // On ne compte que les ventes payées dans les stats par défaut
+    };
+    
     if (filters.magasin_id) where.magasin_id = filters.magasin_id;
     if (filters.dateFrom || filters.dateTo) {
       where.date_creation = {};
@@ -353,7 +404,7 @@ export class VenteService {
       if (filters.dateTo) where.date_creation.lte = filters.dateTo;
     }
 
-    const [totalVentes, montantTotal] = await Promise.all([
+    const [totalVentes, aggregation] = await Promise.all([
       this.prisma.vente.count({ where }),
       this.prisma.vente.aggregate({
         where,
@@ -361,9 +412,14 @@ export class VenteService {
       })
     ]);
 
+    const montantTotal = aggregation._sum.montant_total || 0;
+    const venteMoyenne = totalVentes > 0 ? Math.round(montantTotal / totalVentes) : 0;
+
     return {
-      count: totalVentes,
-      total_amount: montantTotal._sum.montant_total || 0
+      totalVentes,
+      montantTotal,
+      venteMoyenne,
+      parMethode: {} // À implémenter si nécessaire, mais évite le crash frontend
     };
   }
 }

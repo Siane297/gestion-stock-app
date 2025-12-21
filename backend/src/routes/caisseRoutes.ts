@@ -12,22 +12,30 @@ import {
     getHistoriqueSessions,
     getMaSession,
     getSessionDetail,
+    getSessions,
 } from '../controllers/caisseController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 
 const router: Router = Router();
 
 // ============================================
-// CRUD CAISSES (nécessite authentification)
+// BASE & SESSIONS (Priorité Haute)
 // ============================================
 router.get('/', authenticate, getAllCaisses);
+router.get('/sessions', authenticate, getSessions);
+router.get('/sessions/ma-session', authenticate, getMaSession);
+router.get('/sessions/:sessionId', authenticate, getSessionDetail);
+
+// ============================================
+// CRUD CAISSES
+// ============================================
 router.get('/:id', authenticate, getCaisseById);
 router.post('/', authenticate, createCaisse);
 router.put('/:id', authenticate, updateCaisse);
 router.delete('/:id', authenticate, deleteCaisse);
 
 // ============================================
-// SESSIONS DE CAISSE
+// SESSIONS DE CAISSE (Actions sur caisse spécifique)
 // ============================================
 // Ouverture par PIN (ne nécessite PAS le JWT, juste le contexte tenant)
 router.post('/:id/ouvrir-pin', ouvrirSessionParPin);
@@ -37,11 +45,5 @@ router.post('/:id/ouvrir', authenticate, ouvrirSession);
 router.post('/:id/fermer', authenticate, fermerSession);
 router.get('/:id/session-active', authenticate, getSessionActive);
 router.get('/:id/historique', authenticate, getHistoriqueSessions);
-
-// ============================================
-// SESSION UTILISATEUR
-// ============================================
-router.get('/sessions/ma-session', authenticate, getMaSession);
-router.get('/sessions/:sessionId', authenticate, getSessionDetail);
 
 export default router;

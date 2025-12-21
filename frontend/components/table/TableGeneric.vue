@@ -109,6 +109,7 @@
         >
              <!-- Voir Détails -->
              <button
+               v-if="showView"
                @click="handleMenuAction('view', activeMenuData)"
                class="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-bleu/40 transition-colors text-left text-gray-600"
              >
@@ -118,6 +119,7 @@
 
              <!-- Modifier -->
              <button
+               v-if="showEdit"
                @click="handleMenuAction('edit', activeMenuData)"
                class="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-bleu/40 transition-colors text-left text-gray-600"
              >
@@ -125,10 +127,11 @@
                <span class="text-sm font-medium">Modifier</span>
              </button>
 
-             <hr class="my-2 border-gris" />
+             <hr v-if="showDelete && (showView || showEdit)" class="my-2 border-gris" />
 
              <!-- Supprimer -->
              <button
+               v-if="showDelete"
                @click="handleMenuAction('delete', activeMenuData)"
                class="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-red-50 transition-colors text-left text-red-600"
              >
@@ -192,13 +195,19 @@ interface Props {
   searchFields?: string[];
   globalAction?: GlobalAction;
   deleteLabelField?: string; // Champ utilisé pour afficher le nom dans le message de suppression
+  showView?: boolean;
+  showEdit?: boolean;
+  showDelete?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   rowsPerPage: 10,
   searchFields: () => [],
-  deleteLabelField: 'nom'
+  deleteLabelField: 'nom',
+  showView: true,
+  showEdit: true,
+  showDelete: true
 });
 
 const emit = defineEmits<{

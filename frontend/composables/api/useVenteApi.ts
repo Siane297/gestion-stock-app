@@ -42,7 +42,10 @@ export interface Vente {
   date_creation: string;
   client?: { nom: string };
   magasin?: { nom: string };
-  utilisateur?: { email: string };
+  utilisateur?: { 
+    email: string;
+    employee?: { fullName: string };
+  };
   details?: VenteDetail[];
   facture?: Facture;
   session_caisse?: {
@@ -72,6 +75,7 @@ export interface CreateVenteDto {
   methode_paiement: MethodePaiement;
   notes?: string;
   generer_facture?: boolean;
+  session_caisse_id?: string;
   details: Array<{
     produit_id: string;
     conditionnement_id?: string;

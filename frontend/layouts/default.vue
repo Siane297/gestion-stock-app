@@ -5,7 +5,7 @@
     <AppSidebar :is-open="isSidebarOpen" @close="closeSidebar" />
 
     <!-- Main Content Area -->
-    <div class="ml-0 lg:ml-64 h-screen flex flex-col transition-all duration-300">
+    <div class="ml-0 lg:ml-72 h-screen flex flex-col transition-all duration-300">
       <!-- Header -->
       <AppHeader @toggle-sidebar="toggleSidebar" />
 

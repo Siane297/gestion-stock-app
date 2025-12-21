@@ -303,13 +303,13 @@ export class StockService {
     magasin_id: string,
     produit_id: string,
     quantite: number,
-    options: { utilisateur_id?: string; raison?: string; achat_id?: string } = {},
+    options: { utilisateur_id?: string; raison?: string; achat_id?: string; vente_id?: string } = {},
     tx?: any
   ): Promise<StockUpdateResult> {
     return this.createMouvement({
       magasin_id,
       produit_id,
-      type: 'ENTREE_ACHAT',
+      type: options.vente_id ? 'ENTREE_RETOUR' : 'ENTREE_ACHAT',
       quantite,
       ...options
     }, tx);

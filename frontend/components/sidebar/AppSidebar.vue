@@ -12,7 +12,7 @@
   <Transition name="slide">
     <aside
       v-show="isOpen || isDesktop"
-      class="fixed left-0 top-0 h-screen w-64 bg-side border-r border-gris/50  flex flex-col shadow-sm z-50 lg:z-40"
+      class="fixed left-0 top-0 h-screen w-72 bg-side border-r border-gris/50  flex flex-col shadow-sm z-50 lg:z-40"
     >
     <!-- Logo -->
     <div class="px-4 py-[6px] border-b border-gris/50">
@@ -215,8 +215,21 @@ const menuCategories = [
        {
         name: 'Caisse',
         icon: 'tabler:cash-register',
-        link: '/caisse',
         permission: 'caisse',
+        children: [
+          {
+            name: 'Liste des caisses',
+            icon: 'tabler:list',
+            link: '/caisse',
+            permission: 'caisse',
+          },
+          {
+            name: 'Historique session',
+            icon: 'tabler:history',
+            link: '/caisse/sessions',
+            permission: 'caisse',
+          }
+        ]
       },
       // {
       //   name: 'Facture',

@@ -37,14 +37,14 @@ export interface SessionCaisse {
   date_fermeture?: string;
   notes_ouverture?: string;
   notes_fermeture?: string;
-  caisse?: { id: string; nom: string; code: string };
+  caisse?: { id: string; nom: string; code: string; magasin?: { nom: string } };
   utilisateur?: { email: string; employee?: { fullName: string } };
   _count?: { ventes: number };
 }
 
 export interface RapportSession {
   id: string;
-  caisse: { id: string; nom: string; code: string };
+  caisse: { id: string; nom: string; code: string; magasin?: { nom: string } };
   utilisateur: { id: string; email: string; fullName?: string };
   fond_initial: number;
   fond_final: number | null;
@@ -193,6 +193,20 @@ export const useCaisseApi = () => {
   /**
    * Détail complet d'une session (rapport)
    */
+  /**
+   * Récupérer l'historique complet de toutes les sessions de caisse
+   */
+  const getSessionsGlobal = async (filters: { magasinId?: string; statut?: string; limit?: number } = {}): Promise<SessionCaisse[]> => {
+    const response = await get<ApiResponse<SessionCaisse[]>>('/api/caisses/sessions', {
+      params: {
+        magasin_id: filters.magasinId,
+        statut: filters.statut,
+        limit: filters.limit
+      }
+    });
+    return response.data || [];
+  };
+
   const getSessionDetail = async (sessionId: string): Promise<RapportSession | null> => {
     const response = await get<ApiResponse<RapportSession>>(`/api/caisses/sessions/${sessionId}`);
     return response.data || null;
@@ -212,6 +226,7 @@ export const useCaisseApi = () => {
     getSessionActive,
     getHistoriqueSessions,
     getMaSession,
+    getSessionsGlobal,
     getSessionDetail,
   };
 };

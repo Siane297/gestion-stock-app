@@ -381,6 +381,28 @@ export const getMaSession = async (req: Request, res: Response) => {
 };
 
 /**
+ * Récupérer l'historique global des sessions
+ */
+export const getSessions = async (req: Request, res: Response) => {
+  try {
+    const magasinId = req.query.magasin_id as string | undefined;
+    const statut = req.query.statut as any | undefined;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const caisseService = new CaisseService(req.tenantPrisma);
+    const sessions = await caisseService.getSessions({ magasinId, statut, limit });
+
+    res.json({ success: true, data: sessions });
+  } catch (error: any) {
+    logger.error('Erreur lors de la récupération des sessions:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Erreur lors de la récupération des sessions',
+    });
+  }
+};
+
+/**
  * Détail d'une session (rapport complet)
  */
 export const getSessionDetail = async (req: Request, res: Response) => {

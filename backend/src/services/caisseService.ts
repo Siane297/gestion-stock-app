@@ -434,6 +434,32 @@ export class CaisseService {
   }
 
   /**
+   * Récupérer l'historique global des sessions
+   */
+  async getSessions(filters: { magasinId?: string; statut?: StatutSessionCaisse; limit?: number } = {}): Promise<any[]> {
+    const { magasinId, statut, limit = 50 } = filters;
+    
+    const where: any = {};
+    if (statut) {
+        where.statut = statut;
+    }
+    if (magasinId) {
+        where.caisse = { magasin_id: magasinId };
+    }
+
+    return this.prisma.session_caisse.findMany({
+      where,
+      include: {
+        caisse: { select: { nom: true, code: true, magasin: { select: { nom: true } } } },
+        utilisateur: { select: { email: true, employee: { select: { fullName: true } } } },
+        _count: { select: { ventes: true } }
+      },
+      orderBy: { date_ouverture: 'desc' },
+      take: limit
+    });
+  }
+
+  /**
    * Récupérer l'historique des sessions d'une caisse
    */
   async getHistoriqueSessions(caisseId: string, limit = 30): Promise<any[]> {

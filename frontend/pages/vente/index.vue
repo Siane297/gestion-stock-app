@@ -1,106 +1,190 @@
 <template>
-  <div>
+  <div class="space-y-8">
     <SimplePageHeader
       title="Historique des Ventes"
-      description="Consultez et gérez l'historique de vos ventes"
+      description="Consultez, filtrez et analysez l'historique de vos transactions commerciales."
     />
 
-    <div class="mt-6">
-      <TableGeneric
-        :data="ventes"
-        :columns="columns"
-        :loading="loading"
-        :search-fields="['client.nom', 'utilisateur.employee.fullName', 'id']"
-        delete-label-field="id"
-        :global-action="{
-          label: 'Nouvelle Vente',
-          icon: 'pi pi-plus',
-          link: '/point-vente'
-        }"
-        @action:view="viewDetails"
-        @action:delete="handleDelete"
-      >
-        <!-- Custom rendering for Products column -->
-        <template #column-produits="{ data }">
-          <div class="flex flex-col gap-1 text-sm">
-              <div v-for="detail in ((data as unknown) as Vente).details" :key="detail.id" class="flex flex-wrap gap-1 items-center">
-                  <span class="font-medium text-gray-700">{{ detail.produit?.nom }}</span>
-                  <span class="text-gray-500 text-xs text-nowrap">
-                     x{{ detail.quantite }} ({{ detail.conditionnement?.nom }})
-                  </span>
-              </div>
-              <div v-if="!((data as unknown) as Vente).details || ((data as unknown) as Vente).details?.length === 0" class="text-gray-400 italic">
-                  Aucun détail
-              </div>
-          </div>
-        </template>
-  
-        <!-- Custom rendering for Status -->
-        <template #column-statut="{ data }">
-          <Tag :value="((data as unknown) as Vente).statut" :severity="getSeverity(((data as unknown) as Vente).statut)" />
-        </template>
-  
-        <!-- Custom rendering for Payment -->
-        <template #column-methode_paiement="{ data }">
-          <Tag :value="((data as unknown) as Vente).methode_paiement" severity="secondary" />
-        </template>
-  
-          <template #column-date_creation="{ data }">
-              {{ new Date(((data as unknown) as Vente).date_creation).toLocaleString('fr-FR') }}
-          </template>
+    <!-- Cartes de Statistiques -->
+    <VenteStatsCards :stats="stats" :loading="loading" />
 
-          <!-- Custom rendering for Caisse -->
-          <template #column-session_caisse="{ data }">
-              <div v-if="((data as unknown) as Vente).session_caisse?.caisse" class="flex flex-col">
-                  <span class="font-medium text-gray-800">{{ ((data as unknown) as Vente).session_caisse?.caisse?.nom }}</span>
-                  <span class="text-xs text-gray-500">{{ ((data as unknown) as Vente).session_caisse?.caisse?.code }}</span>
-              </div>
-              <span v-else class="text-gray-400 italic">Back Office</span>
-          </template>
-      </TableGeneric>
+    <!-- Filtres -->
+    <VenteFilters 
+      v-model:magasinId="selectedMagasinId"
+      v-model:statut="selectedStatut"
+      v-model:paiement="selectedPaiement"
+      :magasins="magasins"
+      :loading="loading"
+      @refresh="loadData"
+    />
+
+    <!-- Table des Ventes -->
+    <div class="space-y-4">
+        <TableGeneric
+            :data="ventes"
+            :columns="columns"
+            :loading="loading"
+            :search-fields="['client.nom', 'utilisateur.employee.fullName', 'id']"
+            :show-edit="false"
+            :show-delete="false"
+            @action:view="viewDetails"
+        >
+            <!-- Date -->
+            <template #column-date_creation="{ data }">
+                <div class="flex flex-col text-xs">
+                    <span class="font-medium text-gray-700">{{ formatDate((data as any).date_creation) }}</span>
+                    <span class="text-gray-400 font-mono">{{ formatTime((data as any).date_creation) }}</span>
+                </div>
+            </template>
+
+            <!-- Caisse -->
+            <template #column-session_caisse="{ data }">
+                <div v-if="(data as any).session_caisse?.caisse" class="flex items-center gap-2">
+                    <div class="p-2 bg-gray-50 rounded-lg border border-gray-100">
+                        <Icon icon="tabler:cash-register" class="text-gray-400" />
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-gray-800 text-xs">{{ (data as any).session_caisse?.caisse?.nom }}</span>
+                        <span class="text-[10px] text-gray-500">{{ (data as any).session_caisse?.caisse?.code }}</span>
+                    </div>
+                </div>
+                <Tag v-else value="Back Office" severity="secondary" class="!text-[10px]" />
+            </template>
+
+            <!-- Produits / Cond. -->
+            <template #column-produits="{ data }">
+                <div class="flex flex-col gap-1">
+                    <div v-for="detail in (data as any).details?.slice(0, 2)" :key="detail.id" class="flex items-center gap-1 text-xs">
+                        <span class="font-semibold text-gray-700 truncate max-w-[120px]">{{ detail.produit?.nom }}</span>
+                        <span class="text-gray-400 italic">x{{ detail.quantite }}</span>
+                    </div>
+                    <span v-if="(data as any).details?.length > 2" class="text-[10px] text-primary font-bold">
+                        + {{ (data as any).details.length - 2 }} autres articles
+                    </span>
+                    <span v-if="!(data as any).details?.length" class="text-gray-300 italic text-xs">Aucun article</span>
+                </div>
+            </template>
+    
+            <!-- Statut -->
+            <template #column-statut="{ data }">
+                <Badge :value="(data as any).statut" :severity="getSeverity((data as any).statut)" class="!rounded-lg !text-[10px]" />
+            </template>
+    
+            <!-- Paiement -->
+            <template #column-methode_paiement="{ data }">
+                <div class="flex items-center gap-1 text-xs font-medium text-gray-600">
+                    <Icon :icon="getPaiementIcon((data as any).methode_paiement)" class="text-gray-400" />
+                    <span>{{ (data as any).methode_paiement }}</span>
+                </div>
+            </template>
+        </TableGeneric>
     </div>
+
+    <!-- Modale Détail Vente -->
+    <VenteDetailModal 
+        v-model:visible="showDetailModal"
+        :vente="selectedVente"
+        :loading="detailLoading"
+        @status-updated="loadData"
+    />
 
     <Toast />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { Icon } from '@iconify/vue';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
-import { useVenteApi, type Vente } from '~/composables/api/useVenteApi';
+import VenteFilters from '~/components/vente/VenteFilters.vue';
+import VenteStatsCards from '~/components/vente/VenteStatsCards.vue';
+import VenteDetailModal from '~/components/vente/VenteDetailModal.vue';
+import { useVenteApi, type Vente, type VenteStats } from '~/composables/api/useVenteApi';
+import { useMagasinApi } from '~/composables/api/useMagasinApi';
+import Badge from 'primevue/badge';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 
-const { getVentes, updateVenteStatut } = useVenteApi();
+const { getVentes, getVenteStats, updateVenteStatut, getVenteById } = useVenteApi();
+const { getMagasins } = useMagasinApi();
 const toast = useToast();
 
+// État
 const ventes = ref<Vente[]>([]);
+const stats = ref<VenteStats | null>(null);
+const magasins = ref<any[]>([]);
 const loading = ref(false);
 
+// Filtres
+const selectedMagasinId = ref<string | null>(null);
+const selectedStatut = ref<string | null>(null);
+const selectedPaiement = ref<string | null>(null);
+
+// Détail
+const showDetailModal = ref(false);
+const detailLoading = ref(false);
+const selectedVente = ref<Vente | null>(null);
+
 const columns: TableColumn[] = [
-  { field: 'date_creation', header: 'Date', sortable: true, customRender: true },
-  { field: 'session_caisse', header: 'Caisse', sortable: true, customRender: true },
-  { field: 'produits', header: 'Produits / Cond.', sortable: false, customRender: true },
-  { field: 'montant_total', header: 'Total', sortable: true, type: 'price' },
+  { field: 'date_creation', header: 'Date / Heure', sortable: true, customRender: true },
+  { field: 'session_caisse', header: 'Source / Caisse', sortable: true, customRender: true },
+  { field: 'produits', header: 'Articles (Aperçu)', sortable: false, customRender: true },
+  { field: 'montant_total', header: 'Montant TTC', sortable: true, type: 'price' },
   { field: 'methode_paiement', header: 'Paiement', sortable: true, customRender: true },
   { field: 'statut', header: 'Statut', sortable: true, customRender: true },
   { field: 'utilisateur.employee.fullName', header: 'Vendeur', sortable: true },
 ];
 
-const loadVentes = async () => {
-  loading.value = true;
-  try {
-    ventes.value = await getVentes();
-  } catch (error) {
-    console.error("Erreur chargement ventes", error);
-    toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les ventes', life: 3000 });
-  } finally {
-    loading.value = false;
-  }
+const loadData = async () => {
+    loading.value = true;
+    try {
+        const [ventesData, statsData, magasinsData] = await Promise.all([
+            getVentes({ 
+                magasin_id: selectedMagasinId.value || undefined 
+                // Note: Le backend filtrera par défaut via useMagasinStore si undefined
+            }),
+            getVenteStats({ magasin_id: selectedMagasinId.value || undefined }),
+            getMagasins()
+        ]);
+        
+        let filteredVentes = ventesData;
+        
+        // Filtrage frontend pour Statut et Paiement si nécessaire (ou si le backend ne le fait pas encore via query params)
+        if (selectedStatut.value) {
+            filteredVentes = filteredVentes.filter(v => v.statut === selectedStatut.value);
+        }
+        if (selectedPaiement.value) {
+            filteredVentes = filteredVentes.filter(v => v.methode_paiement === selectedPaiement.value);
+        }
+
+        ventes.value = filteredVentes;
+        stats.value = statsData;
+        magasins.value = magasinsData;
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les données', life: 3000 });
+    } finally {
+        loading.value = false;
+    }
 };
 
+const viewDetails = async (vente: Vente) => {
+    selectedVente.value = vente;
+    showDetailModal.value = true;
+    detailLoading.value = true;
+    try {
+        // Recharger l'objet complet avec les détails si nécessaire
+        const fullVente = await getVenteById(vente.id);
+        if (fullVente) selectedVente.value = fullVente;
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les détails de la vente', life: 3000 });
+    } finally {
+        detailLoading.value = false;
+    }
+};
+
+// Utils
 const getSeverity = (status: string) => {
     switch (status) {
         case 'PAYEE': return 'success';
@@ -110,25 +194,25 @@ const getSeverity = (status: string) => {
     }
 };
 
-const viewDetails = (vente: Vente) => {
-    // TODO: Navigate to details page or show modal
-    console.log("View", vente);
-    // router.push(`/ventes/${vente.id}`); 
-};
-
-const handleDelete = async (vente: Vente) => {
-    // Usually we don't 'delete' sales easily, maybe we cancel them?
-    // For now assuming delete functionality is restricted or mapped to CANCEL
-    try {
-        await updateVenteStatut(vente.id, 'ANNULEE');
-        toast.add({ severity: 'success', summary: 'Succès', detail: 'Vente annulée', life: 3000 });
-        loadVentes();
-    } catch (e) {
-        toast.add({ severity: 'error', summary: 'Erreur', detail: "Erreur lors de l'annulation", life: 3000 });
+const getPaiementIcon = (method: string) => {
+    switch (method) {
+        case 'ESPECES': return 'tabler:coin';
+        case 'CARTE': return 'tabler:credit-card';
+        case 'MOBILE_MONEY': return 'tabler:device-mobile';
+        case 'CHEQUE': return 'tabler:clipboard-check';
+        default: return 'tabler:currency-dollar';
     }
 };
 
+const formatDate = (date: string) => new Date(date).toLocaleDateString();
+const formatTime = (date: string) => new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
 onMounted(() => {
-  loadVentes();
+  loadData();
+});
+
+// Recharger quand les filtres changent
+watch([selectedMagasinId, selectedStatut, selectedPaiement], () => {
+    loadData();
 });
 </script>
