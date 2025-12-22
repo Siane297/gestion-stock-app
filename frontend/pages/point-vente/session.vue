@@ -175,7 +175,7 @@ import Badge from 'primevue/badge';
 import Select from 'primevue/select';
 import { useMagasinApi } from '~/composables/api/useMagasinApi';
 import { useMagasinStore } from '~/stores/magasin';
-
+import AppButton from '~/components/button/AppButton.vue';
 const { currentCurrency } = useCurrency();
 const { user } = useSecureAuth();
 const magasinStore = useMagasinStore();
