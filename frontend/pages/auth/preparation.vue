@@ -2,12 +2,24 @@
   <div
     class="min-h-screen flex items-center justify-center bg-side2 relative overflow-hidden">
     
+    <!-- Background Patterns -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <Icon icon="tabler:shopping-cart-check" class="absolute top-10 left-10 text-white opacity-5 text-9xl transform -rotate-12" />
+      <Icon icon="tabler:box" class="absolute top-40 right-20 text-white opacity-5 text-8xl transform rotate-12" />
+      <Icon icon="tabler:chart-line" class="absolute bottom-20 left-20 text-white opacity-5 text-9xl transform -rotate-6" />
+      <Icon icon="tabler:building-store" class="absolute bottom-40 right-10 text-white opacity-5 text-8xl transform rotate-6" />
+      <Icon icon="tabler:tag" class="absolute top-1/2 left-10 text-white opacity-5 text-7xl transform -rotate-45" />
+      <Icon icon="tabler:barcode" class="absolute top-20 left-1/2 text-white opacity-5 text-8xl transform rotate-12" />
+      <Icon icon="tabler:cash" class="absolute bottom-1/3 right-1/3 text-white opacity-10 text-9xl transform -rotate-12" />
+      <Icon icon="tabler:truck-delivery" class="absolute top-32 right-1/4 text-white opacity-5 text-7xl transform rotate-45" />
+    </div>
+
     <!-- Bordure rectangle en haut à droite -->
     <div class="text-center space-y-6 p-8 relative z-10">
       <!-- Logo ou icône -->
       <div class="flex justify-center">
         <div class="relative">
-          <Icon icon="mdi:cog" class="text-white  text-8xl animate-spin-slow" />
+          <img src="~/assets/images/logo-white.png" alt="Logo" class=" w-40 h-auto object-contain" />
           <!-- <Icon icon="tabler:rosette-discount-check-filled"
             class="text-green-500 text-4xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" /> -->
         </div>
@@ -85,7 +97,7 @@ const progress = ref(0);
 const error = ref<string | null>(null);
 
 const tasks = ref([
-  { label: 'Création de votre organisation', completed: true },
+  { label: 'Création de votre boutique', completed: true },
   { label: 'Configuration de la base de données', completed: false },
   { label: 'Préparation de votre espace', completed: false },
   { label: 'Finalisation', completed: false },

@@ -206,12 +206,12 @@ const menuCategories = [
         link: '/achat',
         permission: 'achat',
       },
-      {
-        name: 'Comptabilité',
-        icon: 'tabler:calculator',
-        link: '/comptabilite',
-        permission: 'comptabilite',
-      },
+      // {
+      //   name: 'Comptabilité',
+      //   icon: 'tabler:calculator',
+      //   link: '/comptabilite',
+      //   permission: 'comptabilite',
+      // },
        {
         name: 'Caisse',
         icon: 'tabler:cash-register',
