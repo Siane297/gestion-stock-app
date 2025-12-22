@@ -3,6 +3,7 @@
  */
 
 import { useSecureAuth } from '~/composables/useSecureAuth';
+import { usePermissions } from '~/composables/usePermissions';
 
 export default defineNuxtRouteMiddleware((to) => {
   const { user } = useSecureAuth();
@@ -13,53 +14,55 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   // Configuration des permissions requises par préfixe de route
-  // Les routes sont vérifiées par ordre (plus spécifique en premier)
   const routePermissions: Array<{ path: string; permission: string }> = [
-    { path: '/accueil', permission: 'accueil' },
-    { path: '/employees', permission: 'employees' },
-    { path: '/produits', permission: 'produits' },
-    { path: '/stock', permission: 'stock' },
-    { path: '/caisse', permission: 'caisse' },
-    { path: '/point-vente', permission: 'point-vente' },
-    { path: '/vente', permission: 'vente' },
-    { path: '/achat', permission: 'achat' },
-    { path: '/client', permission: 'client' },
-    { path: '/fournisseur', permission: 'fournisseur' },
-    { path: '/comptabilite', permission: 'comptabilite' },
-    { path: '/boutique', permission: 'boutique' },
-    { path: '/utilisateur', permission: 'utilisateur' },
-    { path: '/parametre', permission: 'parametre' },
+    { path: '/accueil', permission: 'tableau_de_bord:voir' },
+    { path: '/employees', permission: 'personnel:voir' },
+    { path: '/produits', permission: 'produits:voir' },
+    { path: '/stock', permission: 'stock:voir' },
+    { path: '/caisse', permission: 'caisses:voir' },
+    { path: '/point-vente', permission: 'ventes:creer' },
+    { path: '/vente', permission: 'ventes:voir' },
+    { path: '/achat', permission: 'achats:voir' },
+    { path: '/client', permission: 'clients:voir' },
+    { path: '/fournisseur', permission: 'fournisseurs:voir' },
+    { path: '/comptabilite', permission: 'comptabilite:voir' },
+    { path: '/store', permission: 'boutiques:voir' }, // Note: /store et non /boutique d'après AppSidebar.vue
+    { path: '/utilisateur', permission: 'utilisateurs:voir' },
+    { path: '/parametre', permission: 'parametres:voir' },
+    { path: '/organisation', permission: 'SUPER_ADMIN' },
   ];
 
-  // Trouver la permission requise pour cette route (y compris sous-routes)
-  let requiredPermission: string | undefined = undefined;
+  // Trouver la permission requise pour cette route
+  // 1. Priorité à la permission spécifique définie dans definePageMeta
+  let requiredPermission = to.meta.permission as string | undefined;
   
-  for (const route of routePermissions) {
-    // Vérifier correspondance exacte ou si c'est une sous-route
-    if (to.path === route.path || to.path.startsWith(route.path + '/')) {
-      requiredPermission = route.permission;
-      break;
+  // 2. Sinon, utiliser la configuration par préfixe de route
+  if (!requiredPermission) {
+    for (const route of routePermissions) {
+      if (to.path === route.path || to.path.startsWith(route.path + '/')) {
+        requiredPermission = route.permission;
+        break;
+      }
     }
   }
 
-  // Si la route n'est pas dans la config (undefined), laisser passer (par défaut)
+  // Si pas de permission requise, laisser passer
   if (requiredPermission === undefined) {
     return;
   }
 
-  // Les Admin et SUPER_ADMIN ont accès à tout
-  const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
-  if (adminRoles.includes(user.value.role)) {
+  // Utiliser hasPermission du composable pour la vérification centralisée
+  // (gère déjà ADMIN, SUPER_ADMIN, OWNER, customPermissions et effectives)
+  const { hasPermission } = usePermissions();
+
+  if (requiredPermission === 'SUPER_ADMIN') {
+    if (user.value.role !== 'SUPER_ADMIN') {
+      throw createError({ statusCode: 403, statusMessage: 'Accès réservé au Super Admin' });
+    }
     return;
   }
 
-  // Pour les TenantUsers, vérifier les permissions
-  const userPermissions = user.value.permissions || [];
-
-  if (!userPermissions.includes(requiredPermission)) {
-    // L'utilisateur n'a pas la permission requise
-    // Afficher la page d'erreur 403 qui permettra à l'utilisateur de cliquer sur "Retour"
-    // pour être redirigé vers index.vue puis vers sa première page accessible
+  if (!hasPermission(requiredPermission)) {
     throw createError({
       statusCode: 403,
       statusMessage: `Accès refusé - Permission "${requiredPermission}" requise`,

@@ -69,15 +69,19 @@ export class MagasinService {
   }
 
   /**
-   * Récupère tous les magasins
+   * Récupère tous les magasins avec filtres optionnels
    */
-  async getAll(filters?: { est_actif?: boolean }): Promise<any[]> {
+  async getAll(filters?: { est_actif?: boolean; ids?: string[] }): Promise<any[]> {
     const where: any = {};
 
     if (filters?.est_actif !== undefined) {
       where.est_actif = filters.est_actif;
     } else {
-        where.est_actif = true;
+      where.est_actif = true;
+    }
+
+    if (filters?.ids && Array.isArray(filters.ids)) {
+      where.id = { in: filters.ids };
     }
 
     return this.prisma.magasin.findMany({

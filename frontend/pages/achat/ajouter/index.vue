@@ -19,6 +19,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+    middleware: ['auth', 'permissions'],
+    permission: 'achats:creer'
+});
+
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Toast from 'primevue/toast';

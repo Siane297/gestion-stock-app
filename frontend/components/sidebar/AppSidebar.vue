@@ -67,6 +67,7 @@
 import { Icon } from '@iconify/vue';
 import { useRoute } from 'vue-router';
 import { useSecureAuth } from '~/composables/useSecureAuth';
+import { usePermissions } from '~/composables/usePermissions';
 import SidebarMenuItem from '~/components/sidebar/SidebarMenuItem.vue';
 import AppLogo from '~/components/logo/AppLogo.vue';
 import StoreSelector from '~/components/sidebar/StoreSelector.vue';
@@ -100,6 +101,7 @@ if (process.client) {
 
 // Récupérer les informations de l'utilisateur connecté
 const { user, checkAuth } = useSecureAuth();
+const { hasPermission, isAdmin } = usePermissions();
 
 // Vérifier l'authentification au montage
 onMounted(async () => {
@@ -122,9 +124,22 @@ const toggleSubmenu = (menuName: string) => {
 };
 
 
+interface MenuItem {
+  name: string;
+  icon: string;
+  link?: string;
+  permission?: string | string[];
+  children?: MenuItem[];
+}
+
+interface MenuCategory {
+  title: string;
+  items: MenuItem[];
+}
+
 // Configuration complète du menu avec permissions requises
 // Configuration des catégories de menu
-const menuCategories = [
+const menuCategories: MenuCategory[] = [
   {
     title: 'Menu principal',
     items: [
@@ -132,7 +147,7 @@ const menuCategories = [
         name: 'Tableau de bord',
         icon: 'tabler:home',
         link: '/accueil',
-        permission: 'accueil',
+        permission: 'tableau_de_bord:voir',
       },
     ]
   },
@@ -143,19 +158,19 @@ const menuCategories = [
         name: 'Produits',
         icon: 'tabler:box',
         link: '/produits',
-        permission: 'produits',
+        permission: 'produits:voir',
       },
       {
         name: 'Stock',
         icon: 'tabler:archive',
         link: '/stock',
-        permission: 'stock',
+        permission: 'stock:voir',
       },
       {
         name: 'Boutique/Magasin',
         icon: 'tabler:building-store',
         link: '/store',
-        permission: 'boutique',
+        permission: 'boutiques:voir',
       },
     ]
   },
@@ -166,19 +181,19 @@ const menuCategories = [
         name: 'Personnel',
         icon: 'tabler:users',
         link: '/employees',
-        permission: 'employees',
+        permission: 'personnel:voir',
       },
        {
         name: 'Client',
         icon: 'tabler:user-check',
         link: '/client',
-        permission: 'client',
+        permission: 'clients:voir',
       },
       {
         name: 'Fournisseur',
         icon: 'tabler:user-star',
         link: '/fournisseur',
-        permission: 'fournisseur',
+        permission: 'fournisseurs:voir',
       },
      
     ]
@@ -192,51 +207,50 @@ const menuCategories = [
         name: 'Point de vente',
         icon: 'tabler:device-laptop',
         link: '/point-vente',
-        permission: 'point-vente',
+        permission: 'ventes:creer',
       },
       {
         name: 'Vente',
         icon: 'tabler:coins',
         link: '/vente',
-        permission: 'vente',
+        permission: 'ventes:voir',
       },
       {
         name: 'Achat',
         icon: 'tabler:shopping-cart',
         link: '/achat',
-        permission: 'achat',
+        permission: 'achats:voir',
       },
-      // {
-      //   name: 'Comptabilité',
-      //   icon: 'tabler:calculator',
-      //   link: '/comptabilite',
-      //   permission: 'comptabilite',
-      // },
        {
         name: 'Caisse',
         icon: 'tabler:cash-register',
-        permission: 'caisse',
+        permission: ['caisses:modifier', 'caisses:exporter'],
         children: [
           {
             name: 'Liste des caisses',
             icon: 'tabler:list',
             link: '/caisse',
-            permission: 'caisse',
+            permission: 'caisses:voir',
           },
           {
             name: 'Historique session',
             icon: 'tabler:history',
             link: '/caisse/sessions',
-            permission: 'caisse',
+            permission: 'caisses:voir',
           }
         ]
       },
-      // {
-      //   name: 'Facture',
-      //   icon: 'tabler:receipt',
-      //   link: '/facture',
-      //   permission: 'facture',
-      // },
+    ]
+  },
+  {
+    title: 'Finance',
+    items: [
+      {
+        name: 'Comptabilité',
+        icon: 'tabler:calculator',
+        link: '/comptabilite',
+        permission: 'comptabilite:voir',
+      }
     ]
   },
   {
@@ -252,13 +266,13 @@ const menuCategories = [
         name: 'Utilisateurs',
         icon: 'tabler:user-cog',
         link: '/utilisateur',
-        permission: 'utilisateur',
+        permission: 'utilisateurs:voir',
       },
       {
         name: 'Paramètres',
         icon: 'tabler:settings',
         link: '/parametre',
-        permission: 'parametre',
+        permission: 'parametres:voir',
       }
     ]
   }
@@ -275,18 +289,14 @@ const filteredMenuCategories = computed(() => {
     const filteredItems = category.items.filter(item => {
       // Cas spécial SUPER_ADMIN
       if (item.permission === 'SUPER_ADMIN') {
-        return user.value.role === 'SUPER_ADMIN';
+        return user.value?.role === 'SUPER_ADMIN';
       }
 
-      // Admin a accès à tout (sauf SUPER_ADMIN explicit)
-      const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
-      if (adminRoles.includes(user.value.role)) {
-        return true;
-      }
-
-      const userPermissions = user.value.permissions || [];
+      // Si pas de permission requise, visible par tous
       if (!item.permission) return true;
-      return userPermissions.includes(item.permission);
+
+      // Utiliser le composable usePermissions
+      return hasPermission(item.permission);
     });
 
     // Retourner la catégorie seulement si elle a des items visibles

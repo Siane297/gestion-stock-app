@@ -91,7 +91,7 @@ async function restoreUser() {
                 employeeId: employee.id,
                 role: 'ADMIN',
                 isOwner: true,
-                permissions: ["*"] // Full permissions
+                customPermissions: ["*"] // Full permissions
             }
         });
         console.log(`✅ TenantUser créé avec succès (ID: ${user.id})`);

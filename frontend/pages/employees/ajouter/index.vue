@@ -34,6 +34,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+    middleware: ['auth', 'permissions'],
+    permission: 'personnel:creer'
+});
+
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';

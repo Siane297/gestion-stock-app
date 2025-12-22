@@ -18,13 +18,20 @@
 
     <!-- Formulaire -->
     <div class="bg-white border-2 border-gris/40 rounded-xl p-8">
-      <form @submit.prevent="handleSubmit" class="space-y-8">
-        <!-- PARTIE 1 : Informations de base -->
-        <div>
-          <h2 class="text-xl font-bold text-noir mb-4 flex items-center gap-2">
-            <Icon icon="lucide:circle-user" class="text-2xl text-noir" />
-            Informations du compte
-          </h2>
+      <Stepper v-model:value="activeStep">
+        <StepList>
+          <Step :value="1">Compte</Step>
+          <Step :value="2">Permissions</Step>
+        </StepList>
+
+        <StepPanels>
+          <!-- ÉTAPE 1 : Informations du compte -->
+          <StepPanel :value="1">
+            <div class="space-y-8">
+              <h2 class="text-xl font-bold text-noir flex items-center gap-2">
+                <Icon icon="lucide:circle-user" class="text-2xl text-noir" />
+                Informations du compte
+              </h2>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Sélectionner l'employé -->
@@ -339,124 +346,158 @@
                 Utilisé pour se connecter rapidement aux caisses.
               </small>
             </div>
-          </div>
-        </div>
 
-        <Divider />
-
-        <!-- PARTIE 2 : Permissions d'accès aux pages -->
-        <div>
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold text-noir flex items-center gap-2">
-              <Icon icon="tabler:shield-check" class="text-2xl text-noir" />
-              Permissions d'accès aux pages
-            </h2>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                @click="selectAllPermissions"
-                class="text-sm text-primary hover:underline"
-              >
-                Tout sélectionner
-              </button>
-              <span class="text-gray-300">|</span>
-              <button
-                type="button"
-                @click="deselectAllPermissions"
-                class="text-sm text-gray-500 hover:underline"
-              >
-                Tout désélectionner
-              </button>
-            </div>
-          </div>
-
-          <p class="text-sm text-gray-600 mb-6">
-            Sélectionnez les pages auxquelles l'utilisateur aura accès
-          </p>
-
-          <!-- Liste simple des permissions -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div
-              v-for="page in availablePages"
-              :key="page.slug"
-              class="flex items-center justify-between p-3 border-2 rounded-lg transition-colors cursor-pointer"
-              :class="
-                formData.permissions.includes(page.slug)
-                  ? 'border-primary/50 bg-primary/5'
-                  : 'border-gray-200 hover:border-gray-300'
-              "
-              @click="
-                togglePermission(
-                  page.slug,
-                  !formData.permissions.includes(page.slug)
-                )
-              "
-            >
-              <div class="flex items-center gap-3">
-                <Icon
-                  :icon="page.icon"
-                  class="text-xl"
-                  :class="
-                    formData.permissions.includes(page.slug)
-                      ? 'text-primary'
-                      : 'text-gray-500'
-                  "
-                />
+            <!-- Portée Globale -->
+            <div class="field flex flex-col justify-center">
+              <div class="flex items-center gap-3 p-3 border-2 border-gray-100 rounded-lg hover:border-gray-200 transition-colors">
+                <ToggleSwitch v-model="formData.globalScope" />
                 <div>
-                  <p
-                    class="font-medium text-sm"
-                    :class="
-                      formData.permissions.includes(page.slug)
-                        ? 'text-noir'
-                        : 'text-gray-700'
-                    "
+                  <label class="block text-sm font-bold text-gray-700">Accès global</label>
+                  <p class="text-xs text-gray-500">Permet d'accéder à toutes les boutiques de l'organisation.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Multi-boutiques (seulement si pas global) -->
+            <div v-if="!formData.globalScope" class="field">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Boutiques gérées
+              </label>
+              <MultiSelect
+                v-model="formData.managedStoreIds"
+                :options="magasins"
+                optionLabel="nom"
+                optionValue="id"
+                placeholder="Sélectionner les boutiques"
+                class="w-full"
+                filter
+                display="chip"
+              >
+                <template #option="slotProps">
+                  <div class="flex items-center gap-2">
+                    <Icon icon="tabler:building-store" class="text-primary" />
+                    <span>{{ slotProps.option.nom }}</span>
+                  </div>
+                </template>
+              </MultiSelect>
+              <small class="text-gray-500 text-xs mt-1">
+                Boutiques supplémentaires auxquelles l'utilisateur a accès.
+              </small>
+            </div>
+            </div> <!-- Fin de la grid -->
+
+            <!-- Boutons de navigation Étape 1 -->
+            <div class="flex justify-end gap-3 mt-8 pt-6 border-t">
+              <AppButton
+                label="Annuler"
+                variant="outline"
+                @click="onConfirmCancel"
+                iconLeft="pi pi-times"
+                type="button"
+              />
+              <AppButton
+                label="Suivant"
+                variant="primary"
+                iconRight="pi pi-arrow-right"
+                @click="handleNext"
+                type="button"
+              />
+            </div>
+          </div> <!-- Fin de space-y-8 -->
+        </StepPanel>
+
+          <!-- ÉTAPE 2 : Permissions granulaires -->
+          <StepPanel :value="2">
+            <div class="space-y-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-noir flex items-center gap-2">
+                  <Icon icon="tabler:shield-check" class="text-2xl text-noir" />
+                  Permissions granulaires
+                </h2>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    @click="selectAllPermissions"
+                    class="text-sm text-primary hover:underline"
                   >
-                    {{ page.name }}
-                  </p>
-                  <p class="text-xs text-gray-400">
-                    {{ page.description }}
+                    Tout sélectionner
+                  </button>
+                  <span class="text-gray-300">|</span>
+                  <button
+                    type="button"
+                    @click="deselectAllPermissions"
+                    class="text-sm text-gray-500 hover:underline"
+                  >
+                    Tout désélectionner
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="formData.role === 'ADMIN'" class="p-4 bg-primary/5 border-2 border-primary/20 rounded-xl mb-6">
+                <div class="flex items-center gap-3">
+                  <Icon icon="tabler:info-circle" class="text-2xl text-primary" />
+                  <p class="text-sm text-noir">
+                    <span class="font-bold">Note :</span> Les administrateurs ont accès à toutes les fonctionnalités par défaut. Les permissions sélectionnées ici sont des permissions additionnelles ou spécifiques.
                   </p>
                 </div>
               </div>
-              <ToggleSwitch
-                :modelValue="formData.permissions.includes(page.slug)"
-                @update:modelValue="togglePermission(page.slug, $event)"
-                @click.stop
-              />
+
+              <p class="text-sm text-gray-600 mb-6 font-medium">
+                Activez les modules et définissez précisément les actions autorisées :
+              </p>
+
+              <!-- Liste des modules avec le nouveau composant (Grille 2 colonnes) -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <PermissionModuleToggle
+                  v-for="mod in permissionModules"
+                  :key="mod.id"
+                  :module="mod"
+                  :actionLabels="actionLabels"
+                  v-model="moduleStates[mod.id]!"
+                />
+              </div>
+
+              <!-- Résumé des permissions -->
+              <div
+                v-if="formData.customPermissions.length > 0"
+                class="mt-6 p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gris flex items-center justify-between"
+              >
+                <p class="text-sm text-gray-600">
+                  <span class="font-bold text-primary">{{ formData.customPermissions.length }}</span>
+                  permission(s) spécifique(s) configurée(s).
+                </p>
+                <button 
+                    type="button"
+                    @click="deselectAllPermissions"
+                    class="text-xs text-red-500 hover:underline flex items-center gap-1"
+                  >
+                    <Icon icon="lucide:trash-2" />
+                    Réinitialiser
+                  </button>
+              </div>
+
+              <!-- Boutons d'action Étape 2 -->
+              <div class="flex justify-end gap-3 mt-8 pt-6 border-t">
+                <AppButton
+                  label="Précédent"
+                  variant="outline"
+                  @click="activeStep = 1"
+                  iconLeft="pi pi-arrow-left"
+                  type="button"
+                />
+                <AppButton
+                  :label="isEditMode ? 'Enregistrer les modifications' : 'Créer l\'utilisateur'"
+                  variant="primary"
+                  iconLeft="pi pi-check"
+                  :loading="isSubmitting"
+                  @click="handleSubmit"
+                  type="button"
+                />
+              </div>
             </div>
-          </div>
-
-          <!-- Résumé des permissions -->
-          <div
-            v-if="formData.permissions.length > 0"
-            class="mt-4 p-3 bg-gray-50 rounded-lg text-center"
-          >
-            <p class="text-sm text-gray-600">
-              <span class="font-medium">{{ formData.permissions.length }}</span>
-              permission(s) sélectionnée(s) sur
-              <span class="font-medium">{{ availablePages.length }}</span>
-            </p>
-          </div>
-        </div>
-
-        <!-- Boutons d'action -->
-        <div class="flex justify-end gap-3 pt-4 border-t">
-          <AppButton
-            label="Annuler"
-            variant="outline"
-            @click="handleCancel"
-            iconLeft="mdi:close"
-            type="button"
-          />
-          <AppButton
-            :label="isEditMode ? 'Mettre à jour' : 'Créer l\'utilisateur'"
-            variant="primary"
-            iconLeft="mdi:check"
-            :loading="isSubmitting"
-            type="submit"
-          />
-        </div>
-      </form>
+          </StepPanel>
+        </StepPanels>
+      </Stepper>
     </div>
 
     <!-- Dialog de confirmation annulation -->
@@ -472,10 +513,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, reactive } from "vue";
+import Stepper from "primevue/stepper";
+import StepList from "primevue/steplist";
+import Step from "primevue/step";
+import StepPanels from "primevue/steppanels";
+import StepPanel from "primevue/steppanel";
 import Select from "primevue/select";
 import Password from "primevue/password";
 import ToggleSwitch from "primevue/toggleswitch";
+import MultiSelect from "primevue/multiselect";
 import Divider from "primevue/divider";
 import InputText from "primevue/inputtext";
 import InputGroup from "primevue/inputgroup";
@@ -483,7 +530,9 @@ import InputGroupAddon from "primevue/inputgroupaddon";
 import { Icon } from "@iconify/vue";
 import AppButton from "~/components/button/AppButton.vue";
 import ConfirmationDialog from "~/components/dialog/ConfirmationDialog.vue";
+import PermissionModuleToggle from "./PermissionModuleToggle.vue";
 import { useMagasinApi } from "~/composables/api/useMagasinApi";
+import { getEffectivePermissions, calculatePermissionsDiff } from "~/utils/permissions";
 
 interface Employee {
   value: string;
@@ -511,108 +560,60 @@ const roles = [
   {
     label: "Administrateur",
     value: "ADMIN",
-    description: "Propriétaire - Tous les droits",
+    description: "Accès complet à l'organisation",
   },
   {
-    label: "Manager",
-    value: "MANAGER",
-    description: "Gestion d'équipe et paramètres",
+    label: "Gérant de Boutique",
+    value: "STORE_MANAGER",
+    description: "Gestion complète d'une ou plusieurs boutiques",
+  },
+  {
+    label: "Gestionnaire de Stock",
+    value: "STOCK_MANAGER",
+    description: "Gestion des produits et inventaires",
+  },
+  {
+    label: "Vendeur",
+    value: "SELLER",
+    description: "Ventes, caisse et catalogue produits",
+  },
+  {
+    label: "Comptable",
+    value: "ACCOUNTANT",
+    description: "Suivi financier et rapports",
   },
   {
     label: "Utilisateur",
     value: "USER",
-    description: "Accès limité aux pages autorisées",
+    description: "Accès limité par défaut",
   },
-  { label: "RH", value: "RH", description: "Gestion des ressources humaines" },
 ];
 
-// Pages disponibles (correspondant à la sidebar)
-const availablePages = [
-  {
-    name: "Tableau de bord",
-    slug: "accueil",
-    icon: "tabler:home",
-    description: "Vue d'ensemble et statistiques",
-  },
-  {
-    name: "Produits",
-    slug: "produits",
-    icon: "tabler:box",
-    description: "Catalogue des produits",
-  },
-  {
-    name: "Stock",
-    slug: "stock",
-    icon: "tabler:archive",
-    description: "Gestion des stocks",
-  },
-  {
-    name: "Boutique/Magasin",
-    slug: "boutique",
-    icon: "tabler:building-store",
-    description: "Gestion des magasins",
-  },
-  {
-    name: "Personnel",
-    slug: "employees",
-    icon: "tabler:users",
-    description: "Gestion des employés",
-  },
-  {
-    name: "Client",
-    slug: "client",
-    icon: "tabler:user-check",
-    description: "Gestion des clients",
-  },
-  {
-    name: "Fournisseur",
-    slug: "fournisseur",
-    icon: "tabler:user-star",
-    description: "Gestion des fournisseurs",
-  },
-  {
-    name: "Caisse",
-    slug: "caisse",
-    icon: "tabler:device-laptop",
-    description: "Gestion des caisses",
-  },
-  {
-    name: "Point de vente",
-    slug: "point-vente",
-    icon: "tabler:device-laptop",
-    description: "Interface de vente",
-  },
-  {
-    name: "Vente",
-    slug: "vente",
-    icon: "tabler:coins",
-    description: "Historique des ventes",
-  },
-  {
-    name: "Achat",
-    slug: "achat",
-    icon: "tabler:shopping-cart",
-    description: "Gestion des achats",
-  },
-  {
-    name: "Comptabilité",
-    slug: "comptabilite",
-    icon: "tabler:calculator",
-    description: "Suivi comptable",
-  },
-  {
-    name: "Utilisateurs",
-    slug: "utilisateur",
-    icon: "tabler:user-cog",
-    description: "Gestion des comptes utilisateurs",
-  },
-  {
-    name: "Paramètres",
-    slug: "parametre",
-    icon: "tabler:settings",
-    description: "Configuration de l'application",
-  },
+// Modules et actions disponibles pour les permissions granulaires
+const permissionModules = [
+  { id: "tableau_de_bord", name: "Tableau de bord", icon: "tabler:home", actions: ["voir"] },
+  { id: "produits", name: "Produits", icon: "tabler:box", actions: ["voir", "creer", "modifier", "supprimer", "exporter"] },
+  { id: "stock", name: "Stock", icon: "tabler:archive", actions: ["voir", "creer", "modifier", "valider"] },
+  { id: "achats", name: "Achats", icon: "tabler:shopping-cart", actions: ["voir", "creer", "modifier", "valider"] },
+  { id: "ventes", name: "Ventes", icon: "tabler:coins", actions: ["voir", "creer", "modifier", "supprimer", "exporter"] },
+  { id: "clients", name: "Clients", icon: "tabler:user-check", actions: ["voir", "creer", "modifier"] },
+  { id: "fournisseurs", name: "Fournisseurs", icon: "tabler:user-star", actions: ["voir", "creer", "modifier"] },
+  { id: "caisses", name: "Caisses", icon: "tabler:cash-register", actions: ["voir", "creer", "modifier", "valider", "exporter"] },
+  { id: "personnel", name: "Personnel", icon: "tabler:users", actions: ["voir", "creer", "modifier"] },
+  { id: "utilisateurs", name: "Utilisateurs", icon: "tabler:user-cog", actions: ["voir", "creer", "modifier", "supprimer"] },
+  { id: "boutiques", name: "Boutiques", icon: "tabler:building-store", actions: ["voir", "creer", "modifier"] },
+  { id: "comptabilite", name: "Comptabilité", icon: "tabler:calculator", actions: ["voir", "exporter"] },
+  { id: "parametres", name: "Paramètres", icon: "tabler:settings", actions: ["voir", "modifier"] },
 ];
+
+const actionLabels: Record<string, string> = {
+  voir: "Voir",
+  creer: "Créer",
+  modifier: "Modifier",
+  supprimer: "Supprimer",
+  exporter: "Exporter",
+  valider: "Valider",
+};
 
 // Mode édition
 const isEditMode = computed(() => !!props.initialData);
@@ -623,10 +624,70 @@ const formData = ref({
   role: "USER",
   password: "",
   confirmPassword: "",
-  permissions: [] as string[],
+  customPermissions: [] as string[],
   pin: "",
   magasin_id: null as string | null,
+  globalScope: false,
+  managedStoreIds: [] as string[],
 });
+
+const activeStep = ref(1);
+
+/**
+ * Gestion réactive de l'état des modules pour le composant PermissionModuleToggle
+ * Synchronise les permissions individuelles avec la liste plate customPermissions du formulaire
+ */
+const moduleStates = reactive<Record<string, { active: boolean, permissions: string[] }>>({});
+
+// Initialiser moduleStates
+permissionModules.forEach(mod => {
+  moduleStates[mod.id] = {
+    active: false,
+    permissions: formData.value.customPermissions
+  };
+});
+
+// Synchroniser les changements de moduleStates vers formData.customPermissions
+watch(moduleStates, () => {
+  const allPermissions: string[] = [];
+  Object.keys(moduleStates).forEach(moduleId => {
+    const state = moduleStates[moduleId];
+    if (state && state.active && state.permissions) {
+      state.permissions.forEach(p => {
+        if (typeof p === 'string' && p.startsWith(`${moduleId}:`) && !allPermissions.includes(p)) {
+          allPermissions.push(p);
+        }
+      });
+    }
+  });
+  
+  // Rompre la boucle : ne mettre à jour que si les valeurs ont changé
+  const currentPerms = formData.value.customPermissions;
+  if (JSON.stringify(allPermissions) !== JSON.stringify(currentPerms)) {
+    formData.value.customPermissions = allPermissions;
+  }
+}, { deep: true });
+
+// Synchroniser les changements de formData.customPermissions vers moduleStates (chargement initial/reset)
+watch(() => formData.value.customPermissions, (newPerms) => {
+  if (!Array.isArray(newPerms)) return;
+  
+  permissionModules.forEach(mod => {
+    const mState = moduleStates[mod.id];
+    if (mState) {
+      const hasModPerms = newPerms.includes('*') || newPerms.some(p => typeof p === 'string' && p.startsWith(`${mod.id}:`));
+      
+      // Mettre à jour seulement si nécessaire pour éviter de redéclencher le watcher parent
+      if (mState.active === false && hasModPerms) {
+        mState.active = true;
+      }
+      
+      if (mState.permissions !== newPerms) {
+        mState.permissions = newPerms;
+      }
+    }
+  });
+}, { immediate: true });
 
 // Erreurs de validation
 const errors = ref<Record<string, string>>({});
@@ -656,30 +717,44 @@ watch(
   () => props.initialData,
   (newData) => {
     if (newData) {
+      const role = newData.role || "USER";
+      const customPerms = Array.isArray(newData.customPermissions)
+          ? newData.customPermissions
+          : Array.isArray(newData.permissions) ? newData.permissions : [];
+      
       formData.value = {
         employeeId: newData.employeeId || "",
-        role: newData.role || "USER",
+        role: role,
         password: "",
         confirmPassword: "",
-        permissions: Array.isArray(newData.permissions)
-          ? newData.permissions
-          : [],
+        customPermissions: getEffectivePermissions(role, customPerms),
         pin: newData.pin || "",
         magasin_id: newData.magasin_id || null,
+        globalScope: newData.globalScope || false,
+        managedStoreIds: Array.isArray(newData.managedStoreIds) ? newData.managedStoreIds : [],
       };
     }
   },
   { immediate: true }
 );
 
+// Mettre à jour les permissions par défaut lors du changement de rôle (en mode création seulement ou si demandé)
+watch(() => formData.value.role, (newRole, oldRole) => {
+  if (newRole && newRole !== oldRole) {
+    // On met à jour avec les permissions par défaut du nouveau rôle
+    // On garde l'état actuel mais on recalcule la base
+    formData.value.customPermissions = getEffectivePermissions(newRole, []);
+  }
+});
+
 // Toggle permission
 const togglePermission = (slug: string, value: boolean) => {
   if (value) {
-    if (!formData.value.permissions.includes(slug)) {
-      formData.value.permissions.push(slug);
+    if (!formData.value.customPermissions.includes(slug)) {
+      formData.value.customPermissions.push(slug);
     }
   } else {
-    formData.value.permissions = formData.value.permissions.filter(
+    formData.value.customPermissions = formData.value.customPermissions.filter(
       (p) => p !== slug
     );
   }
@@ -687,12 +762,42 @@ const togglePermission = (slug: string, value: boolean) => {
 
 // Sélectionner toutes les permissions
 const selectAllPermissions = () => {
-  formData.value.permissions = availablePages.map((p) => p.slug);
+  const all: string[] = [];
+  permissionModules.forEach(mod => {
+    mod.actions.forEach(act => {
+      all.push(`${mod.id}:${act}`);
+    });
+  });
+  formData.value.customPermissions = all;
+};
+
+// Cocher toutes les actions d'un module
+const toggleModuleAll = (moduleId: string, check: boolean) => {
+  const module = permissionModules.find(m => m.id === moduleId);
+  if (!module) return;
+
+  const currentPermissions = [...formData.value.customPermissions];
+  const modulePermissions = module.actions.map(a => `${moduleId}:${a}`);
+
+  if (check) {
+    // Ajouter seulement celles qui n'y sont pas
+    modulePermissions.forEach(p => {
+      if (!currentPermissions.includes(p)) {
+        currentPermissions.push(p);
+      }
+    });
+  } else {
+    // Retirer toutes celles du module
+    formData.value.customPermissions = currentPermissions.filter(p => !p.startsWith(`${moduleId}:`));
+    return;
+  }
+  
+  formData.value.customPermissions = currentPermissions;
 };
 
 // Désélectionner toutes les permissions
 const deselectAllPermissions = () => {
-  formData.value.permissions = [];
+  formData.value.customPermissions = [];
 };
 
 // Générer un PIN aléatoire
@@ -701,6 +806,13 @@ const generateRandomPin = () => {
   formData.value.pin = pin;
   if (errors.value.pin) {
     delete errors.value.pin;
+  }
+};
+
+// Passer à l'étape suivante
+const handleNext = () => {
+  if (validate()) {
+    activeStep.value = 2;
   }
 };
 
@@ -754,12 +866,17 @@ const handleSubmit = () => {
     return;
   }
 
+  // Calculer le "diff" des permissions par rapport au rôle choisi
+  const customPermissionsDiff = calculatePermissionsDiff(formData.value.role, formData.value.customPermissions);
+
   const dataToSubmit: any = {
     employeeId: formData.value.employeeId,
     role: formData.value.role,
-    permissions: formData.value.permissions,
+    customPermissions: customPermissionsDiff,
     pin: formData.value.pin || null,
     magasin_id: formData.value.magasin_id || null,
+    globalScope: formData.value.globalScope,
+    managedStoreIds: formData.value.managedStoreIds,
   };
 
   // Ajouter le mot de passe seulement si renseigné
@@ -823,22 +940,25 @@ const onConfirmCancel = () => {
 
 <style scoped>
 .field {
-  @apply flex flex-col;
+  display: flex;
+  flex-direction: column;
 }
 
 :deep(.p-password) {
-  @apply w-full;
+  width: 100%;
 }
 
 :deep(.p-password input) {
-  @apply w-full;
+  width: 100%;
 }
 
 :deep(.p-invalid) {
-  @apply border-red-500;
+  border-color: #ef4444; /* red-500 */
 }
 
 .p-error {
-  @apply text-red-500 text-xs mt-1;
+  color: #ef4444; /* red-500 */
+  font-size: 0.75rem; /* text-xs */
+  margin-top: 0.25rem; /* mt-1 */
 }
 </style>

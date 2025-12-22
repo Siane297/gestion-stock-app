@@ -23,9 +23,16 @@ export interface JWTPayload {
   userId: string;
   email: string;
   role: string;
-  companyId?: string; // ID de l'organisation (null pour SUPER_ADMIN)
+  companyId?: string;     // ID de l'organisation (null pour SUPER_ADMIN)
   tenantId?: string;      // Pour les TenantUsers
   employeeId?: string;    // Pour les TenantUsers
+  
+  // Nouveaux champs pour le système de permissions
+  isOwner?: boolean;      // Propriétaire de l'organisation
+  globalScope?: boolean;  // Accès global à toutes les boutiques
+  magasin_id?: string;    // Boutique d'affectation
+  managedStoreIds?: string[]; // Boutiques gérées (pour STORE_MANAGER)
+  customPermissions?: string[]; // Permissions custom ["module:action"]
 }
 
 /**

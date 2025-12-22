@@ -4,6 +4,8 @@ import { logger } from '../config/logger.js';
 import { CloudinaryService } from '../services/CloudinaryService.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { PermissionService } from '../services/permissionService.js';
+import { TenantUserRole, UserPermissionContext } from '../types/permissions.js';
 
 /**
  * Récupère tous les produits
@@ -11,7 +13,8 @@ import path from 'path';
 export const getAllProduits = async (req: Request, res: Response) => {
   try {
     const produitService = new ProduitService(req.tenantPrisma);
-    const user = req.user;
+    const user = req.user as any;
+    if (!user) return res.status(401).json({ success: false, message: 'Non authentifié' });
     
     const filters: any = {
       search: req.query.search as string,
@@ -20,26 +23,34 @@ export const getAllProduits = async (req: Request, res: Response) => {
     };
 
     // Gestion de la visibilité des stocks par rôle
-    if (user?.role !== 'ADMIN') {
-        // Chargement du magasin assigné
-        const tenantUser = await req.tenantPrisma.tenantUser.findUnique({
-             where: { id: user?.userId },
-             select: { magasin_id: true }
-        });
+    const context: UserPermissionContext = {
+      userId: user.userId,
+      role: user.role as TenantUserRole,
+      isOwner: user.isOwner || false,
+      globalScope: user.globalScope || false,
+      magasinId: user.magasin_id,
+      managedStoreIds: user.managedStoreIds || [],
+      customPermissions: (user.customPermissions as string[]) || [],
+    };
 
-        // On filtre strictement sur le magasin de l'utilisateur
-        if (tenantUser?.magasin_id) {
-            filters.magasin_id = tenantUser.magasin_id;
+    const accessibleStoreIds = PermissionService.getAccessibleStoreIds(context);
+
+    if (accessibleStoreIds !== 'all') {
+        // Pour les utilisateurs restreints, on filtre par leurs boutiques autorisées
+        if (req.query.magasin_id) {
+          // Si un magasin spécifique est demandé, on vérifie s'ils y ont droit
+          if (accessibleStoreIds.includes(req.query.magasin_id as string)) {
+            filters.magasin_id = req.query.magasin_id as string;
+          } else {
+            // Tentative d'accès non autorisé -> on force sur leurs boutiques autorisées
+            filters.magasin_id = accessibleStoreIds;
+          }
         } else {
-             // Securité: Si pas de magasin, on pourrait cacher les stocks
-             // Pour l'instant on laisse vide ou on met un ID inexistant ?
-             // On va assumer que filters.magasin_id undefined = tous les stocks
-             // MAIS user standard DOIT avoir une boutique.
-             // On force un filtre impossible si pas de magasin ?
-             // filters.magasin_id = 'NONE'; 
+          // Si pas de magasin spécifié, on montre tout ce à quoi ils ont droit
+          filters.magasin_id = accessibleStoreIds;
         }
     } else {
-        // ADMIN: Peut filtrer s'il veut, sinon voit tout
+        // ADMIN/SCOPE GLOBAL: Peut filtrer s'il veut, sinon voit tout
         if (req.query.magasin_id) {
             filters.magasin_id = req.query.magasin_id as string;
         }

@@ -106,6 +106,14 @@
                 <span class="text-lg font-black text-gray-800 uppercase tracking-widest">Total</span>
                 <span class="text-2xl font-black text-primary">{{ formatPrice(vente.montant_total) }}</span>
             </div>
+            <div class="flex justify-between items-center pt-2 border-t border-dashed border-gray-100 text-sm">
+                <span class="text-gray-500">Montant payé</span>
+                <span class="font-bold text-gray-700">{{ formatPrice(vente.montant_paye) }}</span>
+            </div>
+            <div class="flex justify-between items-center text-sm">
+                <span class="text-gray-500">Rendu</span>
+                <span class="font-bold text-green-600">{{ formatPrice(vente.montant_rendu) }}</span>
+            </div>
         </div>
       </div>
 

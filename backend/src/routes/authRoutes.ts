@@ -8,6 +8,8 @@ import { logger } from '../config/logger.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import { registerSchema, loginSchema, tenantLoginSchema } from '../validators/authValidator.js';
 import { DateHelpers } from '../utils/dateHelpers.js';
+import { PermissionService } from '../services/permissionService.js';
+import { TenantUserRole } from '../types/permissions.js';
 
 const router: Router = Router();
 
@@ -168,7 +170,7 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
             role: 'ADMIN',
             isBlocked: false,
             isOwner: true,
-            permissions: JSON.stringify(['accueil', 'employees', 'pointage', 'historique', 'parametre', 'utilisateur']),
+            customPermissions: ['tableau_de_bord:voir', 'personnel:voir', 'parametres:voir', 'utilisateurs:voir'],
           },
         });
 
@@ -197,11 +199,14 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
     })();
     
     // Générer les tokens JWT avec le companyId
-    const tokenPayload = {
+    const tokenPayload: JWTPayload = {
       userId: user.id,
       email: user.email,
       role: user.role,
       companyId: company.id,
+      isOwner: true,
+      globalScope: true, // Le créateur a accès à tout par défaut
+      customPermissions: ['*'], // Wildcard pour l'owner initial
     };
 
     const refreshToken = generateRefreshToken(tokenPayload);
@@ -301,11 +306,14 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
 
       if (isPasswordValid) {
         // Générer les tokens JWT
-        const tokenPayload = {
+        const tokenPayload: JWTPayload = {
           userId: adminUser.id,
           email: adminUser.email,
           role: adminUser.role,
           ...(adminUser.companyId && { companyId: adminUser.companyId }),
+          isOwner: adminUser.role === 'ADMIN' || adminUser.role === 'SUPER_ADMIN', // À affiner si besoin
+          globalScope: true, // Les admins ont accès à tout par défaut
+          customPermissions: ['*'],
         };
 
         const refreshToken = generateRefreshToken(tokenPayload);
@@ -383,6 +391,7 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
               },
             },
             magasin: { select: { id: true, nom: true } },
+            magasins_geres: { select: { id: true } },
           },
         });
 
@@ -414,13 +423,18 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
             });
 
             // Générer les tokens JWT
-            const tokenPayload = {
+            const tokenPayload: JWTPayload = {
               userId: tenantUser.id,
               email: tenantUser.email,
               role: tenantUser.role,
               tenantId: company.schemaName,
               companyId: company.id,
               employeeId: tenantUser.employeeId,
+              isOwner: tenantUser.isOwner,
+              globalScope: tenantUser.globalScope,
+              magasin_id: tenantUser.magasin_id || undefined,
+              managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
+              customPermissions: (tenantUser.customPermissions as string[]) || [],
             };
 
             const refreshToken = generateRefreshToken(tokenPayload);
@@ -450,6 +464,17 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
               console.log('[✅ TENANT LOGIN] Cookie refresh_token défini pour', tenantUser.email);
             }
 
+            // Calculer les permissions effectives
+            const userPermissions = PermissionService.getUserPermissions({
+              userId: tenantUser.id,
+              role: tenantUser.role as TenantUserRole,
+              customPermissions: (tenantUser.customPermissions as string[]) || [],
+              globalScope: tenantUser.globalScope,
+              isOwner: tenantUser.isOwner,
+              magasinId: tenantUser.magasin_id,
+              managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
+            });
+
             return res.json({
               success: true,
               message: 'Connexion réussie',
@@ -459,9 +484,13 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
                   id: tenantUser.id,
                   email: tenantUser.email,
                   role: tenantUser.role,
-                  permissions: tenantUser.permissions,
+                  permissions: userPermissions,
+                  customPermissions: tenantUser.customPermissions,
+                  globalScope: tenantUser.globalScope,
+                  isOwner: tenantUser.isOwner,
                   magasin_id: tenantUser.magasin_id,
                   magasin: tenantUser.magasin,
+                  managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
                   employee: {
                     id: tenantUser.employee.id,
                     matricule: tenantUser.employee.matricule,
@@ -549,6 +578,7 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
           },
         },
         magasin: { select: { id: true, nom: true } },
+        magasins_geres: { select: { id: true } },
       },
     });
 
@@ -592,13 +622,18 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
     });
 
     // Générer les tokens JWT
-    const tokenPayload = {
+    const tokenPayload: JWTPayload = {
       userId: tenantUser.id,
       email: tenantUser.email,
       role: tenantUser.role,
       tenantId: tenantId,
       companyId: company.id,
       employeeId: tenantUser.employeeId,
+      isOwner: tenantUser.isOwner,
+      globalScope: tenantUser.globalScope,
+      magasin_id: tenantUser.magasin_id || undefined,
+      managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
+      customPermissions: (tenantUser.customPermissions as string[]) || [],
     };
 
     const refreshToken = generateRefreshToken(tokenPayload);
@@ -632,6 +667,17 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
       console.log('[✅ TENANT LOGIN] Cookie refresh_token défini pour', tenantUser.email);
     }
 
+    // Calculer les permissions effectives
+    const userPermissions = PermissionService.getUserPermissions({
+      userId: tenantUser.id,
+      role: tenantUser.role as TenantUserRole,
+      customPermissions: (tenantUser.customPermissions as string[]) || [],
+      globalScope: tenantUser.globalScope,
+      isOwner: tenantUser.isOwner,
+      magasinId: tenantUser.magasin_id,
+      managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
+    });
+
     return res.json({
       success: true,
       message: 'Connexion réussie',
@@ -641,9 +687,13 @@ router.post('/tenant-login', validateRequest(tenantLoginSchema), async (req: Req
           id: tenantUser.id,
           email: tenantUser.email,
           role: tenantUser.role,
-          permissions: tenantUser.permissions,
+          permissions: userPermissions,
+          customPermissions: tenantUser.customPermissions,
+          globalScope: tenantUser.globalScope,
+          isOwner: tenantUser.isOwner,
           magasin_id: tenantUser.magasin_id,
           magasin: tenantUser.magasin,
+          managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
           employee: {
             id: tenantUser.employee.id,
             matricule: tenantUser.employee.matricule,
@@ -763,6 +813,8 @@ router.post('/refresh', async (req: Request, res: Response) => {
                 position: true,
               },
             },
+            magasin: { select: { id: true, nom: true } },
+            magasins_geres: { select: { id: true } },
           },
         });
 
@@ -809,14 +861,20 @@ router.post('/refresh', async (req: Request, res: Response) => {
       });
     }
 
-    // Créer un nouveau payload pour l'access token (sans les propriétés JWT internes)
+    // Créer un nouveau payload pour l'access token
     const newPayload: JWTPayload = {
       userId: payload.userId,
       email: payload.email,
       role: payload.role,
       companyId: payload.companyId || (user as any).company?.id,
       ...(payload.tenantId && { tenantId: payload.tenantId }),
-      ...(payload.employeeId && { employeeId: payload.employeeId })
+      ...(payload.employeeId && { employeeId: payload.employeeId }),
+      // Inclure les scopes et permissions pour le rafraîchissement
+      isOwner: (user as any).isOwner || false,
+      globalScope: (user as any).globalScope || (payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN'),
+      magasin_id: (user as any).magasin_id || undefined,
+      managedStoreIds: (user as any).magasins_geres?.map((m: any) => m.id) || [],
+      customPermissions: ((user as any).customPermissions as string[]) || (payload.role === 'ADMIN' ? ['*'] : []),
     };
 
     // Générer un nouveau access token
@@ -830,11 +888,27 @@ router.post('/refresh', async (req: Request, res: Response) => {
     if (payload.tenantId) {
       // TenantUser - inclure les infos complètes
       const tenantUser = user as any;
+      const userPermissions = PermissionService.getUserPermissions({
+        userId: tenantUser.id,
+        role: tenantUser.role as TenantUserRole,
+        customPermissions: (tenantUser.customPermissions as string[]) || [],
+        globalScope: tenantUser.globalScope,
+        isOwner: tenantUser.isOwner,
+        magasinId: tenantUser.magasin_id,
+        managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
+      });
+
       userData = {
         id: tenantUser.id,
         email: tenantUser.email,
         role: tenantUser.role,
-        permissions: tenantUser.permissions,
+        permissions: userPermissions,
+        customPermissions: tenantUser.customPermissions,
+        globalScope: tenantUser.globalScope,
+        isOwner: tenantUser.isOwner,
+        magasin_id: tenantUser.magasin_id,
+        magasin: tenantUser.magasin,
+        managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
         employee: tenantUser.employee ? {
           id: tenantUser.employee.id,
           matricule: tenantUser.employee.matricule,
@@ -919,6 +993,8 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
               position: true,
             },
           },
+          magasin: { select: { id: true, nom: true } },
+          magasins_geres: { select: { id: true } },
         },
       });
 
@@ -955,6 +1031,16 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
         }
       }
 
+      const userPermissions = PermissionService.getUserPermissions({
+        userId: tenantUser.id,
+        role: tenantUser.role as TenantUserRole,
+        customPermissions: (tenantUser.customPermissions as string[]) || [],
+        globalScope: tenantUser.globalScope,
+        isOwner: tenantUser.isOwner,
+        magasinId: tenantUser.magasin_id,
+        managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
+      });
+
       return res.json({
         success: true,
         data: { 
@@ -962,7 +1048,13 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
             id: tenantUser.id,
             email: tenantUser.email,
             role: tenantUser.role,
-            permissions: tenantUser.permissions,
+            permissions: userPermissions,
+            customPermissions: tenantUser.customPermissions,
+            globalScope: tenantUser.globalScope,
+            isOwner: tenantUser.isOwner,
+            magasin_id: tenantUser.magasin_id,
+            // magasin: tenantUser.magasin, // Déjà inclus ? non pas dans select return
+            managedStoreIds: tenantUser.magasins_geres?.map((m: any) => m.id) || [],
             employee: {
               id: tenantUser.employee.id,
               matricule: tenantUser.employee.matricule,

@@ -9,6 +9,8 @@ import {
   Currency,
   DEFAULT_CURRENCY
 } from '../utils/countryCurrency.js';
+import { requirePermission } from '../middleware/permissionMiddleware.js';
+import { Module, Action } from '../types/permissions.js';
 
 const router: Router = Router();
 
@@ -109,11 +111,10 @@ router.get('/organization', authenticate, async (req: Request, res: Response) =>
 });
 
 /**
- * PUT /api/currencies/organization
  * Modifier la devise de l'organisation (override manuel)
  * Réservé aux Admin
  */
-router.put('/organization', authenticate, async (req: Request, res: Response) => {
+router.put('/organization', authenticate, requirePermission(Module.PARAMETRES, Action.MODIFIER), async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     

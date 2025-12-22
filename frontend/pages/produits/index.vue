@@ -10,12 +10,14 @@
             :columns="columns"
             :data="produits"
             :loading="loading"
-            :global-action="{
+            :global-action="hasPermission('produits', 'creer') ? {
                 label: 'Nouveau Produit',
                 icon: 'pi pi-plus',
                 variant: 'primary',
                 link: '/produits/ajouter'
-            }"
+            } : undefined"
+            :show-edit="hasPermission('produits', 'modifier')"
+            :show-delete="hasPermission('produits', 'supprimer')"
             :search-fields="['nom', 'code_barre', 'categorie.nom']"
             delete-label-field="nom"
             @action:view="handleView"
@@ -41,6 +43,14 @@
         </TableGeneric>
     </div>
 
+    <!-- Modal Détail Produit -->
+    <ProduitDetailModal 
+      v-model:visible="showDetailModal"
+      :produit="selectedProduit"
+      :loading="detailLoading"
+      @edit="handleEdit"
+    />
+
     <!-- Toast pour notifications -->
     <Toast />
   </div>
@@ -52,17 +62,25 @@ import { useToast } from 'primevue/usetoast';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import BannerHeader from '~/components/banner/BannerHeader.vue';
+import ProduitDetailModal from '~/components/produit/ProduitDetailModal.vue';
 import { useProduitApi, type Produit } from '~/composables/api/useProduitApi';
+import { usePermissions } from '~/composables/usePermissions';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 
-const { getProduits, deleteProduit } = useProduitApi();
+const { getProduits, getProduitById, deleteProduit } = useProduitApi();
+const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
 const config = useRuntimeConfig();
 
 const produits = ref<Produit[]>([]);
 const loading = ref(false);
+
+// Détail
+const showDetailModal = ref(false);
+const detailLoading = ref(false);
+const selectedProduit = ref<Produit | null>(null);
 
 const columns: TableColumn[] = [
     { field: 'nom', header: 'Nom du Produit', sortable: true, customRender: true },
@@ -99,10 +117,19 @@ const loadProduits = async () => {
     }
 };
 
-const handleView = (prod: Produit) => {
-    // Redirection vers page détail (à créer si besoin, ou utiliser modifier pour l'instant)
-    // router.push(`/produits/${prod.id}`);
-    toast.add({ severity: 'info', summary: 'Info', detail: `Détails de ${prod.nom} (Bientôt disponible)`, life: 3000 });
+const handleView = async (prod: Produit) => {
+    selectedProduit.value = prod;
+    showDetailModal.value = true;
+    detailLoading.value = true;
+    try {
+        // Recharger l'objet complet avec les détails
+        const fullProduit = await getProduitById(prod.id);
+        if (fullProduit) selectedProduit.value = fullProduit;
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les détails du produit', life: 3000 });
+    } finally {
+        detailLoading.value = false;
+    }
 };
 
 const handleEdit = (prod: Produit) => {

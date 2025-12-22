@@ -10,12 +10,14 @@
         :columns="columns"
         :data="users"
         :loading="loading"
-        :global-action="{
+        :global-action="hasPermission('utilisateurs', 'creer') ? {
           label: 'Nouvel Utilisateur',
           icon: 'pi pi-plus',
           variant: 'primary',
           link: '/utilisateur/ajouter'
-        }"
+        } : undefined"
+        :show-edit="hasPermission('utilisateurs', 'modifier')"
+        :show-delete="hasPermission('utilisateurs', 'supprimer')"
         :search-fields="['email', 'employee.fullName', 'role']"
         delete-label-field="email"
         @action:edit="handleEdit"
@@ -39,7 +41,7 @@
 
         <!-- Colonne Rôle -->
         <template #column-role="{ data }: { data: any }">
-          <Tag :value="data.role" :severity="getRoleSeverity(data.role)" />
+          <Tag :value="roleLabels[data.role] || data.role" :severity="getRoleSeverity(data.role)" />
         </template>
 
         <!-- Colonne PIN -->
@@ -93,15 +95,26 @@ import Avatar from 'primevue/avatar';
 // Protection de la page
 definePageMeta({
   middleware: ['auth', 'permissions'],
+  permission: 'utilisateurs:voir'
 });
 
 const { getAllTenantUsers, deleteTenantUser, toggleBlockTenantUser } = useTenantUserApi();
+const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
 
 const users = ref<any[]>([]);
 const loading = ref(false);
+
+const roleLabels: Record<string, string> = {
+  ADMIN: "Administrateur",
+  STORE_MANAGER: "Gérant",
+  STOCK_MANAGER: "Gestionnaire Stock",
+  SELLER: "Vendeur",
+  ACCOUNTANT: "Comptable",
+  USER: "Utilisateur",
+};
 
 const columns: TableColumn[] = [
   { field: 'user', header: 'Utilisateur', sortable: true, customRender: true },
@@ -124,11 +137,13 @@ const loadData = async () => {
 
 const getRoleSeverity = (role: string) => {
   switch (role) {
-    case 'ADMIN': return 'danger';
-    case 'MANAGER': return 'warn';
-    case 'USER': return 'info';
-    case 'RH': return 'success';
-    default: return 'info';
+    case "ADMIN": return "danger";
+    case "STORE_MANAGER": return "warn";
+    case "STOCK_MANAGER": return "info";
+    case "SELLER": return "success";
+    case "ACCOUNTANT": return "secondary";
+    case "USER": return "info";
+    default: return "info";
   }
 };
 

@@ -10,12 +10,14 @@
             :columns="columns"
             :data="employees"
             :loading="loading"
-            :global-action="{
+            :global-action="hasPermission('personnel', 'creer') ? {
                 label: 'Nouvel Employé',
                 icon: 'pi pi-plus',
                 variant: 'primary',
                 link: '/employees/ajouter'
-            }"
+            } : undefined"
+            :show-edit="hasPermission('personnel', 'modifier')"
+            :show-delete="hasPermission('personnel', 'supprimer')"
             :search-fields="['fullName', 'matricule', 'email', 'phoneNumber']"
             delete-label-field="fullName"
             @action:edit="handleEdit"
@@ -52,16 +54,23 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  middleware: ['auth', 'permissions'],
+  permission: 'personnel:voir'
+});
+
 import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useEmployeeApi } from '~/composables/api/useEmployeeApi';
+import { usePermissions } from '~/composables/usePermissions';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import Avatar from 'primevue/avatar';
 
 const { getEmployees, deleteEmployee } = useEmployeeApi();
+const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();

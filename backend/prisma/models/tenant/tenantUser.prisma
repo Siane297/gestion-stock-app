@@ -1,12 +1,14 @@
 // ⚠️ MODÈLE TENANT - Créé dynamiquement par tenantService.ts
 // Compte utilisateur lié à un employé, dans le schéma de l'organisation
 
-// Rôle d'un utilisateur tenant
+// Rôles utilisateur métier
 enum TenantUserRole {
   ADMIN // Administrateur/Propriétaire de l'organisation
-  MANAGER // Gestion d'équipe et paramètres
-  USER // Utilisateur standard (accès limité)
-  RH // Ressources humaines
+  STORE_MANAGER // Gérant de boutique(s) - gestion complète de sa/ses boutique(s)
+  STOCK_MANAGER // Responsable stock - gestion achats, stocks, inventaires
+  SELLER // Vendeur/Caissier - ventes, caisse, relation client
+  ACCOUNTANT // Comptable - rapports financiers, paiements
+  USER // Utilisateur standard - consultation uniquement
 }
 
 model TenantUser {
@@ -18,8 +20,12 @@ model TenantUser {
   isBlocked  Boolean        @default(false)
   isOwner    Boolean        @default(false)
 
-  // Permissions d'accès aux pages (JSON array des slugs de pages autorisées)
-  permissions Json @default("[]")
+  // Scope global (accès à toutes les boutiques - pour ADMIN/OWNER)
+  globalScope Boolean @default(false)
+
+  // Permissions custom optionnelles (format: ["module:action"])
+  // Permet d'ajouter/retirer des permissions spécifiques au-delà du rôle
+  customPermissions Json @default("[]")
 
   // PIN pour authentification rapide sur caisse (4-6 chiffres)
   pin String? @unique
@@ -27,17 +33,15 @@ model TenantUser {
   // Relations
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  lastLoginAt   DateTime?
-  role_stock    role?     @relation(fields: [role_stock_id], references: [id])
-  role_stock_id String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
 
   // Boutique d'affectation (travail)
   magasin_id String?
   magasin    magasin? @relation("UserMagasin", fields: [magasin_id], references: [id])
 
-  // Boutiques où l'utilisateur est gérant
+  // Boutiques où l'utilisateur est gérant (pour STORE_MANAGER)
   magasins_geres magasin[] @relation("MagasinGerant")
 
   mouvements_stock mouvements_stock[]

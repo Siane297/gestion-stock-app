@@ -48,6 +48,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+    middleware: ['auth', 'permissions'],
+    permission: 'produits:creer'
+});
+
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import FormulaireDynamique from "~/components/form/FormulaireDynamique.vue";

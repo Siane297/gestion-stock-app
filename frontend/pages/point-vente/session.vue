@@ -186,7 +186,8 @@ const currencyDecimals = computed(() => {
 
 // Désactiver le layout normal
 definePageMeta({
-  middleware: ['auth'],
+  middleware: ['auth', 'permissions'],
+  permission: 'ventes:creer',
   hideBreadcrumb: true
 });
 

@@ -14,12 +14,14 @@
             :loading="loading"
             :search-fields="['magasin.nom', 'produit.nom', 'produit.code_barre']"
             delete-label-field="produit.nom"
-            :global-action="{
+            :global-action="hasPermission('stock', 'creer') ? {
                 label: 'Nouveau Mouvement',
                 icon: 'pi pi-plus',
                 variant: 'primary',
                 link: '/stock/ajouter'
-            }"
+            } : undefined"
+            :show-edit="hasPermission('stock', 'modifier')"
+            :show-delete="false"
             @action:view="handleView"
             @action:edit="handleEdit"
             @action:delete="handleDelete"
@@ -55,11 +57,13 @@ import { useToast } from 'primevue/usetoast';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useStockApi, type StockMagasin } from '~/composables/api/useStockApi';
+import { usePermissions } from '~/composables/usePermissions';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import Checkbox from 'primevue/checkbox';
 
 const { getStocks } = useStockApi();
+const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
 

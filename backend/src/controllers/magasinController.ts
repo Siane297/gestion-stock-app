@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import { MagasinService } from '../services/magasinService.js';
 import { logger } from '../config/logger.js';
+import { PermissionService } from '../services/permissionService.js';
+import { TenantUserRole, UserPermissionContext } from '../types/permissions.js';
 
 /**
  * Récupère tous les magasins
@@ -9,8 +11,29 @@ export const getAllMagasins = async (req: Request, res: Response) => {
   try {
     const magasinService = new MagasinService(req.tenantPrisma);
     
+    // @ts-ignore
+    const user = req.user;
+    
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+    
+    // Construire le contexte de permissions
+    const context: UserPermissionContext = {
+      userId: user.userId,
+      role: user.role as TenantUserRole,
+      isOwner: user.isOwner || false,
+      globalScope: user.globalScope || false,
+      magasinId: user.magasin_id,
+      managedStoreIds: user.managedStoreIds || [],
+      customPermissions: (user.customPermissions as string[]) || [],
+    };
+
+    const accessibleStoreIds = PermissionService.getAccessibleStoreIds(context);
+    
     const magasins = await magasinService.getAll({
-      est_actif: req.query.est_actif === 'false' ? false : undefined
+      est_actif: req.query.est_actif === 'false' ? false : undefined,
+      ids: accessibleStoreIds === 'all' ? undefined : accessibleStoreIds
     });
 
     res.json({
@@ -36,6 +59,25 @@ export const getMagasinById = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
     const magasinService = new MagasinService(req.tenantPrisma);
+    
+    // @ts-ignore
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, message: 'Non authentifié' });
+
+    const context: UserPermissionContext = {
+      userId: user.userId,
+      role: user.role as TenantUserRole,
+      isOwner: user.isOwner || false,
+      globalScope: user.globalScope || false,
+      magasinId: user.magasin_id,
+      managedStoreIds: user.managedStoreIds || [],
+      customPermissions: (user.customPermissions as string[]) || [],
+    };
+
+    if (!PermissionService.canAccessStore(context, id)) {
+      return res.status(403).json({ success: false, message: 'Accès refusé à cette boutique' });
+    }
+
     const magasin = await magasinService.getById(id);
 
     res.json({
@@ -140,6 +182,24 @@ export const getMagasinStock = async (req: Request, res: Response) => {
     }
     const magasinService = new MagasinService(req.tenantPrisma);
     
+    // @ts-ignore
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, message: 'Non authentifié' });
+
+    const context: UserPermissionContext = {
+      userId: user.userId,
+      role: user.role as TenantUserRole,
+      isOwner: user.isOwner || false,
+      globalScope: user.globalScope || false,
+      magasinId: user.magasin_id,
+      managedStoreIds: user.managedStoreIds || [],
+      customPermissions: (user.customPermissions as string[]) || [],
+    };
+
+    if (!PermissionService.canAccessStore(context, id)) {
+      return res.status(403).json({ success: false, message: 'Accès refusé à cette boutique' });
+    }
+    
     const stocks = await magasinService.getStock(id, {
       alertOnly: req.query.alerte === 'true',
       search: req.query.search as string
@@ -169,6 +229,25 @@ export const getMagasinStats = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
     const magasinService = new MagasinService(req.tenantPrisma);
+    
+    // @ts-ignore
+    const user = req.user;
+    if (!user) return res.status(401).json({ success: false, message: 'Non authentifié' });
+
+    const context: UserPermissionContext = {
+      userId: user.userId,
+      role: user.role as TenantUserRole,
+      isOwner: user.isOwner || false,
+      globalScope: user.globalScope || false,
+      magasinId: user.magasin_id,
+      managedStoreIds: user.managedStoreIds || [],
+      customPermissions: (user.customPermissions as string[]) || [],
+    };
+
+    if (!PermissionService.canAccessStore(context, id)) {
+      return res.status(403).json({ success: false, message: 'Accès refusé à cette boutique' });
+    }
+
     const stats = await magasinService.getStats(id);
 
     res.json({

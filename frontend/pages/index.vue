@@ -40,20 +40,20 @@ const isChecking = ref(true);
 
 // Configuration des routes avec permissions (même ordre que le middleware)
 const routePermissions = [
-  { path: '/accueil', permission: 'accueil' },
-  { path: '/employees', permission: 'employees' },
-  { path: '/produits', permission: 'produits' },
-  { path: '/stock', permission: 'stock' },
-  { path: '/caisse', permission: 'caisse' },
-  { path: '/point-vente', permission: 'point-vente' },
-  { path: '/vente', permission: 'vente' },
-  { path: '/achat', permission: 'achat' },
-  { path: '/client', permission: 'client' },
-  { path: '/fournisseur', permission: 'fournisseur' },
-  { path: '/comptabilite', permission: 'comptabilite' },
-  { path: '/boutique', permission: 'boutique' },
-  { path: '/utilisateur', permission: 'utilisateur' },
-  { path: '/parametre', permission: 'parametre' },
+  { path: '/accueil', permission: 'tableau_de_bord:voir' },
+  { path: '/employees', permission: 'personnel:voir' },
+  { path: '/produits', permission: 'produits:voir' },
+  { path: '/stock', permission: 'stock:voir' },
+  { path: '/caisse', permission: 'caisses:voir' },
+  { path: '/point-vente', permission: 'ventes:creer' },
+  { path: '/vente', permission: 'ventes:voir' },
+  { path: '/achat', permission: 'achats:voir' },
+  { path: '/client', permission: 'clients:voir' },
+  { path: '/fournisseur', permission: 'fournisseurs:voir' },
+  { path: '/comptabilite', permission: 'comptabilite:voir' },
+  { path: '/store', permission: 'boutiques:voir' },
+  { path: '/utilisateur', permission: 'utilisateurs:voir' },
+  { path: '/parametre', permission: 'parametres:voir' },
 ];
 
 // Trouver la première page accessible pour l'utilisateur

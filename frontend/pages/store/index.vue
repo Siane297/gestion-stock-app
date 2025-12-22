@@ -10,11 +10,13 @@
         :columns="columns"
         :data="magasins"
         :loading="loading"
-        :global-action="{
+        :global-action="hasPermission('magasins', 'creer') ? {
           label: 'Nouveau Magasin',
           icon: 'pi pi-plus',
           link: '/store/ajouter'
-        }"
+        } : undefined"
+        :show-edit="hasPermission('magasins', 'modifier')"
+        :show-delete="hasPermission('magasins', 'supprimer')"
         search-placeholder="Rechercher un magasin..."
         :search-fields="['nom', 'localisation', 'email']"
         delete-label-field="nom"
@@ -38,8 +40,10 @@ import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import TableGeneric from '~/components/table/TableGeneric.vue';
 import Tag from 'primevue/tag';
 import { useMagasinApi } from '~/composables/api/useMagasinApi';
+import { usePermissions } from '~/composables/usePermissions';
 
 const { getMagasins, deleteMagasin } = useMagasinApi();
+const { hasPermission } = usePermissions();
 const toast = useToast();
 const confirm = useConfirm();
 const router = useRouter();

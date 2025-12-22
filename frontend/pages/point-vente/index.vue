@@ -126,7 +126,8 @@ import { useToast } from 'primevue/usetoast';
 
 definePageMeta({
     layout: 'default',
-    middleware: ['auth', 'caisse-session']
+    middleware: ['auth', 'permissions', 'caisse-session'],
+    permission: 'ventes:creer'
 });
 
 const store = usePos();

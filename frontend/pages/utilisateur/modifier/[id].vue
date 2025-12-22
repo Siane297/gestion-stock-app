@@ -35,6 +35,7 @@ import { useEmployeeApi } from '~/composables/api/useEmployeeApi';
 // Protection de la page
 definePageMeta({
   middleware: ['auth', 'permissions'],
+  permission: 'utilisateurs:modifier'
 });
 
 const route = useRoute();
@@ -66,9 +67,11 @@ const userData = computed(() => {
     employeeId: user.value.employeeId,
     email: user.value.email,
     role: user.value.role,
-    permissions: user.value.permissions || [],
+    customPermissions: user.value.customPermissions || [],
     pin: user.value.pin || "",
-    magasin_id: user.value.magasin_id || null
+    magasin_id: user.value.magasin_id || null,
+    globalScope: user.value.globalScope || false,
+    managedStoreIds: user.value.magasins_geres?.map((m: any) => m.id) || []
   };
 });
 
@@ -115,9 +118,11 @@ const handleSubmit = async (data: any) => {
   try {
     const updateData: any = {
       role: data.role,
-      permissions: data.permissions || [],
+      customPermissions: data.customPermissions || [],
       pin: data.pin,
-      magasin_id: data.magasin_id
+      magasin_id: data.magasin_id,
+      globalScope: data.globalScope,
+      managedStoreIds: data.managedStoreIds
     };
 
     // Ajouter le mot de passe seulement s'il est fourni

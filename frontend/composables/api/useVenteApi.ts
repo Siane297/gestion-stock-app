@@ -38,6 +38,8 @@ export interface Vente {
   montant_remise: number;
   statut: StatutVente;
   methode_paiement: MethodePaiement;
+  montant_paye: number;
+  montant_rendu: number;
   notes?: string;
   date_creation: string;
   client?: { nom: string };

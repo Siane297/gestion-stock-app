@@ -74,6 +74,8 @@ export class ProformaPdfService extends BasePdfService {
           total: d.prix_total.toLocaleString('fr-FR')
         })),
         montantTotal: vente.montant_total.toLocaleString('fr-FR'),
+        montantPaye: (vente.montant_paye || 0).toLocaleString('fr-FR'),
+        montantRendu: (vente.montant_rendu || 0).toLocaleString('fr-FR'),
         currencySymbol
       }
     };

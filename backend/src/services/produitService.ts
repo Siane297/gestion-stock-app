@@ -61,7 +61,7 @@ export interface ProduitFilters {
   search?: string;
   categorie_id?: string;
   est_actif?: boolean;
-  magasin_id?: string;
+  magasin_id?: string | string[];
 }
 
 /**
@@ -149,7 +149,11 @@ export class ProduitService {
     // Préparation filtre stock
     const stockWhere: any = {};
     if (filters?.magasin_id) {
-        stockWhere.magasin_id = filters.magasin_id;
+        if (Array.isArray(filters.magasin_id)) {
+            stockWhere.magasin_id = { in: filters.magasin_id };
+        } else {
+            stockWhere.magasin_id = filters.magasin_id;
+        }
     }
 
     return this.prisma.produit.findMany({
@@ -356,13 +360,17 @@ export class ProduitService {
             }
           });
         } else if (cond.action === 'update' && cond.id) {
+            // Si c'est le conditionnement par défaut (quantite_base 1), il a déjà été mis à jour par les champs root.
+            // On ne le remet à jour que si des champs spécifiques aux conditionnements (nom, etc.) sont fournis.
+            const isBase = defaultConditionnement && cond.id === defaultConditionnement.id;
+            
             await this.prisma.conditionnement_produit.update({
                 where: { id: cond.id },
                 data: {
                     nom: cond.nom,
                     quantite_base: cond.quantite_base ? Number(cond.quantite_base) : undefined,
-                    prix_vente: cond.prix_vente ? Number(cond.prix_vente) : undefined,
-                    code_barre: cond.code_barre,
+                    prix_vente: cond.prix_vente ? Number(cond.prix_vente) : (isBase && data.prix_vente ? Number(data.prix_vente) : undefined),
+                    code_barre: cond.code_barre !== undefined ? cond.code_barre : (isBase && data.code_barre ? data.code_barre : undefined),
                     image_url: cond.image_url,
                     image_id: cond.image_id
                 }

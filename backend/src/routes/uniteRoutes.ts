@@ -7,15 +7,17 @@ import {
     deleteUnite,
 } from '../controllers/uniteController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { requirePermission } from '../middleware/permissionMiddleware.js';
+import { Module, Action } from '../types/permissions.js';
 
 const router: Router = Router();
 
 router.use(authenticate);
 
-router.get('/', getAllUnites);
-router.get('/:id', getUniteById);
-router.post('/', createUnite);
-router.put('/:id', updateUnite);
-router.delete('/:id', deleteUnite);
+router.get('/', requirePermission(Module.PRODUITS, Action.VOIR), getAllUnites);
+router.get('/:id', requirePermission(Module.PRODUITS, Action.VOIR), getUniteById);
+router.post('/', requirePermission(Module.PRODUITS, Action.CREER), createUnite);
+router.put('/:id', requirePermission(Module.PRODUITS, Action.MODIFIER), updateUnite);
+router.delete('/:id', requirePermission(Module.PRODUITS, Action.SUPPRIMER), deleteUnite);
 
 export default router;

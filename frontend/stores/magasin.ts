@@ -17,20 +17,26 @@ export const useMagasinStore = defineStore('magasin', () => {
   const { user } = useSecureAuth();
 
   // Watch pour réagir aux changements de l'utilisateur (connexion/refresh)
-  // et forcer le magasin assigné si l'utilisateur n'est pas ADMIN
+  // et forcer le magasin assigné si nécessaire
   watch(() => user.value, (newUser) => {
-    if (newUser && newUser.magasin_id) {
-       // Si l'utilisateur n'est pas ADMIN, on force son magasin assigné
-       if (newUser.role !== 'ADMIN') {
-          if (currentMagasinId.value !== newUser.magasin_id) {
+    if (newUser) {
+       // Déterminer si l'utilisateur a un accès global
+       const hasGlobalAccess = newUser.globalScope || newUser.isOwner || ['ADMIN', 'SUPER_ADMIN'].includes(newUser.role);
+       
+       if (!hasGlobalAccess && newUser.magasin_id) {
+          // Si pas d'accès global, on vérifie si le magasin actuel est autorisé
+          const isManaged = newUser.managedStoreIds?.includes(currentMagasinId.value || '');
+          if (currentMagasinId.value !== newUser.magasin_id && !isManaged) {
              currentMagasinId.value = newUser.magasin_id;
              localStorage.setItem('selected_magasin_id', newUser.magasin_id);
           }
-       } else {
-          // Pour un ADMIN, on ne force que si aucun magasin n'est sélectionné du tout
+       } else if (hasGlobalAccess) {
+          // Pour un accès global, on ne force que si rien n'est sélectionné
           if (currentMagasinId.value === null && !localStorage.getItem('selected_magasin_id')) {
-             currentMagasinId.value = newUser.magasin_id;
-             localStorage.setItem('selected_magasin_id', newUser.magasin_id);
+             if (newUser.magasin_id) {
+                currentMagasinId.value = newUser.magasin_id;
+                localStorage.setItem('selected_magasin_id', newUser.magasin_id);
+             }
           }
        }
     }
@@ -45,31 +51,39 @@ export const useMagasinStore = defineStore('magasin', () => {
       // Logique de sélection initiale
       let targetId = currentMagasinId.value || localStorage.getItem('selected_magasin_id');
 
-      // 1. Priorité à l'assignation user pour les non-admins
-      if (user.value?.role !== 'ADMIN' && user.value?.magasin_id) {
-        targetId = user.value.magasin_id;
-      } 
+      // Déterminer les droits de l'utilisateur
+      const hasGlobalAccess = user.value?.globalScope || user.value?.isOwner || ['ADMIN', 'SUPER_ADMIN'].includes(user.value?.role || '');
+      const managedStoreIds = user.value?.managedStoreIds || [];
 
       // 'all' est représenté par null
       if (targetId === 'all') targetId = null;
 
-      // Vérification que le targetId existe dans la liste chargée (si non null)
-      if (targetId && magasins.value.some(m => m.id === targetId)) {
-        currentMagasinId.value = targetId;
-      } else if (targetId === null && user.value?.role === 'ADMIN') {
-        currentMagasinId.value = null; // Autorisé pour Admin
-      } else {
-        // Fallback : Magasin de l'utilisateur ou Premier/Principal
-        const fallbackId = user.value?.magasin_id || 
-                          magasins.value.find(m => m.nom.toLowerCase().includes('principal'))?.id || 
-                          magasins.value[0]?.id || null;
-        currentMagasinId.value = fallbackId;
+      // 1. Si targetId est null (Toutes les boutiques), vérifier si c'est autorisé
+      if (targetId === null) {
+        if (hasGlobalAccess) {
+          currentMagasinId.value = null;
+        } else {
+          // Sinon fallback vers le magasin assigné
+          currentMagasinId.value = user.value?.magasin_id || magasins.value[0]?.id || null;
+        }
+      } 
+      // 2. Si targetId est spécifié, vérifier s'il est autorisé
+      else {
+        const isAuthorized = hasGlobalAccess || targetId === user.value?.magasin_id || managedStoreIds.includes(targetId);
+        const exists = magasins.value.some(m => m.id === targetId);
+
+        if (isAuthorized && exists) {
+          currentMagasinId.value = targetId;
+        } else {
+          // Fallback
+          currentMagasinId.value = user.value?.magasin_id || magasins.value[0]?.id || null;
+        }
       }
 
       // Persistance du choix validé
       if (currentMagasinId.value) {
         localStorage.setItem('selected_magasin_id', currentMagasinId.value);
-      } else if (currentMagasinId.value === null && user.value?.role === 'ADMIN') {
+      } else if (currentMagasinId.value === null && hasGlobalAccess) {
         localStorage.setItem('selected_magasin_id', 'all');
       }
 
@@ -81,14 +95,21 @@ export const useMagasinStore = defineStore('magasin', () => {
   };
 
   const setMagasin = (id: string | null) => {
-    // Si ADMIN, on peut mettre à null ("Toutes les boutiques")
-    if (id === null && user.value?.role === 'ADMIN') {
-      currentMagasinId.value = null;
-      localStorage.setItem('selected_magasin_id', 'all');
+    const hasGlobalAccess = user.value?.globalScope || user.value?.isOwner || ['ADMIN', 'SUPER_ADMIN'].includes(user.value?.role || '');
+    const managedStoreIds = user.value?.managedStoreIds || [];
+
+    // Si on veut mettre à null ("Toutes les boutiques")
+    if (id === null) {
+      if (hasGlobalAccess) {
+        currentMagasinId.value = null;
+        localStorage.setItem('selected_magasin_id', 'all');
+      }
       return;
     }
 
-    if (id && magasins.value.some(m => m.id === id)) {
+    // Si on veut une boutique spécifique
+    const isAuthorized = hasGlobalAccess || id === user.value?.magasin_id || managedStoreIds.includes(id);
+    if (isAuthorized && magasins.value.some(m => m.id === id)) {
       currentMagasinId.value = id;
       localStorage.setItem('selected_magasin_id', id);
     }

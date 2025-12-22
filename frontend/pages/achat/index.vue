@@ -10,12 +10,14 @@
             :columns="columns"
             :data="achats"
             :loading="loading"
-            :global-action="{
+            :global-action="hasPermission('achats', 'creer') ? {
                 label: 'Nouvel Achat',
                 icon: 'pi pi-plus',
                 variant: 'primary',
                 link: '/achat/ajouter'
-            }"
+            } : undefined"
+            :show-edit="hasPermission('achats', 'modifier')"
+            :show-delete="hasPermission('achats', 'supprimer')"
             :search-fields="['numero_commande', 'fournisseur.nom_entreprise', 'statut']"
             delete-label-field="numero_commande"
             @action:view="handleView"
@@ -45,11 +47,13 @@ import { storeToRefs } from 'pinia';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useAchatApi, type Achat, type StatutAchat } from '~/composables/api/useAchatApi';
+import { usePermissions } from '~/composables/usePermissions';
 import { useMagasinStore } from '~/stores/magasin';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 
 const { getAchats, deleteAchat } = useAchatApi();
+const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
 

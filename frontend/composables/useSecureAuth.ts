@@ -32,6 +32,14 @@ export interface AuthResponse {
       name: string;
       email: string;
       role: string;
+      isOwner?: boolean;
+      globalScope?: boolean;
+      customPermissions?: string[];
+      permissions?: string[];
+      managedStoreIds?: string[];
+      magasin_id?: string;
+      employeeId?: string;
+      tenantId?: string;
       company?: {
         id: string;
         name: string;

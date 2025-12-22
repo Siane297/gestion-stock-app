@@ -28,6 +28,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+    middleware: ['auth', 'permissions'],
+    permission: 'clients:modifier'
+});
+
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';

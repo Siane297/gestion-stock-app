@@ -72,7 +72,7 @@ interface MenuItem {
   name: string;
   icon: string;
   link?: string;
-  permission?: string;
+  permission?: string | string[];
   children?: MenuItem[];
 }
 

@@ -1,4 +1,6 @@
-model role {
+// ⚠️ Ancien système de rôles personnalisés (non utilisé actuellement)
+// Conservé pour compatibilité future si besoin de rôles ultra-personnalisés
+model custom_role {
     id                String   @id @default(uuid())
     nom               String   @unique
     description       String?
@@ -6,8 +8,7 @@ model role {
     date_creation     DateTime @default(now())
     date_modification DateTime @updatedAt
 
-    utilisateurs TenantUser[]
-    permissions  permission_role[]
+    permissions permission_role[]
 
     @@map("roles")
 }
@@ -30,8 +31,8 @@ model permission_role {
     role_id       String
     permission_id String
 
-    role       role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
-    permission permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+    role       custom_role @relation(fields: [role_id], references: [id], onDelete: Cascade)
+    permission permission  @relation(fields: [permission_id], references: [id], onDelete: Cascade)
 
     @@unique([role_id, permission_id])
     @@map("permission_roles")

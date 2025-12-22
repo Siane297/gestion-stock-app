@@ -7,17 +7,19 @@ import {
   deletePoste
 } from '../controllers/posteController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { requirePermission } from '../middleware/permissionMiddleware.js';
+import { Module, Action } from '../types/permissions.js';
 
 const router: Router = Router();
 
-// TODO: Activer l'authentification plus tard
-// Routes publiques temporairement (pour chargement dans formulaire)
-router.get('/', getAllPostes);
-router.get('/:id', getPosteById);
+router.use(authenticate);
 
-// Routes protégées
-router.post('/', authenticate, createPoste);
-router.put('/:id', authenticate, updatePoste);
-router.delete('/:id', authenticate, deletePoste);
+// Routes
+router.get('/', requirePermission(Module.PERSONNEL, Action.VOIR), getAllPostes);
+router.get('/:id', requirePermission(Module.PERSONNEL, Action.VOIR), getPosteById);
+
+router.post('/', requirePermission(Module.PERSONNEL, Action.MODIFIER), createPoste);
+router.put('/:id', requirePermission(Module.PERSONNEL, Action.MODIFIER), updatePoste);
+router.delete('/:id', requirePermission(Module.PERSONNEL, Action.SUPPRIMER), deletePoste);
 
 export default router;

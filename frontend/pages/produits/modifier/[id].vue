@@ -58,6 +58,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+    middleware: ['auth', 'permissions'],
+    permission: 'produits:modifier'
+});
+
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
@@ -258,16 +263,21 @@ const handleSubmit = async (data: Record<string, any>) => {
     
     // a. Map current items (Create or Update)
     if (data.conditionnements) {
-        condsPayload = data.conditionnements.map((c: any) => ({
-            id: c.id, 
-            nom: c.nom,
-            quantite_base: Number(c.quantite_base),
-            prix_vente: Number(c.prix_vente),
-            code_barre: c.code_barre,
-            image_url: c.image_url,
-            image_id: c.image_id,
-            action: c.id ? 'update' : 'create' 
-        }));
+        condsPayload = data.conditionnements.map((c: any) => {
+            const isBase = Number(c.quantite_base) === 1;
+            
+            // Si c'est l'unité de base, on synchronise avec les champs racine
+            return {
+                id: c.id, 
+                nom: isBase ? (unites.value.find(u => u.id === data.unite_id)?.nom || c.nom) : c.nom,
+                quantite_base: Number(c.quantite_base),
+                prix_vente: isBase ? Number(data.prix_vente) : Number(c.prix_vente),
+                code_barre: isBase ? (data.code_barre || c.code_barre) : c.code_barre,
+                image_url: c.image_url,
+                image_id: c.image_id,
+                action: c.id ? 'update' : 'create' 
+            };
+        });
     }
 
     // b. Detect deleted items

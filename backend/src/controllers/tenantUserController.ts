@@ -35,6 +35,7 @@ export const getAllTenantUsers = async (req: Request, res: Response) => {
           },
         },
         magasin: { select: { id: true, nom: true } },
+        magasins_geres: { select: { id: true, nom: true } },
       },
       orderBy: {
         createdAt: 'desc',
@@ -90,6 +91,7 @@ export const getTenantUserById = async (req: Request, res: Response) => {
           },
         },
         magasin: { select: { id: true, nom: true } },
+        magasins_geres: { select: { id: true, nom: true } },
       },
     });
 
@@ -119,7 +121,17 @@ export const getTenantUserById = async (req: Request, res: Response) => {
  */
 export const createTenantUser = async (req: Request, res: Response) => {
   try {
-    const { employeeId, password, role, permissions, pin, magasin_id } = req.body;
+    const { 
+      employeeId, 
+      password, 
+      role, 
+      customPermissions, 
+      permissions, 
+      pin, 
+      magasin_id,
+      globalScope,
+      managedStoreIds 
+    } = req.body;
     const tenantPrisma = req.tenantPrisma;
 
     if (!tenantPrisma) {
@@ -173,9 +185,13 @@ export const createTenantUser = async (req: Request, res: Response) => {
         email: employee.email,
         password: hashedPassword,
         role: role || 'USER',
-        permissions: permissions || [],
+        customPermissions: customPermissions || permissions || [],
         pin: pin || null,
         magasin_id: magasin_id || null,
+        globalScope: globalScope === true,
+        magasins_geres: managedStoreIds && Array.isArray(managedStoreIds) 
+          ? { connect: managedStoreIds.map((id: string) => ({ id })) }
+          : undefined,
       },
       include: {
         employee: {
@@ -223,7 +239,16 @@ export const createTenantUser = async (req: Request, res: Response) => {
 export const updateTenantUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { role, permissions, password, pin, magasin_id } = req.body;
+    const { 
+      role, 
+      customPermissions, 
+      permissions, 
+      password, 
+      pin, 
+      magasin_id,
+      globalScope,
+      managedStoreIds 
+    } = req.body;
     const tenantPrisma = req.tenantPrisma;
 
     if (!tenantPrisma) {
@@ -243,9 +268,19 @@ export const updateTenantUser = async (req: Request, res: Response) => {
     const updateData: any = {};
 
     if (role) updateData.role = role;
-    if (permissions) updateData.permissions = permissions;
+    if (customPermissions !== undefined || permissions !== undefined) {
+      updateData.customPermissions = customPermissions || permissions;
+    }
     if (pin !== undefined) updateData.pin = pin || null;
     if (magasin_id !== undefined) updateData.magasin_id = magasin_id || null;
+    if (globalScope !== undefined) updateData.globalScope = globalScope === true;
+    
+    if (managedStoreIds !== undefined && Array.isArray(managedStoreIds)) {
+      updateData.magasins_geres = {
+        set: managedStoreIds.map((id: string) => ({ id }))
+      };
+    }
+
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }

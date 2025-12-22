@@ -18,6 +18,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+    middleware: ['auth', 'permissions'],
+    permission: 'caisses:creer'
+});
+
 import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormulaireDynamique from '~/components/form/FormulaireDynamique.vue';

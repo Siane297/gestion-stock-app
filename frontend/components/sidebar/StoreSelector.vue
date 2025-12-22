@@ -52,9 +52,9 @@
             </div>
             
             <div class="max-h-60 overflow-y-auto">
-                <!-- Option 'Toutes les boutiques' pour l'admin -->
+                <!-- Option 'Toutes les boutiques' pour ceux qui ont l'accès global -->
                 <button
-                    v-if="user?.role === 'ADMIN'"
+                    v-if="hasGlobalAccess"
                     @click="selectMagasin(null)"
                     class="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors relative border-b border-gray-50"
                     :class="{ 'bg-blue-50  text-blue-700 font-bold': currentMagasinId === null }"
@@ -102,23 +102,28 @@ const selectorRef = ref<HTMLElement | null>(null);
 
 const { user, isAuthenticated } = useSecureAuth();
 
-// Vérifier si l'utilisateur peut changer de boutique (Seulement ADMIN)
+// Accès global (Admin, Owner ou globalScope)
+const hasGlobalAccess = computed(() => {
+    if (!user.value) return false;
+    return user.value.globalScope || user.value.isOwner || ['ADMIN', 'SUPER_ADMIN'].includes(user.value.role);
+});
+
+// Vérifier si l'utilisateur peut changer de boutique
 const canSwitch = computed(() => {
     if (!user.value) return false;
-    // Si ADMIN, peut changer
-    if (user.value.role === 'ADMIN') return true;
-    // Sinon, non (même si pas de boutique assignée, un utilisateur standard ne devrait pas switcher librement sans droit)
+    if (hasGlobalAccess.value) return true;
+    if (user.value.managedStoreIds && user.value.managedStoreIds.length > 0) return true;
     return false;
 });
 
-// Liste filtrée (optionnel, mais propre)
+// Liste filtrée des magasins accessibles
 const filteredMagasins = computed(() => {
-    if (canSwitch.value) return magasins.value;
-    // Si pas de droit, on ne montre que le magasin courant (ou assigné)
-    if (currentMagasinId.value) {
-        return magasins.value.filter(m => m.id === currentMagasinId.value);
-    }
-    return [];
+    if (!user.value) return [];
+    if (hasGlobalAccess.value) return magasins.value;
+    
+    // Filtrer par managedStoreIds + magasin d'affectation
+    const allowedIds = [user.value.magasin_id, ...(user.value.managedStoreIds || [])].filter(Boolean);
+    return magasins.value.filter(m => allowedIds.includes(m.id));
 });
 
 const toggleDropdown = () => {

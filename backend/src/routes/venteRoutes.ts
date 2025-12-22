@@ -8,17 +8,19 @@ import {
 } from '../controllers/venteController.js';
 import { PdfController } from '../controllers/pdfController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { requirePermission } from '../middleware/permissionMiddleware.js';
+import { Module, Action } from '../types/permissions.js';
 
 const router: Router = Router();
 
 router.use(authenticate);
 
-router.get('/', getAllVentes);
-router.get('/stats', getVenteStats);
-router.get('/:id', getVenteById);
-router.get('/:id/pdf', PdfController.generateReceiptPdf);
-router.get('/:id/proforma', PdfController.generateProformaPdf);
-router.post('/', createVente);
-router.patch('/:id/statut', updateVenteStatut);
+router.get('/', requirePermission(Module.VENTES, Action.VOIR), getAllVentes);
+router.get('/stats', requirePermission(Module.VENTES, Action.VOIR), getVenteStats);
+router.get('/:id', requirePermission(Module.VENTES, Action.VOIR), getVenteById);
+router.get('/:id/pdf', requirePermission(Module.VENTES, Action.VOIR), PdfController.generateReceiptPdf);
+router.get('/:id/proforma', requirePermission(Module.VENTES, Action.VOIR), PdfController.generateProformaPdf);
+router.post('/', requirePermission(Module.VENTES, Action.CREER), createVente);
+router.patch('/:id/statut', requirePermission(Module.VENTES, Action.MODIFIER), updateVenteStatut);
 
 export default router;

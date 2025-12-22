@@ -1,14 +1,18 @@
 import { useSecureApi } from '~/composables/useSecureApi';
 import type { ApiResponse } from './config';
 
+export type UserRole = 'ADMIN' | 'STORE_MANAGER' | 'STOCK_MANAGER' | 'SELLER' | 'ACCOUNTANT' | 'USER' | 'SUPER_ADMIN';
+
 export interface TenantUser {
   id: string;
   employeeId: string;
   email: string;
-  role: 'ADMIN' | 'MANAGER' | 'USER' | 'RH';
+  role: UserRole;
   isBlocked: boolean;
   isOwner?: boolean;
-  permissions: string[];
+  globalScope?: boolean;
+  customPermissions: string[];
+  managedStoreIds?: string[];
   pin?: string;
   employee?: {
     id: string;
@@ -29,17 +33,23 @@ export interface CreateTenantUserDto {
   employeeId: string;
   email: string;
   password: string;
-  role: 'ADMIN' | 'MANAGER' | 'USER' | 'RH';
-  permissions: string[];
+  role: UserRole;
+  customPermissions?: string[];
+  permissions?: string[]; // Compatibilité temporaire
   pin?: string;
   magasin_id?: string | null;
+  globalScope?: boolean;
+  managedStoreIds?: string[];
 }
 
 export interface UpdateTenantUserDto {
-  role?: 'ADMIN' | 'MANAGER' | 'USER' | 'RH';
-  permissions?: string[];
+  role?: UserRole;
+  customPermissions?: string[];
+  permissions?: string[]; // Compatibilité temporaire
   pin?: string;
   magasin_id?: string | null;
+  globalScope?: boolean;
+  managedStoreIds?: string[];
 }
 
 export const useTenantUserApi = () => {

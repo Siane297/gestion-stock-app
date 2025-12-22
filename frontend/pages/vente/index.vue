@@ -27,6 +27,7 @@
             :search-fields="['client.nom', 'utilisateur.employee.fullName', 'id']"
             :show-edit="false"
             :show-delete="false"
+            :show-view="hasPermission('ventes', 'voir')"
             @action:view="viewDetails"
         >
             <!-- Date -->
@@ -109,6 +110,7 @@ import { useToast } from 'primevue/usetoast';
 
 const { getVentes, getVenteStats, updateVenteStatut, getVenteById } = useVenteApi();
 const { getMagasins } = useMagasinApi();
+const { hasPermission } = usePermissions();
 const toast = useToast();
 
 // État

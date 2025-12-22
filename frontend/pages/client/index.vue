@@ -10,12 +10,14 @@
             :columns="columns"
             :data="clients"
             :loading="loading"
-            :global-action="{
+            :global-action="hasPermission('clients', 'creer') ? {
                 label: 'Nouveau Client',
                 icon: 'pi pi-plus',
                 variant: 'primary',
                 link: '/client/ajouter'
-            }"
+            } : undefined"
+            :show-edit="hasPermission('clients', 'modifier')"
+            :show-delete="hasPermission('clients', 'supprimer')"
             :search-fields="['nom', 'email', 'telephone']"
             delete-label-field="nom"
             @action:edit="handleEdit"
@@ -47,10 +49,12 @@ import { useToast } from 'primevue/usetoast';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useClientApi, type Client } from '~/composables/api/useClientApi';
+import { usePermissions } from '~/composables/usePermissions';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 
 const { getClients, deleteClient } = useClientApi();
+const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();

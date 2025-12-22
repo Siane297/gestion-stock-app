@@ -121,6 +121,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+    middleware: ['auth', 'permissions'],
+    permission: 'caisses:voir'
+});
+
 import { ref, computed, onMounted } from "vue";
 import { Icon } from "@iconify/vue";
 import SimplePageHeader from "~/components/banner/SimplePageHeader.vue";

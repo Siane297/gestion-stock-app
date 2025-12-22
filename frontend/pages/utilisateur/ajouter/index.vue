@@ -23,6 +23,7 @@ import { useEmployeeApi } from '~/composables/api/useEmployeeApi';
 // Protection de la page
 definePageMeta({
   middleware: ['auth', 'permissions'],
+  permission: 'utilisateurs:creer'
 });
 
 const { createTenantUser } = useTenantUserApi();
@@ -74,9 +75,11 @@ const handleSubmit = async (data: any) => {
       email: data.email,
       password: data.password,
       role: data.role,
-      permissions: data.permissions || [],
+      customPermissions: data.customPermissions || [],
       pin: data.pin,
-      magasin_id: data.magasin_id
+      magasin_id: data.magasin_id,
+      globalScope: data.globalScope,
+      managedStoreIds: data.managedStoreIds
     });
 
     toast.add({

@@ -10,7 +10,7 @@
             <h2 class="font-bold text-lg">{{ stock.produit?.nom }}</h2>
             <div class="flex gap-4 text-sm">
                 <span>Magasin: <strong>{{ stock.magasin?.nom }}</strong></span>
-                <span>Stock Actuel: <strong>{{ stock.quantite }} {{ stock.produit?.unite }}</strong></span>
+                <span>Stock Actuel: <strong>{{ stock.quantite }} {{ stock.produit?.unite?.nom }}</strong></span>
             </div>
         </div>
 
@@ -32,6 +32,11 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+    middleware: ['auth', 'permissions'],
+    permission: 'stock:modifier'
+});
+
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';

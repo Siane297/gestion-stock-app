@@ -11,7 +11,7 @@ export interface StockMagasin {
   quantite_minimum: number;
   isAlert?: boolean;
   magasin?: { nom: string };
-  produit?: { nom: string; code_barre?: string; unite: string; prix_vente?: number };
+  produit?: { nom: string; code_barre?: string; unite?: { nom: string }; prix_vente?: number };
 }
 
 export interface MouvementStock {

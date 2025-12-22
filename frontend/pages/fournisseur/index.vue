@@ -10,12 +10,14 @@
             :columns="columns"
             :data="fournisseurs"
             :loading="loading"
-            :global-action="{
+            :global-action="hasPermission('fournisseurs', 'creer') ? {
                 label: 'Nouveau Fournisseur',
                 icon: 'pi pi-plus',
                 variant: 'primary',
                 link: '/fournisseur/ajouter'
-            }"
+            } : undefined"
+            :show-edit="hasPermission('fournisseurs', 'modifier')"
+            :show-delete="hasPermission('fournisseurs', 'supprimer')"
             :search-fields="['nom_entreprise', 'email', 'responsable', 'telephone']"
             delete-label-field="nom_entreprise"
             @action:view="handleView"
@@ -34,9 +36,11 @@ import { useToast } from 'primevue/usetoast';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useFournisseurApi, type Fournisseur } from '~/composables/api/useFournisseurApi';
+import { usePermissions } from '~/composables/usePermissions';
 import Toast from 'primevue/toast';
 
 const { getFournisseurs, deleteFournisseur } = useFournisseurApi();
+const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();

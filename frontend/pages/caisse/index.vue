@@ -10,11 +10,13 @@
         :columns="columns"
         :data="caisses"
         :loading="loading"
-        :global-action="{
+        :global-action="hasPermission('caisses', 'creer') ? {
           label: 'Nouvelle Caisse',
           icon: 'pi pi-plus',
           link: '/caisse/ajouter'
-        }"
+        } : undefined"
+        :show-edit="hasPermission('caisses', 'modifier')"
+        :show-delete="hasPermission('caisses', 'supprimer')"
         search-placeholder="Rechercher une caisse..."
         :search-fields="['code', 'nom', 'magasin.nom']"
         delete-label-field="nom"
@@ -61,8 +63,10 @@ import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { useCaisseApi, type Caisse, type StatutCaisse } from '~/composables/api/useCaisseApi';
 import { useErrorHandler } from '~/composables/useErrorHandler';
+import { usePermissions } from '~/composables/usePermissions';
 
 const { getCaisses, deleteCaisse } = useCaisseApi();
+const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();

@@ -30,6 +30,13 @@ export interface Produit {
   est_actif: boolean;
   date_creation: string;
   conditionnements?: Conditionnement[];
+  stocks?: Array<{
+    id: string;
+    magasin_id: string;
+    quantite: number;
+    quantite_minimum: number;
+    magasin?: { nom: string };
+  }>;
   image_url?: string;
 }
 
