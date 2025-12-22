@@ -85,10 +85,10 @@ export const registerSchema = Joi.object({
     }),
   
   telephoneOrganisation: Joi.string()
-    .pattern(/^\+?[1-9]\d{6,19}$|^\+?[1-9][\d\s\-\(\)]{7,20}$/)
+    .pattern(/^\+?[0-9][\d\s\-\(\)]{6,20}$/)
     .required()
     .messages({
-      'string.pattern.base': 'Format de téléphone invalide (ex: +33612345678, +33 6 12 34 56 78 ou +269123456)',
+      'string.pattern.base': 'Format de téléphone invalide (ex: +33612345678, 0612345678 ou +269 32 12 45)',
       'any.required': 'Le téléphone de l\'organisation est requis',
     }),
 });
