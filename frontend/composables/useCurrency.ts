@@ -69,6 +69,46 @@ export const useCurrency = () => {
     return `${result} ${currency.symbol}`;
   };
 
+  /**
+   * Formater un montant de manière compacte (K, M, Md) pour les grands nombres
+   * Ex: 100000 → 100K, 1500000 → 1.5M, 1000000000 → 1Md
+   */
+  const formatPriceCompact = (amount: number | string | undefined | null): string => {
+    if (amount === undefined || amount === null) return '---';
+    
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numAmount)) return '---';
+
+    const currency = currentCurrency.value || {
+      symbol: 'KMF',
+    };
+
+    let formattedValue: string;
+    let suffix = '';
+
+    if (Math.abs(numAmount) >= 1_000_000_000) {
+      // Milliards
+      formattedValue = (numAmount / 1_000_000_000).toFixed(1);
+      suffix = 'Md';
+    } else if (Math.abs(numAmount) >= 1_000_000) {
+      // Millions
+      formattedValue = (numAmount / 1_000_000).toFixed(1);
+      suffix = 'M';
+    } else if (Math.abs(numAmount) >= 100_000) {
+      // Centaines de milliers → K
+      formattedValue = (numAmount / 1_000).toFixed(1);
+      suffix = 'K';
+    } else {
+      // Moins de 100K, on affiche normalement
+      formattedValue = numAmount.toLocaleString('fr-FR', { maximumFractionDigits: 0 });
+    }
+
+    // Supprimer les décimales inutiles (.0)
+    formattedValue = formattedValue.replace(/\.0$/, '');
+
+    return `${formattedValue}${suffix} ${currency.symbol}`;
+  };
+
   // Charger automatiquement la devise au montage du composant si nécessaire
   onMounted(() => {
     loadCurrency();
@@ -78,6 +118,7 @@ export const useCurrency = () => {
     currentCurrency,
     isLoadingCurrency,
     formatPrice,
+    formatPriceCompact,
     loadCurrency
   };
 };

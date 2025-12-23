@@ -39,14 +39,14 @@
                     <div class="flex gap-2">
                         <button 
                             @click="caisseStore.lock()" 
-                            class="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors"
+                            class="p-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors"
                             title="Verrouiller"
                         >
                             <Icon icon="tabler:lock" class="text-xl" />
                         </button>
                         <button 
                             @click="handleLogout" 
-                            class="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
+                            class="p-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
                             title="Fermer la session"
                         >
                             <Icon icon="tabler:power" class="text-xl" />
@@ -55,7 +55,7 @@
                 </div>
 
                 <!-- Filter Categories -->
-                <div class="flex gap-2 overflow-x-auto max-w-4xl pb-4 scrollbar-hide mb-4">
+                <div class="flex gap-2 border-b border-gray-200 overflow-x-auto max-w-4xl pb-4 scrollbar-hide mb-4">
                     <button @click="store.selectedCategory = null" :class="[
                         'px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
                         !store.selectedCategory ? 'bg-side2 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50'
@@ -71,7 +71,7 @@
                 </div>
 
                 <div v-if="store.loading" class="flex justify-center items-center h-full">
-                    <ProgressSpinner strokeWidth="4" />
+                    <ProgressSpinner strokeWidth="2" />
                 </div>
 
                 <div v-else-if="store.filteredItems.length === 0"
@@ -80,7 +80,7 @@
                     <p>Aucun produit trouvé</p>
                 </div>
 
-                <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
+                <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-3">
                     <ProductCard v-for="item in store.filteredItems" :key="item.uniqueId" :item="item"
                         @add="handleAddToCart" />
                 </div>
@@ -88,7 +88,7 @@
         </div>
 
         <!-- Zone Droite (Panier) -->
-        <div class="w-[400px]">
+        <div class="w-[350px]">
             <CartPanel />
         </div>
 

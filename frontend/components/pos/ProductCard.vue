@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="bg-white rounded-xl shadow-sm border border-gris/90 p-3 flex flex-col gap-2 h-full relative overflow-hidden group transition-all"
+    class="bg-white rounded-lg shadow-sm border border-gris/90 p-3 flex flex-col gap-1.5 h-full relative overflow-hidden group transition-all"
     :class="[
         isOutOfStock ? 'opacity-60 cursor-not-allowed border-red-200 bg-red-50/10' : 'cursor-pointer hover:shadow-md hover:border-primary/50'
     ]"
@@ -12,9 +12,9 @@
     </div>
 
     <!-- Image / Placeholder -->
-    <div class="h-24 w-full bg-bleu/50 rounded-lg flex items-center justify-center overflow-hidden mb-1 relative">
+    <div class="h-20 w-full bg-bleu/50 rounded-lg flex items-center justify-center overflow-hidden mb-0.5 relative">
       <img v-if="item.image" :src="item.image" alt="Product" class="h-full w-full object-cover" :class="{ 'grayscale': isOutOfStock }" />
-      <span v-else class="text-2xl opacity-50">📦</span>
+      <span v-else class="text-xl opacity-50">📦</span>
       
       <!-- Overlay Add -->
       <div v-if="!isOutOfStock" class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -38,8 +38,8 @@
         <p v-else-if="item.packLabel" class="text-xs text-orange-600 font-medium mt-0.5">{{ item.packLabel }}</p>
       </div>
 
-      <div class="mt-2 flex items-end justify-between">
-        <span class="font-bold text-lg text-[#064654]" :class="{ 'text-gray-500': isOutOfStock }">{{ formatPrice(item.price) }}</span>
+      <div class="mt-1.5 flex items-end justify-between">
+        <span class="font-bold text-base text-[#064654]" :class="{ 'text-gray-500': isOutOfStock }">{{ formatPrice(item.price) }}</span>
         <!-- Stock indicator (opt) -->
         <span 
             class="text-[10px] px-1.5 py-0.5 rounded-full font-bold border" 

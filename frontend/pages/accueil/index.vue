@@ -29,7 +29,7 @@
       
       <!-- KPI Cards Grid -->
       <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <CardStat :label="`CA (${periodLabel})`" :value="formatPrice(stats.revenue.value)" 
+        <CardStat :label="`CA (${periodLabel})`" :value="formatPriceCompact(stats.revenue.value)" 
           icon="tabler:coin" variant="primary" :loading="loading" 
           :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
           
@@ -103,7 +103,7 @@ const loading = ref(true);
 const store = useMagasinStore();
 const { currentMagasinId } = storeToRefs(store);
 const { getDashboardStats } = useDashboardApi();
-const { formatPrice } = useCurrency();
+const { formatPrice, formatPriceCompact } = useCurrency();
 
 // Methods
 const fetchDashboardStats = async () => {
