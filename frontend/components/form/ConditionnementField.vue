@@ -37,6 +37,10 @@
             <span>Quantité Base:</span>
             <span class="font-medium">{{ item.quantite_base }}</span>
           </div>
+          <div v-if="item.prix_achat" class="flex justify-between">
+            <span>Prix Achat:</span>
+            <span class="font-medium font-mono bg-blue-50 text-blue-700 px-1 rounded">{{ formatPrice(item.prix_achat) }}</span>
+          </div>
           <div class="flex justify-between">
             <span>Prix Vente:</span>
             <span class="font-medium font-mono bg-green-50 text-green-700 px-1 rounded">{{ formatPrice(item.prix_vente) }}</span>
@@ -93,6 +97,7 @@ export interface ConditionnementItem {
   nom: string;
   quantite_base: number;
   prix_vente: number;
+  prix_achat?: number;  // Prix d'achat du conditionnement
   code_barre?: string;
   image_url?: string;
   image_file?: File;
@@ -141,6 +146,15 @@ const baseFields = [
     required: true,
     min: 1,
     value: ''
+  },
+  {
+    name: 'prix_achat',
+    label: "Prix d'Achat",
+    type: 'currency' as const,
+    placeholder: '0.00',
+    required: false,
+    value: '',
+    helpText: "Prix d'achat unitaire pour ce conditionnement (optionnel)"
   },
   {
     name: 'prix_vente',
@@ -230,6 +244,7 @@ const handlePopupSubmit = (data: any) => {
     id: currentItem?.id,
     nom: data.nom,
     quantite_base: Number(data.quantite_base),
+    prix_achat: data.prix_achat ? Number(data.prix_achat) : undefined,
     prix_vente: Number(data.prix_vente),
     code_barre: data.code_barre,
     image_url: data.image_url,

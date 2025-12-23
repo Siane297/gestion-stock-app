@@ -219,6 +219,45 @@ export class DashboardService {
          .slice(0, limit);
   }
 
+  async getTopCategories(magasinId?: string, period: DashboardPeriod = 'DAY', limit: number = 5) {
+    const { currentStart } = this.getDateRanges(period);
+
+    const where: any = {
+        vente: {
+            statut: 'PAYEE',
+            date_creation: { gte: currentStart }
+        }
+    };
+    if (magasinId) where.vente.magasin_id = magasinId;
+
+    const details = await this.prisma.vente_detail.findMany({
+        where,
+        include: {
+            produit: { 
+              include: { 
+                categorie: { select: { nom: true } } 
+              } 
+            }
+        }
+    });
+
+    const categoryStats: Record<string, {name: string, value: number}> = {};
+
+    details.forEach(d => {
+        const categoryId = d.produit.categorie_id || 'uncategorized';
+        const categoryName = d.produit.categorie?.nom || 'Sans catégorie';
+        
+        if (!categoryStats[categoryId]) {
+           categoryStats[categoryId] = { name: categoryName, value: 0 };
+        }
+        categoryStats[categoryId].value += d.prix_total;
+    });
+
+    return Object.values(categoryStats)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, limit);
+ }
+
   async getRecentSales(magasinId?: string, limit: number = 6) {
     const where: any = {};
     if (magasinId) where.magasin_id = magasinId;

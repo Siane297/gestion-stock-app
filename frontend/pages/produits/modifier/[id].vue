@@ -165,10 +165,10 @@ const getFullImageUrl = (path?: string) => {
 const productFields = computed(() => {
     if (!produit.value) return [];
 
-    // Extract base values from default conditionnement (Unit)
-    const baseConditionnement = produit.value.conditionnements?.find((c: any) => c.quantite_base === 1);
-    const prixVente = baseConditionnement ? baseConditionnement.prix_vente : 0;
-    const codeBarre = baseConditionnement ? baseConditionnement.code_barre : '';
+    // Extract base values
+    const prixVente = produit.value.prix_vente;
+    const prixAchat = produit.value.prix_achat;
+    const codeBarre = produit.value.code_barre;
 
     return [
    {
@@ -189,6 +189,14 @@ const productFields = computed(() => {
     required: true,
     value: produit.value.nom
   },
+  // {
+  //   name: "description",
+  //   label: "Description",
+  //   type: "textarea" as const,
+  //   placeholder: "Description détaillée du produit...",
+  //   required: false,
+  //   value: produit.value.description
+  // },
   {
     name: "code_barre",
     label: "Code barre",
@@ -221,6 +229,14 @@ const productFields = computed(() => {
     optionValue: "id",
   },
   {
+    name: "prix_achat",
+    label: "Prix d'achat",
+    type: "currency" as const,
+    placeholder: "0.00",
+    required: false,
+    value: prixAchat
+  },
+  {
     name: "prix_vente",
     label: "Prix de vente",
     type: "currency" as const,
@@ -229,12 +245,25 @@ const productFields = computed(() => {
     value: prixVente
   },
   {
-    name: "gere_peremption",
-    label: "Gère la péremption",
-    type: "checkbox" as const,
+    name: "marge_min_pourcent",
+    label: "Marge minimum (%)",
+    type: "number" as const,
+    placeholder: "Ex: 20",
     required: false,
-    value: produit.value.gere_peremption, 
-    helpText: "Activer le suivi des lots et dates de péremption."
+    min: 0,
+    max: 100,
+    value: produit.value.marge_min_pourcent,
+    helpText: "Seuil d'alerte si la marge descend sous ce pourcentage."
+  },
+  {
+    name: "tva_pourcentage",
+    label: "TVA (%)",
+    type: "number" as const,
+    placeholder: "Ex: 15",
+    required: false,
+    value: produit.value.tva_pourcentage,
+    min: 0,
+    max: 100,
   },
   {
     name: "conditionnements",
@@ -242,6 +271,14 @@ const productFields = computed(() => {
     type: "conditionnement" as const,
     required: false,
     value: produit.value.conditionnements 
+  },
+  {
+    name: "gere_peremption",
+    label: "Gère la péremption",
+    type: "checkbox" as const,
+    required: false,
+    value: produit.value.gere_peremption, 
+    helpText: "Activer le suivi des lots et dates de péremption."
   },
   {
     name: 'est_actif',
@@ -271,6 +308,7 @@ const handleSubmit = async (data: Record<string, any>) => {
                 id: c.id, 
                 nom: isBase ? (unites.value.find(u => u.id === data.unite_id)?.nom || c.nom) : c.nom,
                 quantite_base: Number(c.quantite_base),
+                prix_achat: isBase ? (data.prix_achat ? Number(data.prix_achat) : undefined) : (c.prix_achat ? Number(c.prix_achat) : undefined),
                 prix_vente: isBase ? Number(data.prix_vente) : Number(c.prix_vente),
                 code_barre: isBase ? (data.code_barre || c.code_barre) : c.code_barre,
                 image_url: c.image_url,
@@ -301,14 +339,14 @@ const handleSubmit = async (data: Record<string, any>) => {
     const payload: UpdateProduitDto = {
       nom: data.nom,
       code_barre: data.code_barre || undefined,
-      categorie_id: data.categorie_id || undefined, // undefined sends null if explicit in DTO? backend model relies on optional.
-      // DTO defines optional string. sending undefined excludes field from update? 
-      // Prisma update with undefined does nothing. We might want to send null to clear it.
-      // Backend controller just passes body.
-      // Let's keep logic simple for now.
+      categorie_id: data.categorie_id || undefined,
       unite_id: data.unite_id,
       prix_achat: data.prix_achat ? Number(data.prix_achat) : undefined,
       prix_vente: Number(data.prix_vente),
+      marge_min_pourcent: data.marge_min_pourcent ? Number(data.marge_min_pourcent) : undefined,
+      tva_pourcentage: data.tva_pourcentage ? Number(data.tva_pourcentage) : undefined,
+      description: data.description || undefined,
+      gere_peremption: data.gere_peremption,
       est_actif: data.est_actif,
       conditionnements: condsPayload.length > 0 ? condsPayload : undefined
     };

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../config/logger.js';
+import { StockService } from './stockService.js';
 
 // Types DTO
 // Types DTO
@@ -17,10 +18,14 @@ export interface CreateProduitDto {
   tva_pourcentage?: number;
   gere_peremption?: boolean;
   est_actif?: boolean;
+  // Stock initial
+  magasin_id?: string;         // Magasin par défaut pour le stock initial
+  quantite_initiale?: number;  // Quantité en stock à la création
   conditionnements?: Array<{
     nom: string;
     quantite_base: number;
     prix_vente: number;
+    prix_achat?: number;
     code_barre?: string;
     image_url?: string;
     image_id?: string;
@@ -42,11 +47,18 @@ export interface UpdateProduitDto {
   gere_peremption?: boolean;
   est_actif?: boolean;
   raison_changement_prix?: string;
+  // Ajustement de stock (optionnel lors de la modification)
+  stock_ajustements?: Array<{
+    magasin_id: string;
+    quantite_ajustement: number;  // Positif = ajout, Négatif = retrait
+    raison?: string;
+  }>;
   conditionnements?: Array<{
     id?: string;
     nom?: string;
     quantite_base?: number;
     prix_vente?: number;
+    prix_achat?: number;
     code_barre?: string;
     image_url?: string;
     image_id?: string;
@@ -69,9 +81,11 @@ export interface ProduitFilters {
  */
 export class ProduitService {
   private prisma: PrismaClient;
+  private stockService: StockService;
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient, stockService?: StockService) {
     this.prisma = prisma;
+    this.stockService = stockService || new StockService(prisma);
   }
 
   /**
@@ -226,6 +240,9 @@ export class ProduitService {
         data: {
           nom: String(data.nom).trim(),
           description: data.description?.trim(),
+          code_barre: data.code_barre || undefined,
+          prix_achat: data.prix_achat !== undefined ? Number(data.prix_achat) : undefined,
+          prix_vente: data.prix_vente !== undefined ? Number(data.prix_vente) : undefined,
           categorie_id: data.categorie_id,
           unite_id: data.unite_id,
           marge_min_pourcent: data.marge_min_pourcent !== undefined ? Number(data.marge_min_pourcent) : undefined,
@@ -261,23 +278,54 @@ export class ProduitService {
                  if (existing) throw new Error(`Un conditionnement avec ce code-barre existe déjà: ${cond.code_barre}`);
             }
 
-           const newCond = await tx.conditionnement_produit.create({
-             data: {
-               produit_id: produit.id,
-               nom: cond.nom,
-               quantite_base: Number(cond.quantite_base),
-               prix_vente: Number(cond.prix_vente),
-               code_barre: cond.code_barre,
-               est_actif: true,
-               image_url: cond.image_url,
-               image_id: cond.image_id
-             }
-           });
+            const newCond = await tx.conditionnement_produit.create({
+              data: {
+                produit_id: produit.id,
+                nom: cond.nom,
+                quantite_base: Number(cond.quantite_base),
+                prix_vente: Number(cond.prix_vente),
+                prix_achat: cond.prix_achat !== undefined ? Number(cond.prix_achat) : undefined,
+                code_barre: cond.code_barre,
+                est_actif: true,
+                image_url: cond.image_url,
+                image_id: cond.image_id
+              }
+            });
            
            // Ajout au tableau pour le retour API
            (produit.conditionnements as any[]).push(newCond);
         }
       }
+
+      // 4. Création du stock initial si quantité fournie
+      if (data.quantite_initiale && data.quantite_initiale > 0 && data.magasin_id) {
+        // Validation : la quantité doit être un entier positif
+        const quantiteInitiale = Math.floor(Number(data.quantite_initiale));
+        if (quantiteInitiale <= 0) {
+          throw new Error('La quantité initiale doit être un nombre entier positif');
+        }
+
+        // Validation : le magasin doit exister
+        const magasinExists = await tx.magasin.findUnique({
+          where: { id: data.magasin_id },
+          select: { id: true }
+        });
+        if (!magasinExists) {
+          throw new Error('Le magasin spécifié n\'existe pas');
+        }
+
+        // Création du mouvement de stock initial via StockService
+        await this.stockService.createMouvement({
+          magasin_id: data.magasin_id,
+          produit_id: produit.id,
+          type: 'ENTREE_INITIALE',
+          quantite: quantiteInitiale,
+          raison: 'Stock initial à la création du produit'
+        }, tx);
+
+        logger.info(`Stock initial créé: ${quantiteInitiale} unités pour le produit ${produit.id} dans le magasin ${data.magasin_id}`);
+      }
+
       logger.info(`Produit créé: ${produit.id} - ${produit.nom}`);
       
       // On retourne l'objet directement car getById ne verrait pas le produit avant le commit de la transaction
@@ -316,7 +364,9 @@ export class ProduitService {
       where: { id },
       data: {
         nom: data.nom?.trim(),
-        // code_barre, prix_achat, prix_vente ne sont plus sur produit
+        code_barre: data.code_barre || undefined,
+        prix_achat: data.prix_achat !== undefined ? Number(data.prix_achat) : undefined,
+        prix_vente: data.prix_vente !== undefined ? Number(data.prix_vente) : undefined,
         categorie_id: data.categorie_id,
         description: data.description?.trim(),
         unite_id: data.unite_id,
@@ -354,6 +404,7 @@ export class ProduitService {
               nom: cond.nom,
               quantite_base: Number(cond.quantite_base),
               prix_vente: Number(cond.prix_vente),
+              prix_achat: cond.prix_achat !== undefined ? Number(cond.prix_achat) : undefined,
               code_barre: cond.code_barre,
               image_url: cond.image_url,
               image_id: cond.image_id
@@ -370,6 +421,7 @@ export class ProduitService {
                     nom: cond.nom,
                     quantite_base: cond.quantite_base ? Number(cond.quantite_base) : undefined,
                     prix_vente: cond.prix_vente ? Number(cond.prix_vente) : (isBase && data.prix_vente ? Number(data.prix_vente) : undefined),
+                    prix_achat: cond.prix_achat !== undefined ? Number(cond.prix_achat) : (isBase && data.prix_achat !== undefined ? Number(data.prix_achat) : undefined),
                     code_barre: cond.code_barre !== undefined ? cond.code_barre : (isBase && data.code_barre ? data.code_barre : undefined),
                     image_url: cond.image_url,
                     image_id: cond.image_id
@@ -380,6 +432,44 @@ export class ProduitService {
                 where: { id: cond.id }
             });
         }
+      }
+    }
+
+    // Gestion des ajustements de stock
+    if (data.stock_ajustements && data.stock_ajustements.length > 0) {
+      for (const ajustement of data.stock_ajustements) {
+        const quantiteAjustement = Math.floor(Number(ajustement.quantite_ajustement));
+        
+        if (quantiteAjustement === 0) continue; // Pas d'ajustement
+        
+        // Validation magasin
+        const magasinExists = await this.prisma.magasin.findUnique({
+          where: { id: ajustement.magasin_id },
+          select: { id: true }
+        });
+        if (!magasinExists) {
+          throw new Error(`Le magasin ${ajustement.magasin_id} n'existe pas`);
+        }
+
+        // Déterminer le type de mouvement et la quantité
+        const typeMovement: 'AJUSTEMENT' = 'AJUSTEMENT';
+        const raison = ajustement.raison || 
+          (quantiteAjustement > 0 
+            ? `Ajout manuel de stock (+${quantiteAjustement})` 
+            : `Retrait manuel de stock (${quantiteAjustement})`);
+
+        // Créer le mouvement d'ajustement
+        await this.stockService.createMouvement({
+          magasin_id: ajustement.magasin_id,
+          produit_id: id,
+          type: typeMovement,
+          quantite: Math.abs(quantiteAjustement),
+          raison: quantiteAjustement > 0 
+            ? `${raison} - ajout` // Pour que isIncrement détecte 'ajout'
+            : raison
+        });
+
+        logger.info(`Ajustement de stock: ${quantiteAjustement} unités pour le produit ${id} dans le magasin ${ajustement.magasin_id}`);
       }
     }
 

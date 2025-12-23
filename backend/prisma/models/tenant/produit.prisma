@@ -21,13 +21,13 @@ model categorie_produit {
 
 model produit {
     id                 String   @id @default(uuid())
-    // prix_achat et prix_vente déplacés vers conditionnement_produit
-    // code_barre déplacé vers conditionnement_produit
     categorie_id       String?
     unite_id           String?
     nom                String
     description        String?
-    // unite              UniteProduit @default(UNITE)  <- Removed
+    code_barre         String?
+    prix_achat         Float?
+    prix_vente         Float?
     marge_min_pourcent Float? // Alerte marge
     gere_peremption    Boolean  @default(false)
     est_actif          Boolean  @default(true)

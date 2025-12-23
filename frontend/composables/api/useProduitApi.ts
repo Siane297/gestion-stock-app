@@ -8,6 +8,7 @@ export interface Conditionnement {
   nom: string;
   quantite_base: number;
   prix_vente: number;
+  prix_achat?: number;
   code_barre?: string;
   est_actif: boolean;
   image_url?: string; // Ajout pour cohérence
@@ -66,6 +67,7 @@ export interface CreateProduitDto {
     nom: string;
     quantite_base: number;
     prix_vente: number;
+    prix_achat?: number;
     code_barre?: string;
     image_url?: string;
     image_id?: string;
@@ -91,6 +93,7 @@ export interface UpdateProduitDto {
     nom?: string;
     quantite_base?: number;
     prix_vente?: number;
+    prix_achat?: number;
     code_barre?: string;
     image_url?: string;
     image_id?: string;

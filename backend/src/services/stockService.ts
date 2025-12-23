@@ -4,6 +4,7 @@ import { logger } from '../config/logger.js';
 // Types pour les mouvements de stock
 export type TypeMouvementStock = 
   | 'ENTREE_ACHAT'
+  | 'ENTREE_INITIALE'
   | 'ENTREE_RETOUR'
   | 'SORTIE_VENTE'
   | 'SORTIE_PERISSABLE'
@@ -122,7 +123,7 @@ export class StockService {
     }
 
     // Déterminer l'opération (incrément ou décrément) sur le magasin source
-    const isIncrement = ['ENTREE_ACHAT', 'ENTREE_RETOUR'].includes(data.type) ||
+    const isIncrement = ['ENTREE_ACHAT', 'ENTREE_INITIALE', 'ENTREE_RETOUR'].includes(data.type) ||
       (data.type === 'AJUSTEMENT' && data.raison?.toLowerCase().includes('ajout'));
     
     // TRANSFERT est une sortie pour le magasin source

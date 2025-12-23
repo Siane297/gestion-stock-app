@@ -1,5 +1,6 @@
 enum TypeMouvementStock {
     ENTREE_ACHAT
+    ENTREE_INITIALE
     ENTREE_RETOUR
     SORTIE_VENTE
     SORTIE_PERISSABLE

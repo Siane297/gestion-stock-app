@@ -46,12 +46,15 @@
     </div>
     
     <!-- Charts & Tables Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <!-- Main Chart: Sales Evolution -->
       <SalesEvolutionChart :loading="loading" :sales-data="salesData" :period="selectedPeriod" class="lg:col-span-2" />
 
       <!-- Top Products -->
       <TopProductsList :loading="loading" :products="topProducts" />
+
+      <!-- Top Categories Chart -->
+      <TopCategoriesChart :loading="loading" :categories="topCategories" />
     </div>
 
     <!-- Recent Sales Table (Full Width) -->
@@ -79,6 +82,7 @@ import SalesEvolutionChart from '~/components/chart/SalesEvolutionChart.vue';
 import TopProductsList from '~/components/TopProductsList.vue';
 import RecentSalesList from '~/components/dashboard/RecentSalesList.vue';
 import VenteDetailModal from '~/components/vente/VenteDetailModal.vue';
+import TopCategoriesChart from '~/components/chart/TopCategoriesChart.vue';
 import { useMagasinStore } from '~/stores/magasin';
 import { useDashboardApi } from '~/composables/api/useDashboardApi';
 import { useVenteApi, type Vente } from '~/composables/api/useVenteApi';
@@ -113,6 +117,7 @@ const trendComparisonLabel = computed(() => {
 });
 
 const topProducts = ref<any[]>([]);
+const topCategories = ref<any[]>([]);
 const recentSales = ref<any[]>([]);
 const salesData = ref<{ date: string, amount: number }[]>([]);
 const loading = ref(true);
@@ -137,6 +142,7 @@ const fetchDashboardStats = async () => {
       stats.value = data.stats;
       salesData.value = data.charts.sales;
       topProducts.value = data.top_products;
+      topCategories.value = data.top_categories;
       recentSales.value = data.recent_sales;
     }
   } catch (error) {

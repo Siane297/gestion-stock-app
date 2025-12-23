@@ -31,10 +31,11 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         finalMagasinId = tenantUser.magasin_id;
     }
 
-    const [globalStats, salesChart, topProducts, recentSales] = await Promise.all([
+    const [globalStats, salesChart, topProducts, topCategories, recentSales] = await Promise.all([
       dashboardService.getGlobalStats(finalMagasinId, period),
       dashboardService.getSalesChart(finalMagasinId, period),
       dashboardService.getTopProducts(finalMagasinId, period),
+      dashboardService.getTopCategories(finalMagasinId, period),
       dashboardService.getRecentSales(finalMagasinId, 6)
     ]);
 
@@ -46,6 +47,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             sales: salesChart
         },
         top_products: topProducts,
+        top_categories: topCategories,
         recent_sales: recentSales
       }
     });

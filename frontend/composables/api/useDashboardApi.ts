@@ -25,6 +25,11 @@ export interface ProductStat {
   image_url?: string;
 }
 
+export interface CategoryStat {
+  name: string;
+  value: number;
+}
+
 export interface RecentSale {
   id: string;
   numero_vente: string | null;
@@ -43,6 +48,7 @@ export interface DashboardData {
   stats: DashboardStats;
   charts: DashboardCharts;
   top_products: ProductStat[];
+  top_categories: CategoryStat[];
   recent_sales: RecentSale[];
 }
 

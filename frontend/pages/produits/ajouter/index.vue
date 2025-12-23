@@ -61,10 +61,12 @@ import FormPopupDynamique from "~/components/form/FormPopupDynamique.vue";
 import { useUniteApi } from "~/composables/api/useUniteApi";
 import { useProduitApi } from "~/composables/api/useProduitApi";
 import { useCategorieProduitApi } from "~/composables/api/useCategorieProduitApi";
+import { useMagasinApi } from "~/composables/api/useMagasinApi";
 
 const { createProduit } = useProduitApi();
 const { getCategories, createCategory } = useCategorieProduitApi();
 const { getUnites, createUnite } = useUniteApi();
+const { getMagasins } = useMagasinApi();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 
@@ -79,6 +81,7 @@ const loading = ref(false);
 // Listes
 const categories = ref<Array<{ id: string; nom: string }>>([]);
 const unites = ref<Array<{ id: string; nom: string }>>([]);
+const magasins = ref<Array<{ id: string; nom: string }>>([]);
 const loadingLists = ref(false);
 
 // États du popup catégorie et unité
@@ -91,12 +94,14 @@ const loadingUnite = ref(false);
 const loadLists = async () => {
   loadingLists.value = true;
   try {
-    const [catsData, unitesData] = await Promise.all([
+    const [catsData, unitesData, magasinsData] = await Promise.all([
         getCategories(),
-        getUnites()
+        getUnites(),
+        getMagasins() // Charger la liste des magasins
     ]);
     categories.value = catsData;
     unites.value = unitesData;
+    magasins.value = magasinsData;
   } catch (error) {
     console.error("Erreur chargement listes:", error);
     toast.add({ severity: "error", summary: "Erreur", detail: "Erreur chargement données", life: 3000 });
@@ -130,6 +135,13 @@ const productFields = computed(() => [
     required: true,
   },
   {
+    name: "description",
+    label: "Description",
+    type: "textarea" as const,
+    placeholder: "Description détaillée du produit...",
+    required: false,
+  },
+  {
     name: "code_barre",
     label: "Code barre",
     type: "text" as const,
@@ -157,6 +169,13 @@ const productFields = computed(() => [
     optionValue: "id",
   },
   {
+    name: "prix_achat",
+    label: "Prix d'achat",
+    type: "currency" as const,
+    placeholder: "0.00",
+    required: true,
+  },
+  {
     name: "prix_vente",
     label: "Prix de vente",
     type: "currency" as const,
@@ -164,12 +183,45 @@ const productFields = computed(() => [
     required: true,
   },
   {
-    name: "gere_peremption",
-    label: "Gère la péremption",
-    type: "checkbox" as const,
+    name: "marge_min_pourcent",
+    label: "Marge minimum (%)",
+    type: "number" as const,
+    placeholder: "Ex: 20",
     required: false,
-    helpText:
-      "Cochez cette case pour activer le suivi des lots et dates de péremption.",
+    min: 0,
+    max: 100,
+    helpText: "Seuil d'alerte si la marge descend sous ce pourcentage."
+  },
+  {
+    name: "tva_pourcentage",
+    label: "TVA (%)",
+    type: "number" as const,
+    placeholder: "Ex: 15",
+    required: false,
+    min: 0,
+    max: 100,
+  },
+ 
+   // Stock Initial (optionnel)
+  {
+    name: "magasin_id",
+    label: "Magasin pour stock initial",
+    type: "select" as const,
+    placeholder: "Sélectionnez un magasin",
+    required: false,
+    options: magasins.value,
+    optionLabel: "nom",
+    optionValue: "id",
+    helpText: "Si vous êtes votre propre fournisseur, saisissez directement la quantité en stock."
+  },
+  {
+    name: "quantite_initiale",
+    label: "Quantité initiale en stock",
+    type: "number" as const,
+    placeholder: "Ex: 100",
+    required: false,
+    min: 0,
+    helpText: "Nombre d'unités disponibles en stock pour ce produit."
   },
   {
     name: "conditionnements",
@@ -177,6 +229,15 @@ const productFields = computed(() => [
     type: "conditionnement" as const,
     required: false,
   },
+   {
+    name: "gere_peremption",
+    label: "Gère la péremption",
+    type: "checkbox" as const,
+    required: false,
+    helpText:
+      "Cochez cette case pour activer le suivi des lots et dates de péremption.",
+  },
+ 
 ]);
 
 // Gestion de la soumission
@@ -198,11 +259,17 @@ const handleSubmit = async (data: Record<string, any>) => {
       gere_peremption: data.gere_peremption || false,
       description: data.description || undefined,
       est_actif: true,
+      // Stock initial (si fourni)
+      magasin_id: data.magasin_id || undefined,
+      quantite_initiale: data.quantite_initiale && data.quantite_initiale > 0 
+        ? Number(data.quantite_initiale) 
+        : undefined,
       conditionnements: data.conditionnements
         ? data.conditionnements.map((c: any) => ({
             nom: c.nom,
             quantite_base: Number(c.quantite_base),
             prix_vente: Number(c.prix_vente),
+            prix_achat: c.prix_achat ? Number(c.prix_achat) : undefined,
             code_barre: c.code_barre || undefined,
           }))
         : undefined,
