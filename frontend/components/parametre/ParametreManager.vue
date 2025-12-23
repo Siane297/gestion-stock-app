@@ -61,10 +61,8 @@
         <div class="h-full overflow-y-auto">
           <div class="p-4 lg:px-4">
             <!-- Contenu dynamique selon l'onglet actif -->
-            <ParametreHoraire v-if="activeTab === 'horaire'" />
-            <ParametreAdministrateur v-else-if="activeTab === 'administrateur'" />
+            <ParametreAdministrateur v-if="activeTab === 'administrateur'" />
             <ParametreOrganisation v-else-if="activeTab === 'organisation'" />
-            <ParametreBadge v-else-if="activeTab === 'badge'" />
           </div>
         </div>
       </div>
@@ -76,19 +74,14 @@
 import { ref } from 'vue';
 import { Icon } from '@iconify/vue';
 
-import ParametreAdministrateur from '~/components/parametre/content/ParametreAdministrateur.vue';
+import ParametreAdministrateur from '~/components/parametre/content/ParametreProfil.vue';
 import ParametreOrganisation from '~/components/parametre/content/ParametreOrganisation.vue';
 
 // Onglet actif
-const activeTab = ref<'horaire' | 'administrateur' | 'organisation' | 'badge'>('horaire');
+const activeTab = ref<'administrateur' | 'organisation' | 'badge'>('administrateur');
 
 // Configuration de la navigation
 const navigationItems = [
-  {
-    key: 'horaire',
-    label: 'Masse horaire',
-    icon: 'lucide:clock'
-  },
   {
     key: 'administrateur',
     label: 'Administrateur',
@@ -99,11 +92,6 @@ const navigationItems = [
     label: 'Organisation',
     icon: 'lucide:building'
   },
-  {
-    key: 'badge',
-    label: 'Badge',
-    icon: 'lucide:credit-card'
-  }
 ] as const;
 
 // Middleware d'authentification
@@ -114,10 +102,6 @@ definePageMeta({
 
 <style scoped>
 /* Styles personnalisés pour le sidebar des paramètres */
-.bg-primary {
-  background-color: var(--primary-color, #3b82f6);
-}
-
 /* Effet 3D pour le lien actif */
 .shadow-3d-sidebar-active {
   box-shadow: 

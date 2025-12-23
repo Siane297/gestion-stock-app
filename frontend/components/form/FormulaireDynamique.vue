@@ -29,6 +29,13 @@
                 :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
                 class="w-full" @input="validateFieldRealTime(field)" />
 
+              <!-- Password -->
+              <Password v-else-if="field.type === 'password'" :id="field.name"
+                v-model="formData[field.name]" :placeholder="field.placeholder" :feedback="false" toggleMask
+                inputClass="w-full" :inputStyle="{ width: '100%' }"
+                :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
+                class="w-full" @input="validateFieldRealTime(field)" />
+
               <!-- Select -->
               <Select v-else-if="field.type === 'select'" :id="field.name" v-model="formData[field.name]"
                 :options="field.options" :optionLabel="field.optionLabel || 'label'"
@@ -179,6 +186,7 @@
 
 <script setup lang="ts">
 import InputText from "primevue/inputtext";
+import Password from "primevue/password";
 import SimplePageHeader from "~/components/banner/SimplePageHeader.vue";
 import Select from "primevue/select";
 import { Icon } from "@iconify/vue";
@@ -207,6 +215,7 @@ export interface FormField {
   | "email"
   | "select"
   | "select-with-add"
+  | "password"
   | "number"
   | "date"
   | "time"

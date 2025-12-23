@@ -48,15 +48,15 @@ export interface UserSession {
  * Hook pour récupérer les informations de l'utilisateur connecté
  */
 export const useUserApi = () => {
-  const { get, post } = useSecureApi();
+  const { get, put } = useSecureApi();
 
   /**
    * Récupérer les informations de l'utilisateur connecté
    */
   const getCurrentUser = async (): Promise<User | null> => {
     try {
-      const response = await get<ApiResponse<{ user: User }>>('/api/auth/me');
-      return response.data?.user || null;
+      const response = await get<ApiResponse<User>>('/api/users/me');
+      return response.data || null;
     } catch (error) {
       console.error('Erreur lors de la récupération de l\'utilisateur:', error);
       throw error;
@@ -66,9 +66,15 @@ export const useUserApi = () => {
   /**
    * Mettre à jour le profil utilisateur
    */
-  const updateUserProfile = async (data: { name?: string; image?: string }): Promise<User | null> => {
+  const updateUserProfile = async (data: { 
+    name?: string; 
+    email?: string;
+    currentPassword?: string;
+    newPassword?: string;
+    pin?: string;
+  }): Promise<User | null> => {
     try {
-      const response = await post<ApiResponse<User>>('/user/update-profile', data);
+      const response = await put<ApiResponse<User>>('/api/users/profile', data);
       return response.data || null;
     } catch (error) {
       console.error('Erreur lors de la mise à jour du profil:', error);

@@ -52,6 +52,9 @@
       </ClientOnly>
     </nav>
 
+    <!-- Upgrade Pro Card -->
+    <UpgradeProCard v-if="user?.company?.subscriptionStatus === 'TRIAL'" />
+
     <!-- Bouton de fermeture (mobile uniquement) -->
     <button
       class="absolute top-4 right-4 lg:hidden text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
@@ -71,6 +74,7 @@ import { usePermissions } from '~/composables/usePermissions';
 import SidebarMenuItem from '~/components/sidebar/SidebarMenuItem.vue';
 import AppLogo from '~/components/logo/AppLogo.vue';
 import StoreSelector from '~/components/sidebar/StoreSelector.vue';
+import UpgradeProCard from '~/components/sidebar/UpgradeProCard.vue';
 
 interface Props {
   isOpen?: boolean;

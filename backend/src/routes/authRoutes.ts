@@ -14,6 +14,31 @@ import { TenantUserRole } from '../types/permissions.js';
 const router: Router = Router();
 
 /**
+ * Helper: Calculer les jours restants pour un abonnement
+ */
+function calculateDaysRemaining(company: any): number {
+  if (!company) return 0;
+
+  const now = new Date();
+  let targetDate: Date | null = null;
+
+  // Utiliser trialEndsAt pour TRIAL, subscriptionEndsAt pour ACTIVE
+  if (company.subscriptionStatus === 'TRIAL' && company.trialEndsAt) {
+    targetDate = new Date(company.trialEndsAt);
+  } else if (company.subscriptionStatus === 'ACTIVE' && company.subscriptionEndsAt) {
+    targetDate = new Date(company.subscriptionEndsAt);
+  }
+
+  if (targetDate) {
+    const diffTime = targetDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays); // Ne pas afficher de valeurs négatives
+  }
+
+  return 0;
+}
+
+/**
  * POST /api/auth/register
  * Inscription d'un nouvel utilisateur et création de son organisation
  */
@@ -360,6 +385,12 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
               company: adminUser.company ? {
                 id: adminUser.company.id,
                 name: adminUser.company.name,
+                country: adminUser.company.country,
+                logo: adminUser.company.logo,
+                subscriptionStatus: adminUser.company.subscriptionStatus,
+                trialEndsAt: adminUser.company.trialEndsAt,
+                subscriptionEndsAt: adminUser.company.subscriptionEndsAt,
+                daysRemaining: calculateDaysRemaining(adminUser.company),
               } : null,
             },
           },
@@ -498,10 +529,21 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
                     // department: tenantUser.employee.department?.name || null,
                     position: tenantUser.employee.position?.name || null,
                   },
-                  company: {
-                    id: company.id,
-                    name: company.name,
-                  },
+                  company: await (async () => {
+                    const fullCompany = await prismaPublic.company.findUnique({
+                      where: { schemaName: company.schemaName },
+                    });
+                    return fullCompany ? {
+                      id: fullCompany.id,
+                      name: fullCompany.name,
+                      country: fullCompany.country,
+                      logo: fullCompany.logo,
+                      subscriptionStatus: fullCompany.subscriptionStatus,
+                      trialEndsAt: fullCompany.trialEndsAt,
+                      subscriptionEndsAt: fullCompany.subscriptionEndsAt,
+                      daysRemaining: calculateDaysRemaining(fullCompany),
+                    } : null;
+                  })(),
                 },
               },
             });
@@ -919,6 +961,12 @@ router.post('/refresh', async (req: Request, res: Response) => {
         company: tenantUser.company ? {
           id: tenantUser.company.id,
           name: tenantUser.company.name,
+          country: tenantUser.company.country,
+          logo: tenantUser.company.logo,
+          subscriptionStatus: tenantUser.company.subscriptionStatus,
+          trialEndsAt: tenantUser.company.trialEndsAt,
+          subscriptionEndsAt: tenantUser.company.subscriptionEndsAt,
+          daysRemaining: calculateDaysRemaining(tenantUser.company),
         } : null,
       };
     } else {
@@ -934,6 +982,10 @@ router.post('/refresh', async (req: Request, res: Response) => {
           name: adminUser.company.name,
           country: adminUser.company.country,
           logo: adminUser.company.logo,
+          subscriptionStatus: adminUser.company.subscriptionStatus,
+          trialEndsAt: adminUser.company.trialEndsAt,
+          subscriptionEndsAt: adminUser.company.subscriptionEndsAt,
+          daysRemaining: calculateDaysRemaining(adminUser.company),
         } : null,
       };
     }
