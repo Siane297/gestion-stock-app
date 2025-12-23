@@ -48,11 +48,24 @@
     <!-- Charts & Tables Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Main Chart: Sales Evolution -->
-      <SalesEvolutionChart :loading="loading" :sales-data="salesData" :period="selectedPeriod" />
+      <SalesEvolutionChart :loading="loading" :sales-data="salesData" :period="selectedPeriod" class="lg:col-span-2" />
 
       <!-- Top Products -->
       <TopProductsList :loading="loading" :products="topProducts" />
     </div>
+
+    <!-- Recent Sales Table (Full Width) -->
+    <div class="grid grid-cols-1">
+      <RecentSalesList :loading="loading" :sales="recentSales" @action:view="viewDetails" />
+    </div>
+
+    <!-- Modale Détail Vente -->
+    <VenteDetailModal 
+        v-model:visible="showDetailModal"
+        :vente="selectedVente"
+        :loading="detailLoading"
+        @status-updated="fetchDashboardStats"
+    />
   </div>
 </template>
 
@@ -64,8 +77,11 @@ import Dropdown from 'primevue/dropdown';
 import CardStat from '~/components/card/CardStat.vue';
 import SalesEvolutionChart from '~/components/chart/SalesEvolutionChart.vue';
 import TopProductsList from '~/components/TopProductsList.vue';
+import RecentSalesList from '~/components/dashboard/RecentSalesList.vue';
+import VenteDetailModal from '~/components/vente/VenteDetailModal.vue';
 import { useMagasinStore } from '~/stores/magasin';
 import { useDashboardApi } from '~/composables/api/useDashboardApi';
+import { useVenteApi, type Vente } from '~/composables/api/useVenteApi';
 import { useCurrency } from '~/composables/useCurrency';
 
 // Initialiser les valeurs par défaut avec la nouvelle structure
@@ -97,12 +113,19 @@ const trendComparisonLabel = computed(() => {
 });
 
 const topProducts = ref<any[]>([]);
+const recentSales = ref<any[]>([]);
 const salesData = ref<{ date: string, amount: number }[]>([]);
 const loading = ref(true);
+
+// Détail Vente
+const showDetailModal = ref(false);
+const detailLoading = ref(false);
+const selectedVente = ref<Vente | null>(null);
 
 const store = useMagasinStore();
 const { currentMagasinId } = storeToRefs(store);
 const { getDashboardStats } = useDashboardApi();
+const { getVenteById } = useVenteApi();
 const { formatPrice, formatPriceCompact } = useCurrency();
 
 // Methods
@@ -114,12 +137,28 @@ const fetchDashboardStats = async () => {
       stats.value = data.stats;
       salesData.value = data.charts.sales;
       topProducts.value = data.top_products;
+      recentSales.value = data.recent_sales;
     }
   } catch (error) {
     console.error("Erreur chargement dashboard:", error);
   } finally {
     loading.value = false;
   }
+};
+
+const viewDetails = async (vente: any) => {
+    selectedVente.value = vente;
+    showDetailModal.value = true;
+    detailLoading.value = true;
+    try {
+        // Recharger l'objet complet avec les détails si nécessaire
+        const fullVente = await getVenteById(vente.id);
+        if (fullVente) selectedVente.value = fullVente as any;
+    } catch (e) {
+        console.error("Erreur lors du chargement des détails de la vente:", e);
+    } finally {
+        detailLoading.value = false;
+    }
 };
 
 // Recharger quand le magasin change

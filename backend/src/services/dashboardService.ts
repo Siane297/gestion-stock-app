@@ -218,5 +218,30 @@ export class DashboardService {
          .sort((a, b) => b.quantity - a.quantity)
          .slice(0, limit);
   }
+
+  async getRecentSales(magasinId?: string, limit: number = 6) {
+    const where: any = {};
+    if (magasinId) where.magasin_id = magasinId;
+
+    return await this.prisma.vente.findMany({
+      where,
+      take: limit,
+      orderBy: { date_creation: 'desc' },
+      include: {
+        client: { select: { nom: true } },
+        magasin: { select: { nom: true } },
+        session_caisse: {
+          include: {
+            caisse: { select: { nom: true, code: true } }
+          }
+        },
+        utilisateur: { 
+          select: { 
+            employee: { select: { fullName: true } } 
+          } 
+        }
+      }
+    });
+  }
 }
 

@@ -25,10 +25,25 @@ export interface ProductStat {
   image_url?: string;
 }
 
+export interface RecentSale {
+  id: string;
+  numero_vente: string | null;
+  montant_total: number;
+  statut: string;
+  date_creation: string;
+  client?: { nom: string };
+  magasin?: { nom: string };
+  session_caisse?: {
+    caisse: { nom: string, code: string }
+  };
+  utilisateur: { employee: { fullName: string } };
+}
+
 export interface DashboardData {
   stats: DashboardStats;
   charts: DashboardCharts;
   top_products: ProductStat[];
+  recent_sales: RecentSale[];
 }
 
 export const useDashboardApi = () => {
