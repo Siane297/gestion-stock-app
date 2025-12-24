@@ -17,7 +17,7 @@
             <div v-for="(field, index) in fields" :key="field.name" :class="getFieldClass(index)"
               class="flex flex-col gap-2">
 
-              <label v-if="field.showLabel !== false && field.type !== 'conditionnement' && field.type !== 'achat-lines' && field.type !== 'image'" :for="field.name"
+              <label v-if="field.showLabel !== false && field.type !== 'conditionnement' && field.type !== 'achat-lines' && field.type !== 'image' && field.type !== 'select-packaging'" :for="field.name"
                 class="font-semibold text-gray-700">
                 {{ field.label }}
                 <span v-if="field.required" class="text-red-500">*</span>
@@ -60,6 +60,20 @@
                   </div>
                 </template>
               </Select>
+ 
+               <!-- Select Packaging (Design Orange style Achat) -->
+               <div v-else-if="field.type === 'select-packaging'"
+                 class="flex flex-col gap-2 p-3 bg-orange-50 rounded-lg border border-orange-100">
+                 <label :for="field.name" class="font-semibold text-orange-800 flex items-center gap-2">
+                   <i class="pi pi-box"></i> {{ field.label }}
+                   <span v-if="field.required" class="text-red-500">*</span>
+                 </label>
+                 <Select :id="field.name" v-model="formData[field.name]" :options="field.options"
+                   :optionLabel="field.optionLabel || 'label'" :optionValue="field.optionValue || 'value'"
+                   :placeholder="field.placeholder" :disabled="field.disabled"
+                   :invalid="submitted && field.required && !formData[field.name]" :filter="field.filter" class="w-full"
+                   showClear />
+               </div>
 
               <!-- Select avec filtre et bouton + -->
               <div v-else-if="field.type === 'select-with-add'" class="flex gap-2">
@@ -225,6 +239,7 @@ export interface FormField {
   | "conditionnement"
   | "checkbox"
   | "currency"
+  | "select-packaging"
   | "achat-lines";
   placeholder?: string;
   required?: boolean;

@@ -55,7 +55,7 @@ const chartOptions = computed(() => ({
     animations: { enabled: true }
   },
   labels: props.categories.map(c => c.name),
-  colors: ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#10b981'],
+  colors: ['#00a6fb', '#c77dff', '#ec4899', '#f97316', '#10b981'],
   stroke: { show: false },
   dataLabels: { enabled: false },
   legend: {

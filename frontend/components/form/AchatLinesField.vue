@@ -5,31 +5,19 @@
         {{ label }}
         <span v-if="required" class="text-red-500">*</span>
       </label>
-      <button
-        type="button"
-        @click="openPopup()"
-        class="text-sm px-3 py-1.5 bg-[#064654] text-white rounded-lg hover:bg-[#064654]/90 transition-colors flex items-center gap-2"
-      >
+      <button type="button" @click="openPopup()"
+        class="text-sm px-3 py-1.5 bg-[#064654] text-white rounded-lg hover:bg-[#064654]/90 transition-colors flex items-center gap-2">
         <i class="pi pi-plus"></i>
         Ajouter un produit
       </button>
     </div>
 
     <!-- Liste des lignes d'achat -->
-    <div
-      class="grid grid-cols-1 bg-bleu/50 rounded-lg border-2 border-dashed p-4 gap-4"
-    >
-      <div
-        v-for="(item, index) in items"
-        :key="index"
-        @click="openPopup(index)"
-        class="bg-white border rounded-xl p-4 relative group hover:shadow-md transition-shadow cursor-pointer hover:border-primary/50"
-      >
-        <button
-          type="button"
-          @click.stop="removeItem(index)"
-          class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors z-10"
-        >
+    <div class="grid grid-cols-1 bg-bleu/50 rounded-lg border-2 border-dashed p-4 gap-4">
+      <div v-for="(item, index) in items" :key="index" @click="openPopup(index)"
+        class="bg-white border rounded-xl p-4 relative group hover:shadow-md transition-shadow cursor-pointer hover:border-primary/50">
+        <button type="button" @click.stop="removeItem(index)"
+          class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors z-10">
           <i class="pi pi-times"></i>
         </button>
 
@@ -38,47 +26,32 @@
             <div class="font-bold text-lg text-[#064654]">
               {{ getProductName(item.produit_id) }}
             </div>
-            <div
-              v-if="item.quantite_conditionnement"
-              class="text-sm font-medium text-orange-600 bg-orange-50 px-4 py-1 rounded-full flex items-center gap-2 mt-1"
-            >
+            <div v-if="item.quantite_conditionnement"
+              class="text-sm font-medium text-orange-600 bg-orange-50 px-4 py-1 rounded-full flex items-center gap-2 mt-1">
               📦 {{ item.quantite_conditionnement }} colis ({{
                 item.quantite
               }}
               {{ getBaseUnitName(item.produit_id) }}s)
-              <div
-                v-if="item.quantite_recue !== undefined"
-                class="text-xs font-bold"
-                :class="
-                  item.quantite_recue >= item.quantite
-                    ? 'text-green-600'
-                    : 'text-orange-600'
-                "
-              >
+              <div v-if="item.quantite_recue !== undefined" class="text-xs font-bold" :class="item.quantite_recue >= item.quantite
+                  ? 'text-green-600'
+                  : 'text-orange-600'
+                ">
                 Reçu :
                 {{
                   item.conditionnement_id
                     ? item.quantite_recue /
-                      (item.quantite / item.quantite_conditionnement)
+                    (item.quantite / item.quantite_conditionnement)
                     : item.quantite_recue
                 }}
                 / {{ item.quantite_conditionnement }} colis
               </div>
             </div>
-            <div
-              v-else
-              class="text-sm font-medium text-gray-500 bg-gray-100 px-4 py-1 rounded-full inline-block mt-1"
-            >
+            <div v-else class="text-sm font-medium text-gray-500 bg-gray-100 px-4 py-1 rounded-full inline-block mt-1">
               🔢 {{ item.quantite }} {{ getBaseUnitName(item.produit_id) }}s
-              <div
-                v-if="item.quantite_recue !== undefined"
-                class="text-xs font-bold mt-1"
-                :class="
-                  item.quantite_recue >= item.quantite
-                    ? 'text-green-600'
-                    : 'text-orange-600'
-                "
-              >
+              <div v-if="item.quantite_recue !== undefined" class="text-xs font-bold mt-1" :class="item.quantite_recue >= item.quantite
+                  ? 'text-green-600'
+                  : 'text-orange-600'
+                ">
                 Reçu : {{ item.quantite_recue }} / {{ item.quantite }}
               </div>
             </div>
@@ -91,18 +64,14 @@
           </div>
         </div>
 
-        <div
-          class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 border-t pt-3 mt-1"
-        >
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 border-t pt-3 mt-1">
           <div>
             <span class="block text-xs text-gray-400">Prix Unitaire</span>
             <span class="font-medium font-mono">{{
               formatPrice(item.prix_unitaire)
             }}</span>
           </div>
-          <div
-            v-if="item.conditionnement_id && item.conditionnement_id !== 'UNIT'"
-          >
+          <div v-if="item.conditionnement_id && item.conditionnement_id !== 'UNIT'">
             <span class="block text-xs text-gray-400">Prix Colis</span>
             <span class="font-medium font-mono text-orange-600">{{
               formatPrice(getPrixConditionnement(item))
@@ -110,10 +79,7 @@
           </div>
           <div v-if="item.numero_lot">
             <span class="block text-xs text-gray-400">Lot</span>
-            <span
-              class="font-medium font-mono bg-yellow-50 text-yellow-700 px-1 rounded"
-              >{{ item.numero_lot }}</span
-            >
+            <span class="font-medium font-mono bg-yellow-50 text-yellow-700 px-1 rounded">{{ item.numero_lot }}</span>
           </div>
           <div v-if="item.date_peremption">
             <span class="block text-xs text-gray-400">Expiration</span>
@@ -125,82 +91,48 @@
       </div>
 
       <!-- Placeholder Empty State -->
-      <div
-        v-if="items.length === 0"
-        class="col-span-full border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-400 bg-white"
-      >
+      <div v-if="items.length === 0"
+        class="col-span-full border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-400 bg-white">
         <i class="pi pi-shopping-cart text-3xl mb-2"></i>
         <p class="text-sm">Aucun produit ajouté à la commande</p>
-        <button
-          type="button"
-          @click="openPopup()"
-          class="mt-2 text-primary font-medium hover:underline text-sm"
-        >
+        <button type="button" @click="openPopup()" class="mt-2 text-primary font-medium hover:underline text-sm">
           Ajouter un produit
         </button>
       </div>
     </div>
 
-    <Dialog v-model:visible="showPopup" modal
-      :style="{ width: '50rem' }"
-      :breakpoints="{ '1199px': '75vw', '575px': '90vw' }" 
-      @hide="resetPopup"
-      class="overflow-hidden"
-      :showHeader="false"
-    >
+    <Dialog v-model:visible="showPopup" modal :style="{ width: '50rem' }"
+      :breakpoints="{ '1199px': '75vw', '575px': '90vw' }" @hide="resetPopup" class="overflow-hidden"
+      :showHeader="false">
       <div class="header-container relative pt-5 pb-0">
-        <SimplePageHeader 
-          :title="editingIndex !== null ? 'Modifier la ligne' : 'Ajouter un produit'"
+        <SimplePageHeader :title="editingIndex !== null ? 'Modifier la ligne' : 'Ajouter un produit'"
           :description="editingIndex !== null ? 'Ajustez les détails du produit sélectionné.' : 'Sélectionnez un produit et définissez ses quantités.'"
-          class="rounded-2xl"
-        />
+          class="rounded-2xl" />
         <!-- Bouton fermer manuel car showHeader=false -->
-        <button 
-          @click="showPopup = false" 
-          class="absolute top-8 right-8 text-white/70 hover:text-white transition-colors h-8 w-8 flex items-center justify-center rounded-full hover:bg-white/10 z-20"
-        >
+        <button @click="showPopup = false"
+          class="absolute top-8 right-8 text-white/70 hover:text-white transition-colors h-8 w-8 flex items-center justify-center rounded-full hover:bg-white/10 z-20">
           <i class="pi pi-times text-lg"></i>
         </button>
       </div>
       <div class="flex flex-col gap-4 p-6">
         <!-- 1. Sélection Produit -->
         <div class="flex flex-col gap-2">
-          <label class="font-semibold text-gray-700"
-            >Produit <span class="text-red-500">*</span></label
-          >
-          <Select
-            v-model="form.produit_id"
-            :options="produits"
-            optionLabel="nom"
-            optionValue="id"
-            placeholder="Sélectionner un produit"
-            filter
-            class="w-full"
-            @change="onProductChange"
-            :disabled="editingIndex !== null"
-          />
+          <label class="font-semibold text-gray-700">Produit <span class="text-red-500">*</span></label>
+          <Select v-model="form.produit_id" :options="produits" optionLabel="nom" optionValue="id"
+            placeholder="Sélectionner un produit" filter class="w-full" @change="onProductChange"
+            :disabled="editingIndex !== null" />
           <!-- On empêche de changer le produit en modification pour simplifier -->
         </div>
 
         <!-- 2. Conditionnement (Si dispo) -->
-        <div
-          v-if="conditionnementOptions.length > 0"
-          class="flex flex-col gap-2 p-3 bg-orange-50 rounded-lg border border-orange-100"
-        >
+        <div v-if="conditionnementOptions.length > 0"
+          class="flex flex-col gap-2 p-3 bg-orange-50 rounded-lg border border-orange-100">
           <label class="font-semibold text-orange-800 flex items-center gap-2">
             <i class="pi pi-box"></i> Conditionnement d'achat
           </label>
-          <!-- <p class="text-xs text-orange-600 mb-1">Acheter par colis plutôt que par unité.</p> -->
-          <Select
-            v-model="form.conditionnement_id"
-            :options="conditionnementOptions"
-            optionLabel="label"
-            optionValue="id"
-            placeholder="Choisir un conditionnement (Optionnel)"
-            class="w-full"
-            showClear
-            @change="onConditionnementChange"
-          />
+          <Select v-model="form.conditionnement_id" :options="conditionnementOptions" optionLabel="label"
+            optionValue="id" placeholder="Choisir un conditionnement (Optionnel)" class="w-full" showClear
+            @change="onConditionnementChange" />
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -214,19 +146,9 @@
               }}
               <span class="text-red-500">*</span>
             </label>
-            <InputNumber
-              v-model="form.quantite_saisie"
-              :min="1"
-              showButtons
-              buttonLayout="horizontal"
-              :step="1"
-              :useGrouping="false"
-              :maxFractionDigits="3"
-              :minFractionDigits="0"
-              inputClass="text-center"
-              class="w-full"
-              @input="(e) => (form.quantite_saisie = Number(e.value) || 0)"
-            >
+            <InputNumber v-model="form.quantite_saisie" :min="1" showButtons buttonLayout="horizontal" :step="1"
+              :useGrouping="false" :maxFractionDigits="3" :minFractionDigits="0" inputClass="text-center" class="w-full"
+              @input="(e) => (form.quantite_saisie = Number(e.value) || 0)">
               <template #incrementbuttonicon>
                 <span class="pi pi-plus" />
               </template>
@@ -254,27 +176,17 @@
               <span class="text-red-500">*</span>
             </label>
             <InputGroup>
-              <InputGroupAddon
-                v-if="currentCurrency?.symbolPosition === 'before'"
-                class="font-bold text-gray-600 bg-gray-50 border-r-0"
-              >
+              <InputGroupAddon v-if="currentCurrency?.symbolPosition === 'before'"
+                class="font-bold text-gray-600 bg-gray-50 border-r-0">
                 {{ currentCurrency?.symbol }}
               </InputGroupAddon>
 
-              <InputNumber
-                v-model="form.prix_saisie"
-                :min="0"
-                :useGrouping="false"
-                :maxFractionDigits="currencyDecimals"
-                :minFractionDigits="0"
-                class="w-full"
-                @input="(e) => (form.prix_saisie = Number(e.value) || 0)"
-              />
+              <InputNumber v-model="form.prix_saisie" :min="0" :useGrouping="false"
+                :maxFractionDigits="currencyDecimals" :minFractionDigits="0" class="w-full"
+                @input="(e) => (form.prix_saisie = Number(e.value) || 0)" />
 
-              <InputGroupAddon
-                v-if="currentCurrency?.symbolPosition !== 'before'"
-                class="font-bold text-gray-600 bg-gray-50 border-l-0"
-              >
+              <InputGroupAddon v-if="currentCurrency?.symbolPosition !== 'before'"
+                class="font-bold text-gray-600 bg-gray-50 border-l-0">
                 {{ currentCurrency?.symbol }}
               </InputGroupAddon>
             </InputGroup>
@@ -282,10 +194,7 @@
         </div>
 
         <!-- 4.5 Quantité Reçue (Si modification) -->
-        <div
-          v-if="editingIndex !== null"
-          class="p-3 bg-green-50 rounded-lg border border-green-200"
-        >
+        <div v-if="editingIndex !== null" class="p-3 bg-green-50 rounded-lg border border-green-200">
           <div class="flex flex-col gap-2">
             <label class="font-semibold text-green-800">
               Quantité Reçue ({{
@@ -293,16 +202,8 @@
               }})
             </label>
             <div class="flex items-center gap-3">
-              <InputNumber
-                v-model="form.quantite_recue_saisie"
-                :min="0"
-                :max="form.quantite_saisie"
-                showButtons
-                buttonLayout="horizontal"
-                :step="1"
-                inputClass="text-center font-bold text-green-700"
-                class="w-full"
-              >
+              <InputNumber v-model="form.quantite_recue_saisie" :min="0" :max="form.quantite_saisie" showButtons
+                buttonLayout="horizontal" :step="1" inputClass="text-center font-bold text-green-700" class="w-full">
                 <template #incrementbuttonicon>
                   <span class="pi pi-plus" />
                 </template>
@@ -315,16 +216,12 @@
                 {{ form.conditionnement_id ? "Colis" : `${baseUnitLabel}s` }}
               </span>
             </div>
-            <small class="text-green-600"
-              >Saisissez ce qui a été effectivement livré.</small
-            >
+            <small class="text-green-600">Saisissez ce qui a été effectivement livré.</small>
           </div>
         </div>
 
         <!-- 5. Total Readonly -->
-        <div
-          class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border"
-        >
+        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border">
           <span class="font-semibold text-gray-600">Total Ligne :</span>
           <span class="text-xl font-bold text-[#064654]">{{
             formatPrice(formTotal)
@@ -333,42 +230,21 @@
 
         <!-- 6. Détails Lot (Optionnel) -->
         <div class="border-t pt-4 mt-2">
-          <button
-            type="button"
-            @click="showLotDetails = !showLotDetails"
-            class="text-sm font-medium text-primary flex items-center gap-2 mb-2"
-          >
-            <i
-              :class="
-                showLotDetails ? 'pi pi-chevron-down' : 'pi pi-chevron-right'
-              "
-            ></i>
+          <button type="button" @click="showLotDetails = !showLotDetails"
+            class="text-sm font-medium text-primary flex items-center gap-2 mb-2">
+            <i :class="showLotDetails ? 'pi pi-chevron-down' : 'pi pi-chevron-right'
+              "></i>
             Informations de lot (Optionnel)
           </button>
 
-          <div
-            v-if="showLotDetails"
-            class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn"
-          >
+          <div v-if="showLotDetails" class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-700"
-                >Numéro de Lot</label
-              >
-              <InputText
-                v-model="form.numero_lot"
-                placeholder="Ex: BATCH-001"
-              />
+              <label class="text-sm font-medium text-gray-700">Numéro de Lot</label>
+              <InputText v-model="form.numero_lot" placeholder="Ex: BATCH-001" />
             </div>
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-700"
-                >Date d'expiration</label
-              >
-              <DatePicker
-                v-model="form.date_peremption"
-                dateFormat="dd/mm/yy"
-                showIcon
-                fluid
-              />
+              <label class="text-sm font-medium text-gray-700">Date d'expiration</label>
+              <DatePicker v-model="form.date_peremption" dateFormat="dd/mm/yy" showIcon fluid />
             </div>
           </div>
         </div>
@@ -376,19 +252,9 @@
 
       <template #footer>
         <div class="flex justify-end gap-2">
-          <AppButton
-            label="Annuler"
-            icon="pi pi-times"
-            variant="outline"
-            @click="showPopup = false"
-          />
-          <AppButton
-            :label="editingIndex !== null ? 'Mettre à jour' : 'Ajouter'"
-            icon="pi pi-check"
-            variant="primary"
-            @click="submitDirect"
-            :disabled="!isValid"
-          />
+          <AppButton label="Annuler" icon="pi pi-times" variant="outline" @click="showPopup = false" />
+          <AppButton :label="editingIndex !== null ? 'Mettre à jour' : 'Ajouter'" icon="pi pi-check" variant="primary"
+            @click="submitDirect" :disabled="!isValid" />
         </div>
       </template>
     </Dialog>
@@ -572,7 +438,7 @@ const openPopup = (index: number | null = null) => {
             Math.round(
               (item.quantite_recue /
                 selectedConditionnement.value.quantite_base) *
-                100
+              100
             ) / 100;
         } else if (
           item.quantite_recue &&

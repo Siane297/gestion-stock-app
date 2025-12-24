@@ -69,9 +69,9 @@ const achatFields = computed(() => [
   },
   {
     name: 'magasin_id',
-    label: 'Magasin de réception',
+    label: 'Boutique de réception',
     type: 'select' as const,
-    placeholder: 'Sélectionner un magasin',
+    placeholder: 'Sélectionner une boutique',
     required: true,
     options: magasins.value,
     optionLabel: 'nom',

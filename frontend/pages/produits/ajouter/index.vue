@@ -1,11 +1,11 @@
 <template>
   <div>
-    <div class="mt-6 bg-white p-6 rounded-xl shadow-sm border border-gris">
+    <div class="mt-6">
       <!-- Formulaire dynamique -->
-      <FormulaireDynamique
+      <ProduitFormulaire
         title="Ajouter un produit"
         description="Remplissez le formulaire pour créer un nouveau produit dans le catalogue"
-        :fields="productFields"
+        :groups="productGroups"
         submit-label="Enregistrer"
         cancel-label="Annuler"
         :loading="loading"
@@ -55,7 +55,7 @@ definePageMeta({
 
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
-import FormulaireDynamique from "~/components/form/FormulaireDynamique.vue";
+import ProduitFormulaire from "~/components/form/ProduitFormulaire.vue";
 import FormPopupDynamique from "~/components/form/FormPopupDynamique.vue";
 // ... imports
 import { useUniteApi } from "~/composables/api/useUniteApi";
@@ -73,7 +73,7 @@ const toast = useToast();
 const router = useRouter();
 
 // Référence du formulaire
-const formRef = ref<InstanceType<typeof FormulaireDynamique> | null>(null);
+const formRef = ref<InstanceType<typeof ProduitFormulaire> | null>(null);
 
 // État
 const loading = ref(false);
@@ -115,129 +115,149 @@ onMounted(() => {
   loadLists();
 });
 
-// Définition des champs du formulaire produit
-const productFields = computed(() => [
-   {
-    name: "image",
-    label: "Image du produit",
-    type: "image" as const,
-    required: false,
-    placeholder: "Ajouter une image",
-    acceptedFormats: "image/png,image/jpeg,image/jpg,image/webp",
-    maxSize: 5, // 5MB
-    helpText: "Format accepté : PNG, JPG, WEBP. Max 5Mo."
+// Définition des groupes de champs du formulaire produit
+const productGroups = computed(() => [
+  {
+    title: "Informations Générales",
+    icon: "pi pi-info-circle",
+    fields: [
+      {
+        name: "image",
+        label: "Image du produit",
+        type: "image" as const,
+        required: false,
+        placeholder: "Ajouter une image",
+        acceptedFormats: "image/png,image/jpeg,image/jpg,image/webp",
+        maxSize: 5, // 5MB
+        helpText: "Format accepté : PNG, JPG, WEBP. Max 5Mo."
+      },
+      {
+        name: "nom",
+        label: "Nom du produit",
+        type: "text" as const,
+        placeholder: "Ex: Smartphone X",
+        required: true,
+      },
+      // {
+      //   name: "description",
+      //   label: "Description",
+      //   type: "textarea" as const,
+      //   placeholder: "Description détaillée du produit...",
+      //   required: false,
+      // },
+      {
+        name: "code_barre",
+        label: "Code barre",
+        type: "text" as const,
+        placeholder: "Scanner ou saisir le code",
+        required: false,
+      },
+      {
+        name: "unite_id",
+        label: "Unité de base",
+        type: "select-with-add" as const,
+        placeholder: "Sélectionnez l'unité",
+        required: true,
+        options: unites.value,
+        optionLabel: "nom",
+        optionValue: "id",
+      },
+      {
+        name: "categorie_id",
+        label: "Catégorie",
+        type: "select-with-add" as const,
+        placeholder: "Sélectionnez une catégorie",
+        required: false,
+        options: categories.value,
+        optionLabel: "nom",
+        optionValue: "id",
+      },
+    ]
   },
   {
-    name: "nom",
-    label: "Nom du produit",
-    type: "text" as const,
-    placeholder: "Ex: Smartphone X",
-    required: true,
+    title: "Tarification",
+    icon: "pi pi-tag",
+    fields: [
+      {
+        name: "prix_achat",
+        label: "Prix d'achat",
+        type: "currency" as const,
+        placeholder: "0.00",
+        required: true,
+      },
+      {
+        name: "prix_vente",
+        label: "Prix de vente",
+        type: "currency" as const,
+        placeholder: "0.00",
+        required: true,
+      },
+      {
+        name: "marge_min_pourcent",
+        label: "Marge minimum (%)",
+        type: "number" as const,
+        placeholder: "Ex: 20",
+        required: false,
+        min: 0,
+        max: 100,
+        helpText: "Seuil d'alerte si la marge descend sous ce pourcentage."
+      },
+      {
+        name: "tva_pourcentage",
+        label: "TVA (%)",
+        type: "number" as const,
+        placeholder: "Ex: 15",
+        required: false,
+        min: 0,
+        max: 100,
+      },
+    ]
   },
   {
-    name: "description",
-    label: "Description",
-    type: "textarea" as const,
-    placeholder: "Description détaillée du produit...",
-    required: false,
+    title: "Stock & Configuration",
+    icon: "pi pi-box",
+    fields: [
+      {
+        name: "magasin_id",
+        label: "Magasin pour stock initial",
+        type: "select" as const,
+        placeholder: "Sélectionnez un magasin",
+        required: false,
+        options: magasins.value,
+        optionLabel: "nom",
+        optionValue: "id",
+        helpText: "Si vous êtes votre propre fournisseur, saisissez directement la quantité en stock."
+      },
+      {
+        name: "quantite_initiale",
+        label: "Quantité initiale en stock",
+        type: "number" as const,
+        placeholder: "Ex: 100",
+        required: false,
+        min: 0,
+        helpText: "Nombre d'unités disponibles en stock pour ce produit."
+      },
+      {
+        name: "gere_peremption",
+        label: "Gère la péremption",
+        type: "checkbox" as const,
+        required: false,
+        helpText: "Cochez cette case pour activer le suivi des lots et dates de péremption.",
+      },
+    ]
   },
   {
-    name: "code_barre",
-    label: "Code barre",
-    type: "text" as const,
-    placeholder: "Scanner ou saisir le code",
-    required: false,
-  },
-  {
-    name: "unite_id",
-    label: "Unité de base",
-    type: "select-with-add" as const, // Utiliser select-with-add pour les unités aussi
-    placeholder: "Sélectionnez l'unité",
-    required: true, // Peut être false si backend optionnel, mais mieux vaut forcer
-    options: unites.value,
-    optionLabel: "nom",
-    optionValue: "id",
-  },
-  {
-    name: "categorie_id",
-    label: "Catégorie",
-    type: "select-with-add" as const,
-    placeholder: "Sélectionnez une catégorie",
-    required: false,
-    options: categories.value,
-    optionLabel: "nom",
-    optionValue: "id",
-  },
-  {
-    name: "prix_achat",
-    label: "Prix d'achat",
-    type: "currency" as const,
-    placeholder: "0.00",
-    required: true,
-  },
-  {
-    name: "prix_vente",
-    label: "Prix de vente",
-    type: "currency" as const,
-    placeholder: "0.00",
-    required: true,
-  },
-  {
-    name: "marge_min_pourcent",
-    label: "Marge minimum (%)",
-    type: "number" as const,
-    placeholder: "Ex: 20",
-    required: false,
-    min: 0,
-    max: 100,
-    helpText: "Seuil d'alerte si la marge descend sous ce pourcentage."
-  },
-  {
-    name: "tva_pourcentage",
-    label: "TVA (%)",
-    type: "number" as const,
-    placeholder: "Ex: 15",
-    required: false,
-    min: 0,
-    max: 100,
-  },
- 
-   // Stock Initial (optionnel)
-  {
-    name: "magasin_id",
-    label: "Magasin pour stock initial",
-    type: "select" as const,
-    placeholder: "Sélectionnez un magasin",
-    required: false,
-    options: magasins.value,
-    optionLabel: "nom",
-    optionValue: "id",
-    helpText: "Si vous êtes votre propre fournisseur, saisissez directement la quantité en stock."
-  },
-  {
-    name: "quantite_initiale",
-    label: "Quantité initiale en stock",
-    type: "number" as const,
-    placeholder: "Ex: 100",
-    required: false,
-    min: 0,
-    helpText: "Nombre d'unités disponibles en stock pour ce produit."
-  },
-  {
-    name: "conditionnements",
-    label: "Conditionnements",
-    type: "conditionnement" as const,
-    required: false,
-  },
-   {
-    name: "gere_peremption",
-    label: "Gère la péremption",
-    type: "checkbox" as const,
-    required: false,
-    helpText:
-      "Cochez cette case pour activer le suivi des lots et dates de péremption.",
-  },
- 
+    title: "Vente & Formats",
+    icon: "pi pi-shopping-bag",
+    fields: [
+      {
+        name: "conditionnements",
+        label: "Conditionnements",
+        type: "conditionnement" as const,
+        required: false,
+      },
+    ]
+  }
 ]);
 
 // Gestion de la soumission

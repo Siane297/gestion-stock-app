@@ -172,7 +172,7 @@ export class ProduitService {
 
     return this.prisma.produit.findMany({
       where,
-      orderBy: { nom: 'asc' },
+      orderBy: { date_creation: 'desc' },
       include: {
         categorie: true,
         unite: true,

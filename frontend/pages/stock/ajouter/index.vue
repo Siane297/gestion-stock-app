@@ -105,7 +105,7 @@ const stockFields = computed(() => {
     const fields = [
     {
         name: 'magasin_id',
-        label: 'Magasin',
+        label: 'Boutique',
         type: 'select' as const,
         required: true,
         options: magasins.value,
@@ -130,8 +130,8 @@ const stockFields = computed(() => {
     // Only show conditionnement if product is selected
     ...(selectedProduct.value ? [{
         name: 'conditionnement_id',
-        label: 'Conditionnement / Format',
-        type: 'select' as const, 
+        label: "Conditionnement / Format d'achat",
+        type: 'select-packaging' as const, 
         required: true, 
         options: conditionnementOptions.value,
         optionLabel: 'label',
@@ -147,7 +147,7 @@ const stockFields = computed(() => {
         placeholder: 'Sélectionner un type de mouvement',
         required: true,
         options: [
-            { label: 'Achat', value: 'ENTREE_ACHAT' },
+            { label: 'Entrée', value: 'ENTREE_ACHAT' },
             { label: 'Retour', value: 'ENTREE_RETOUR' },
             { label: 'Vente', value: 'SORTIE_VENTE' },
             { label: 'Périssable', value: 'SORTIE_PERISSABLE' },

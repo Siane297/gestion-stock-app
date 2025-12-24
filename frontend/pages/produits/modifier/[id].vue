@@ -5,17 +5,17 @@
       description="Mettre à jour les informations du produit"
     /> -->
 
-    <div class="mt-6 bg-white p-6 rounded-xl shadow-sm border border-gris">
+    <div class="mt-6">
         <div v-if="loadingInitial" class="flex justify-center p-8">
             <span class="text-gray-500">Chargement du produit...</span>
         </div>
 
       <!-- Formulaire dynamique -->
-      <FormulaireDynamique
+      <ProduitFormulaire
         v-else
         title="Détails du Produit"
         description="Modifiez les informations ci-dessous."
-        :fields="productFields"
+        :groups="productGroups"
         submit-label="Enregistrer les modifications"
         cancel-label="Annuler"
         :loading="loading"
@@ -67,7 +67,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
-import FormulaireDynamique from "~/components/form/FormulaireDynamique.vue";
+import ProduitFormulaire from "~/components/form/ProduitFormulaire.vue";
 import FormPopupDynamique from "~/components/form/FormPopupDynamique.vue";
 import { useProduitApi, type UpdateProduitDto, type Produit } from "~/composables/api/useProduitApi";
 import { useUniteApi } from "~/composables/api/useUniteApi";
@@ -86,7 +86,7 @@ const produitId = route.params.id as string;
 const produit = ref<Produit | null>(null);
 
 // Référence du formulaire
-const formRef = ref<InstanceType<typeof FormulaireDynamique> | null>(null);
+const formRef = ref<InstanceType<typeof ProduitFormulaire> | null>(null);
 
 // État
 const loading = ref(false);
@@ -161,134 +161,157 @@ const getFullImageUrl = (path?: string) => {
     return `${serverUrl}${path}`;
 };
 
-// Définition des champs
-const productFields = computed(() => {
-    if (!produit.value) return [];
+// Définition des groupes de champs du formulaire produit
+const productGroups = computed(() => {
+  if (!produit.value) return [];
+  
+  const prixVente = produit.value.conditionnements?.find(c => c.quantite_base === 1)?.prix_vente || produit.value.prix_vente;
+  const prixAchat = produit.value.conditionnements?.find(c => c.quantite_base === 1)?.prix_achat || produit.value.prix_achat;
+  const codeBarre = produit.value.code_barre;
 
-    // Extract base values
-    const prixVente = produit.value.prix_vente;
-    const prixAchat = produit.value.prix_achat;
-    const codeBarre = produit.value.code_barre;
-
-    return [
-   {
-    name: "image",
-    label: "Image du produit",
-    type: "image" as const,
-    required: false,
-    value: getFullImageUrl(produit.value.image_url), // use snake_case property from backend
-    placeholder: "Ajouter/Modifier image",
-    acceptedFormats: "image/png,image/jpeg,image/jpg,image/webp",
-    maxSize: 5
-  },
-  {
-    name: "nom",
-    label: "Nom du produit",
-    type: "text" as const,
-    placeholder: "Ex: Smartphone X",
-    required: true,
-    value: produit.value.nom
-  },
-  // {
-  //   name: "description",
-  //   label: "Description",
-  //   type: "textarea" as const,
-  //   placeholder: "Description détaillée du produit...",
-  //   required: false,
-  //   value: produit.value.description
-  // },
-  {
-    name: "code_barre",
-    label: "Code barre",
-    type: "text" as const,
-    placeholder: "Scanner ou saisir le code",
-    required: false,
-    value: codeBarre
-  },
- 
-  {
-    name: "unite_id",
-    label: "Unité de base",
-    type: "select-with-add" as const,
-    placeholder: "Sélectionnez l'unité",
-    required: true,
-    value: produit.value.unite_id,
-    options: unites.value,
-    optionLabel: "nom",
-    optionValue: "id",
-  },
-  {
-    name: "categorie_id",
-    label: "Catégorie",
-    type: "select-with-add" as const,
-    placeholder: "Sélectionnez une catégorie",
-    required: false, 
-    value: produit.value.categorie_id,
-    options: categories.value,
-    optionLabel: "nom",
-    optionValue: "id",
-  },
-  {
-    name: "prix_achat",
-    label: "Prix d'achat",
-    type: "currency" as const,
-    placeholder: "0.00",
-    required: false,
-    value: prixAchat
-  },
-  {
-    name: "prix_vente",
-    label: "Prix de vente",
-    type: "currency" as const,
-    placeholder: "0.00",
-    required: true,
-    value: prixVente
-  },
-  {
-    name: "marge_min_pourcent",
-    label: "Marge minimum (%)",
-    type: "number" as const,
-    placeholder: "Ex: 20",
-    required: false,
-    min: 0,
-    max: 100,
-    value: produit.value.marge_min_pourcent,
-    helpText: "Seuil d'alerte si la marge descend sous ce pourcentage."
-  },
-  {
-    name: "tva_pourcentage",
-    label: "TVA (%)",
-    type: "number" as const,
-    placeholder: "Ex: 15",
-    required: false,
-    value: produit.value.tva_pourcentage,
-    min: 0,
-    max: 100,
-  },
-  {
-    name: "conditionnements",
-    label: "Conditionnements",
-    type: "conditionnement" as const,
-    required: false,
-    value: produit.value.conditionnements 
-  },
-  {
-    name: "gere_peremption",
-    label: "Gère la péremption",
-    type: "checkbox" as const,
-    required: false,
-    value: produit.value.gere_peremption, 
-    helpText: "Activer le suivi des lots et dates de péremption."
-  },
-  {
-    name: 'est_actif',
-    label: 'Produit Actif',
-    type: 'checkbox' as const,
-    required: false,
-    value: produit.value.est_actif,
-    helpText: 'Décochez pour archiver ce produit.'
-  }
-]});
+  return [
+    {
+      title: "Informations Générales",
+      icon: "pi pi-info-circle",
+      fields: [
+        {
+          name: "image",
+          label: "Image du produit",
+          type: "image" as const,
+          required: false,
+          value: getFullImageUrl(produit.value.image_url),
+          placeholder: "Ajouter/Modifier image",
+          acceptedFormats: "image/png,image/jpeg,image/jpg,image/webp",
+          maxSize: 5
+        },
+        {
+          name: "nom",
+          label: "Nom du produit",
+          type: "text" as const,
+          placeholder: "Ex: Smartphone X",
+          required: true,
+          value: produit.value.nom
+        },
+        // {
+        //   name: "description",
+        //   label: "Description",
+        //   type: "textarea" as const,
+        //   placeholder: "Description détaillée du produit...",
+        //   required: false,
+        //   value: produit.value.description
+        // },
+        {
+          name: "code_barre",
+          label: "Code barre",
+          type: "text" as const,
+          placeholder: "Scanner ou saisir le code",
+          required: false,
+          value: codeBarre
+        },
+        {
+          name: "unite_id",
+          label: "Unité de base",
+          type: "select-with-add" as const,
+          placeholder: "Sélectionnez l'unité",
+          required: true,
+          value: produit.value.unite_id,
+          options: unites.value,
+          optionLabel: "nom",
+          optionValue: "id",
+        },
+        {
+          name: "categorie_id",
+          label: "Catégorie",
+          type: "select-with-add" as const,
+          placeholder: "Sélectionnez une catégorie",
+          required: false, 
+          value: produit.value.categorie_id,
+          options: categories.value,
+          optionLabel: "nom",
+          optionValue: "id",
+        },
+      ]
+    },
+    {
+      title: "Tarification",
+      icon: "pi pi-tag",
+      fields: [
+        {
+          name: "prix_achat",
+          label: "Prix d'achat",
+          type: "currency" as const,
+          placeholder: "0.00",
+          required: false,
+          value: prixAchat
+        },
+        {
+          name: "prix_vente",
+          label: "Prix de vente",
+          type: "currency" as const,
+          placeholder: "0.00",
+          required: true,
+          value: prixVente
+        },
+        {
+          name: "marge_min_pourcent",
+          label: "Marge minimum (%)",
+          type: "number" as const,
+          placeholder: "Ex: 20",
+          required: false,
+          min: 0,
+          max: 100,
+          value: produit.value.marge_min_pourcent,
+          helpText: "Seuil d'alerte si la marge descend sous ce pourcentage."
+        },
+        {
+          name: "tva_pourcentage",
+          label: "TVA (%)",
+          type: "number" as const,
+          placeholder: "Ex: 15",
+          required: false,
+          value: produit.value.tva_pourcentage,
+          min: 0,
+          max: 100,
+        },
+      ]
+    },
+    {
+      title: "Vente & Formats",
+      icon: "pi pi-shopping-bag",
+      fields: [
+        {
+          name: "conditionnements",
+          label: "Conditionnements",
+          type: "conditionnement" as const,
+          required: false,
+          value: produit.value.conditionnements 
+        },
+      ]
+    },
+    {
+      title: "Configuration",
+      icon: "pi pi-cog",
+      fields: [
+        {
+          name: "gere_peremption",
+          label: "Gère la péremption",
+          type: "checkbox" as const,
+          required: false,
+          value: produit.value.gere_peremption, 
+          helpText: "Activer le suivi des lots et dates de péremption."
+        },
+        {
+          name: 'est_actif',
+          label: 'Produit Actif',
+          type: 'checkbox' as const,
+          required: false,
+          value: produit.value.est_actif,
+          helpText: 'Décochez pour archiver ce produit.'
+        }
+      ]
+    }
+  ]
+});
 
 // Gestion de la soumission
 const handleSubmit = async (data: Record<string, any>) => {
