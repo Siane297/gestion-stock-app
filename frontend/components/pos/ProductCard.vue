@@ -39,7 +39,7 @@
       </div>
 
       <div class="mt-1.5 flex items-end justify-between">
-        <span class="font-bold text-base text-[#064654]" :class="{ 'text-gray-500': isOutOfStock }">{{ formatPrice(item.price) }}</span>
+        <span class="font-bold md:text-[12px] text-[14px] text-[#064654]" :class="{ 'text-gray-500': isOutOfStock }">{{ formatPrice(item.price) }}</span>
         <!-- Stock indicator (opt) -->
         <span 
             class="text-[10px] px-1.5 py-0.5 rounded-full font-bold border" 

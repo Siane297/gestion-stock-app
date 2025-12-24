@@ -156,9 +156,9 @@ const nameClasses = computed(() => {
         xs: 'tracking-wide text-xs',
         sm: 'tracking-wide text-sm',
         md: 'tracking-wide text-base',
-        lg: 'tracking-wide text-lg',
-        xl: 'tracking-wide text-xl',
-        '2xl': 'tracking-wide text-2xl',
+        lg: 'tracking-wide md:text-[14px] text-[14px] lg:text-lg',
+        xl: 'tracking-wide md:text-[14px] text-[14px] lg:text-xl',
+        '2xl': 'tracking-wide md:text-[14px] text-[14px] lg:text-2xl',
     };
 
     return `font-medium text-noir ${sizeClasses[props.size]}`;

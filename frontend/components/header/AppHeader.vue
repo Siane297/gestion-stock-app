@@ -34,13 +34,23 @@
       <div class="relative">
         <!-- Desktop: Avatar + Nom + Rôle -->
         <button @click="toggleUserMenu"
-          class="hidden lg:flex items-center gap-6 px-2 py-2 bg-bleu/50 rounded-full transition-colors">
+          class="hidden lg:flex items-center gap-6 px-2 py-2 bg-bleu/60  rounded-full transition-colors">
           <AvatarInitials :name="userName" :subtitle="userRole" size="md" :show-name="true" />
           <Icon icon="lucide:chevron-down" class="text-noir w-5 h-auto transition-transform"
             :class="{ 'rotate-180': isUserMenuOpen }" />
         </button>
 
 
+
+        <!-- Mobile: Avatar + Menu Burger (Mobile/Tablet uniquement) -->
+        <div class="bg-bleu/60 lg:hidden px-3 py-2 rounded-full flex items-center gap-2">
+            <button @click="toggleUserMenu" class="">
+            <AvatarInitials :name="userName" size="sm" :show-name="false" />
+            </button>
+            <button class="bg-white p-2 rounded-full transition-colors" @click="$emit('toggle-sidebar')">
+            <Icon icon="tabler:menu-3" class="text-2xl text-noir" />
+            </button>
+        </div>
 
         <!-- User Dropdown Menu -->
         <Transition name="dropdown">
@@ -65,16 +75,6 @@
             </button>
           </div>
         </Transition>
-      </div>
-      <div class="bg-slot lg:hidden px-3 py-2 rounded-full flex items-center gap-2">
-        <!-- Mobile: Avatar uniquement -->
-        <button @click="toggleUserMenu" class="">
-          <AvatarInitials :name="userName" size="sm" :show-name="false" />
-        </button>
-        <!-- Menu Burger (Mobile/Tablet uniquement) -->
-        <button class="bg-white p-2 rounded-full transition-colors" @click="$emit('toggle-sidebar')">
-          <Icon icon="tabler:menu-3" class="text-2xl text-noir" />
-        </button>
       </div>
     </div>
   </header>

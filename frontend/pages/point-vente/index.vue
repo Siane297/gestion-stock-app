@@ -80,7 +80,7 @@
                     <p>Aucun produit trouvé</p>
                 </div>
 
-                <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-3">
+                <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-3">
                     <ProductCard v-for="item in store.filteredItems" :key="item.uniqueId" :item="item"
                         @add="handleAddToCart" />
                 </div>
