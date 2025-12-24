@@ -104,8 +104,8 @@
             :loading="closureLoading"
             @submit="handleClosureSubmit"
         />
-
-        <Toast />
+        
+        <!-- Toast supprimé car global dans App.vue -->
     </div>
 </template>
 
@@ -121,7 +121,6 @@ import PinPad from '~/components/pos/PinPad.vue';
 import ProgressSpinner from 'primevue/progressspinner';
 import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
 import type { FormField } from '~/components/form/FormulaireDynamique.vue';
-import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 
 definePageMeta({

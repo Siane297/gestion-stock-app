@@ -149,8 +149,6 @@
     <HeldOrdersModal 
         v-model:visible="showHeldOrders"
     />
-
-    <Toast />
   </div>
 </template>
 

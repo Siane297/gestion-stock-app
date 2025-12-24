@@ -35,31 +35,7 @@
 import Dialog from 'primevue/dialog';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import FormulaireDynamique from '~/components/form/FormulaireDynamique.vue';
-
-interface FormField {
-  name: string;
-  label: string;
-  type: "text" | "email" | "password" | "select" | "select-with-add" | "number" | "date" | "time" | "textarea" | "image" | "color" | "conditionnement" | "checkbox" | "currency" | "achat-lines";
-  placeholder?: string;
-  required?: boolean;
-  options?: string[] | any[];
-  optionLabel?: string;
-  optionValue?: string;
-  min?: number;
-  max?: number;
-  showIcon?: boolean;
-  disabled?: boolean;
-  value?: string | number | boolean | Date;
-  onAdd?: () => void;
-  onImageUpload?: (file: File) => Promise<string>;
-  onImageRemove?: () => Promise<void>;
-  filter?: boolean;
-  showFlag?: boolean;
-  showLabel?: boolean;
-  fixedWidth?: boolean;
-  helpText?: string;
-  fullWidth?: boolean;
-}
+import type { FormField } from '~/components/form/FormulaireDynamique.vue';
 
 interface Props {
   visible: boolean;
