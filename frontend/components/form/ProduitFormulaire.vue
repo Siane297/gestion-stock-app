@@ -11,10 +11,10 @@
     <form @submit.prevent="handleSubmit" class="flex flex-col gap-8 pb-12">
       <!-- Groupes de champs -->
       <div v-for="(group, groupIndex) in groups" :key="groupIndex" 
-           class="bg-white border border-gris rounded-xl p-8 shadow-sm flex flex-col gap-8">
+           class="bg-white border-2 border-gris/40 rounded-xl p-8  flex flex-col gap-8">
         
         <!-- Titre du groupe avec Icône -->
-        <div v-if="group.title" class="flex items-center gap-3 border-b border-gray-100 pb-4">
+        <div v-if="group.title" class="flex items-center gap-3 border-b border-gris pb-4">
           <div v-if="group.icon" class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <i :class="group.icon" class="text-lg"></i>
           </div>
@@ -23,17 +23,27 @@
 
         <!-- Grille des champs du groupe -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          <div v-for="(field, fieldIndex) in group.fields" :key="field.name" :class="getFieldClass(group.fields, fieldIndex)"
-            class="flex flex-col gap-2">
-
-            <label v-if="field.showLabel !== false && field.type !== 'conditionnement' && field.type !== 'achat-lines' && field.type !== 'image' && field.type !== 'select-packaging'" :for="field.name"
+          <template v-for="(field, fieldIndex) in (group.fields || []).filter(f => f.visible !== false)" :key="field.name">
+            <div :class="getFieldClass((group.fields || []).filter(f => f.visible !== false), fieldIndex)"
+              class="flex flex-col gap-2">
+ 
+            <label v-if="field.showLabel !== false && !['conditionnement', 'achat-lines', 'image', 'select-packaging', 'info-divider'].includes(field.type)" :for="field.name"
               class="font-semibold text-gray-700">
               {{ field.label }}
               <span v-if="field.required" class="text-red-500">*</span>
             </label>
-
+ 
+             <!-- info-divider (Design Orange) -->
+             <div v-if="field.type === 'info-divider'" 
+               class="bg-orange-100/50 border-l-4 border-orange-400 p-3 rounded-r-lg mb-2">
+               <div class="flex items-center gap-2 text-orange-800 font-bold uppercase text-xs tracking-wider">
+                 <i :class="field.icon || 'pi pi-info-circle'"></i>
+                 {{ field.label }}
+               </div>
+             </div>
+ 
             <!-- Input Text / Email -->
-            <InputText v-if="field.type === 'text' || field.type === 'email'" :id="field.name"
+            <InputText v-else-if="field.type === 'text' || field.type === 'email'" :id="field.name"
               v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
               :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
               class="w-full h-11" @input="validateFieldRealTime(field)" />
@@ -120,10 +130,34 @@
             <Textarea v-else-if="field.type === 'textarea'" :id="field.name" v-model="formData[field.name]"
               :placeholder="field.placeholder" :invalid="submitted && field.required && !formData[field.name]"
               rows="3" class="w-full" />
+ 
+            <!-- DatePicker -->
+            <DatePicker v-else-if="field.type === 'date'" :id="field.name" v-model="formData[field.name]"
+              :placeholder="field.placeholder" :invalid="submitted && field.required && !formData[field.name]"
+              showIcon fluid dateFormat="dd/mm/yy" class="w-full h-11" />
 
             <!-- Conditionnement Field -->
             <ConditionnementField v-else-if="field.type === 'conditionnement'" v-model="formData[field.name]"
               :label="field.label" />
+
+            <!-- Lot Fields Group (Design Orange style Achat) -->
+            <div v-else-if="field.type === 'lot-fields' && field.visible !== false"
+              class="md:col-span-2 flex flex-col gap-4 p-4 bg-orange-50/60 rounded-xl border border-orange-200">
+              <label class="font-bold text-orange-800 flex items-center gap-2 uppercase text-xs tracking-wider">
+                <i :class="field.icon || 'pi pi-box'"></i> {{ field.label }}
+                <span v-if="field.required" class="text-red-500">*</span>
+              </label>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-600">Numéro de Lot</label>
+                    <InputText v-model="formData[field.name]" placeholder="Ex: LOT-2024-001" class="w-full h-11" />
+                 </div>
+                 <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-600">Date de péremption</label>
+                    <DatePicker v-if="field.name2" v-model="formData[field.name2]" placeholder="Sélectionner une date" showIcon fluid dateFormat="dd/mm/yy" class="w-full h-11" />
+                 </div>
+              </div>
+            </div>
 
             <!-- Checkbox -->
             <div v-else-if="field.type === 'checkbox'" class="flex items-center gap-3 mt-2">
@@ -161,8 +195,9 @@
               {{ field.helpText }}
             </small>
           </div>
-        </div>
+        </template>
       </div>
+    </div>
 
       <!-- Boutons d'action -->
       <div class="flex justify-end gap-4 p-6 bg-white border border-gris rounded-xl shadow-sm">
@@ -191,6 +226,7 @@ import AppButton from "~/components/button/AppButton.vue";
 import ConfirmationDialog from "~/components/dialog/ConfirmationDialog.vue";
 import InputNumber from "primevue/inputnumber";
 import Checkbox from 'primevue/checkbox';
+import DatePicker from 'primevue/datepicker';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
 import ImageUploadField from "~/components/form/ImageUploadField.vue";
@@ -283,7 +319,7 @@ watch(formData, (newVal) => {
 
 const getFieldClass = (groupFields: FormField[], index: number) => {
   const field = groupFields[index];
-  const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'image');
+  const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'image' || f.type === 'lot-fields');
 
   if (groupFields.length === 2 && !isFullWidthField(groupFields[0]) && !isFullWidthField(groupFields[1])) {
     return "md:col-span-1";
@@ -315,10 +351,17 @@ const handleSubmit = async () => {
 
   try {
     const isValid = allFields.value.every((field) => {
+      if (field.visible === false) return true;
       if (field.required) {
-        return formData.value[field.name] !== undefined && 
-               formData.value[field.name] !== null && 
-               formData.value[field.name].toString().trim() !== "";
+        const val1 = formData.value[field.name];
+        const ok1 = val1 !== undefined && val1 !== null && val1.toString().trim() !== "";
+        
+        if (field.type === 'lot-fields' && field.name2) {
+            const val2 = formData.value[field.name2];
+            const ok2 = val2 !== undefined && val2 !== null && val2.toString().trim() !== "";
+            return ok1 && ok2;
+        }
+        return ok1;
       }
       return true;
     });

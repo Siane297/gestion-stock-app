@@ -14,17 +14,27 @@
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Champs dynamiques -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div v-for="(field, index) in fields" :key="field.name" :class="getFieldClass(index)"
-              class="flex flex-col gap-2">
+            <template v-for="(field, index) in visibleFields" :key="field.name">
+              <div :class="getFieldClass(visibleFields, index)"
+                class="flex flex-col gap-2">
 
-              <label v-if="field.showLabel !== false && field.type !== 'conditionnement' && field.type !== 'achat-lines' && field.type !== 'image' && field.type !== 'select-packaging'" :for="field.name"
-                class="font-semibold text-gray-700">
-                {{ field.label }}
-                <span v-if="field.required" class="text-red-500">*</span>
-              </label>
+              <label v-if="field.showLabel !== false && !['conditionnement', 'achat-lines', 'image', 'select-packaging', 'info-divider'].includes(field.type)" :for="field.name"
+                 class="font-semibold text-gray-700">
+                 {{ field.label }}
+                 <span v-if="field.required" class="text-red-500">*</span>
+               </label>
 
-              <!-- Input Text / Email -->
-              <InputText v-if="field.type === 'text' || field.type === 'email'" :id="field.name"
+               <!-- info-divider (Design Orange) -->
+               <div v-if="field.type === 'info-divider'" 
+                 class="bg-orange-100/50 border-l-4 border-orange-400 p-3 rounded-r-lg mb-2">
+                 <div class="flex items-center gap-2 text-orange-800 font-bold uppercase text-xs tracking-wider">
+                   <i :class="field.icon || 'pi pi-info-circle'"></i>
+                   {{ field.label }}
+                 </div>
+               </div>
+ 
+               <!-- Input Text / Email -->
+               <InputText v-else-if="field.type === 'text' || field.type === 'email'" :id="field.name"
                 v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
                 :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
                 class="w-full" @input="validateFieldRealTime(field)" />
@@ -140,6 +150,25 @@
               <AchatLinesField v-else-if="field.type === 'achat-lines'" v-model="formData[field.name]"
                 :label="field.label" :required="field.required" />
 
+              <!-- Lot Fields Group (Design Orange) -->
+              <div v-else-if="field.type === 'lot-fields'"
+                class="flex flex-col gap-4 p-4 bg-orange-50/60 rounded-xl border border-orange-200">
+                <label class="font-bold text-orange-800 flex items-center gap-2 uppercase text-xs tracking-wider">
+                  <i :class="field.icon || 'pi pi-box'"></i> {{ field.label }}
+                  <span v-if="field.required" class="text-red-500">*</span>
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div class="flex flex-col gap-1.5">
+                      <label class="text-sm font-semibold text-gray-600">Numéro de Lot</label>
+                      <InputText v-model="formData[field.name]" placeholder="Ex: LOT-2024-001" class="w-full" />
+                   </div>
+                   <div class="flex flex-col gap-1.5">
+                      <label class="text-sm font-semibold text-gray-600">Date de péremption</label>
+                      <DatePicker v-if="field.name2" v-model="formData[field.name2]" placeholder="Sélectionner une date" showIcon fluid dateFormat="dd/mm/yy" class="w-full" />
+                   </div>
+                </div>
+              </div>
+
               <!-- Checkbox -->
               <div v-else-if="field.type === 'checkbox'" class="flex items-center gap-2 mt-2">
                 <Checkbox :inputId="field.name" v-model="formData[field.name]" :binary="true"
@@ -173,12 +202,14 @@
                 {{ errors[field.name] }}
               </small>
 
-              <!-- Help Text (Generic) -->
-              <small v-if="field.helpText && field.type !== 'checkbox'" class="block text-gray-500 text-xs mt-1">
-                {{ field.helpText }}
-              </small>
-            </div>
-          </div>
+ 
+               <!-- Help Text (Generic) -->
+               <small v-if="field.helpText && field.type !== 'checkbox'" class="block text-gray-500 text-xs mt-1">
+                 {{ field.helpText }}
+               </small>
+             </div>
+           </template>
+        </div>
 
           <!-- Boutons -->
           <div class="flex justify-end gap-4 pt-6 border-t border-gray-200">
@@ -240,6 +271,8 @@ export interface FormField {
   | "checkbox"
   | "currency"
   | "select-packaging"
+  | "info-divider"
+  | "lot-fields"
   | "achat-lines";
   placeholder?: string;
   required?: boolean;
@@ -248,7 +281,9 @@ export interface FormField {
   optionValue?: string; // Propriété pour la valeur du select (ex: 'value', 'id')
   min?: number;
   max?: number;
+  icon?: string;
   showIcon?: boolean;
+  visible?: boolean;
   disabled?: boolean;
   value?: string | number | Date | boolean | any;
   onAdd?: () => void; // Callback pour le bouton +
@@ -260,6 +295,7 @@ export interface FormField {
   fixedWidth?: boolean; // Largeur fixe de 30% au lieu de responsive
   fullWidth?: boolean; // Force la largeur à 100%
   helpText?: string;
+  name2?: string; // Deuxième nom de champ (pour lot-fields)
 }
 
 interface Props {
@@ -351,68 +387,39 @@ watch(
 watch(
   formData,
   (newVal) => {
-      emit('change', newVal);
+      emit('change', { ...newVal });
   },
-  { deep: true }
+  { deep: true, immediate: true }
 );
 
+const visibleFields = computed(() => {
+  return (props.fields || []).filter(f => f.visible !== false);
+});
+
 // Déterminer la classe du champ (2 par 2, orphelin prend 100%)
-const getFieldClass = (index: number) => {
-  const field = props.fields[index];
+const getFieldClass = (visibleFields: FormField[], index: number) => {
+  const field = visibleFields[index];
+  const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'achat-lines' || f.type === 'image' || f.type === 'lot-fields');
 
-  // Fonction utilitaire pour vérifier si un champ force le "Pleine Largeur"
-  const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'achat-lines' || f.type === 'image');
+  if (visibleFields.length === 1 || isFullWidthField(field)) return "md:col-span-2";
 
-  // 0. Si on a exactement 2 champs, on force chacun à prendre 100% de la largeur
-  if (props.fields.length === 2) {
-    return "md:col-span-2";
-  }
-
-  // 1. Si le champ actuel est explicitement Pleine Largeur, on retourne col-span-2
-  if (isFullWidthField(field)) {
-    return "md:col-span-2";
-  }
-
-  // 2. Calculer l'alignement actuel (0 = Gauche/Début, 1 = Droite/Fin)
-  // On doit simuler le placement des champs précédents pour savoir où on tombe
   let align = 0;
   for (let i = 0; i < index; i++) {
-    const prevField = props.fields[i];
+    const prevField = visibleFields[i];
 
     if (isFullWidthField(prevField)) {
-      align = 0; // Un champ full width force le retour à la ligne
+      align = 0;
     } else {
-      // C'est un champ standard. A-t-il pris 1 ou 2 slots ?
-      // Il prend 2 slots s'il était à Gauche (0) ET (C'était le dernier OU le suivant était Full)
-      const nextField = props.fields[i + 1]; // Existe car i < index
-      // Note: nextField ici est props.fields[i+1], qui est le champ actuel si i == index-1
-
+      const nextField = visibleFields[i + 1];
       const isOrphan = (align === 0) && (!nextField || isFullWidthField(nextField));
-
-      if (isOrphan) {
-        align = 0; // Il a pris toute la ligne, donc le prochain (nous) commence à 0
-      } else {
-        align = (align + 1) % 2; // Il a pris 1 slot, on avance
-      }
+      if (isOrphan) align = 0;
+      else align = (align + 1) % 2;
     }
   }
 
-  // 3. Appliquer la logique sur le champ actuel selon son alignement
-  if (align === 1) {
-    // On est à Droite (2ème sur la ligne). On prend juste notre place.
-    return "md:col-span-1";
-  } else {
-    // On est à Gauche (1er sur la ligne).
-    // On doit vérifier si on est "Orphelin" pour s'étendre
-    const nextField = props.fields[index + 1];
-    const willBeOrphan = !nextField || isFullWidthField(nextField);
-
-    if (willBeOrphan) {
-      return "md:col-span-2"; // Extension
-    } else {
-      return "md:col-span-1"; // Normal
-    }
-  }
+  if (align === 1) return "md:col-span-1";
+  const nextField = visibleFields[index + 1];
+  return (!nextField || isFullWidthField(nextField)) ? "md:col-span-2" : "md:col-span-1";
 };
 
 // Validation et soumission
@@ -423,11 +430,17 @@ const handleSubmit = async () => {
   try {
     // Valider les champs requis
     const isValid = props.fields.every((field) => {
+      if (field.visible === false) return true;
       if (field.required) {
-        return (
-          formData.value[field.name] &&
-          formData.value[field.name].toString().trim() !== ""
-        );
+        const val1 = formData.value[field.name];
+        const ok1 = val1 !== undefined && val1 !== null && val1.toString().trim() !== "";
+        
+        if (field.type === 'lot-fields' && field.name2) {
+            const val2 = formData.value[field.name2];
+            const ok2 = val2 !== undefined && val2 !== null && val2.toString().trim() !== "";
+            return ok1 && ok2;
+        }
+        return ok1;
       }
       return true;
     });

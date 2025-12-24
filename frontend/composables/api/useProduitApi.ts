@@ -63,6 +63,12 @@ export interface CreateProduitDto {
   marge_min_pourcent?: number;
   tva_pourcentage?: number;
   gere_peremption?: boolean;
+  // Stock initial
+  magasin_id?: string;
+  quantite_initiale?: number;
+  stock_minimum?: number;
+  numero_lot?: string;
+  date_peremption?: string;
   conditionnements?: Array<{
     nom: string;
     quantite_base: number;
@@ -88,6 +94,7 @@ export interface UpdateProduitDto {
   tva_pourcentage?: number;
   gere_peremption?: boolean;
   est_actif?: boolean;
+  stock_minimum?: number;
   conditionnements?: Array<{
     id?: string;
     nom?: string;

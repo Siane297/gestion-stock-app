@@ -21,6 +21,7 @@ export interface CreateProduitDto {
   // Stock initial
   magasin_id?: string;         // Magasin par défaut pour le stock initial
   quantite_initiale?: number;  // Quantité en stock à la création
+  stock_minimum?: number;      // Seuil d'alerte (stock minimum)
   conditionnements?: Array<{
     nom: string;
     quantite_base: number;
@@ -29,7 +30,9 @@ export interface CreateProduitDto {
     code_barre?: string;
     image_url?: string;
     image_id?: string;
-  }>;
+   }>;
+  numero_lot?: string;
+  date_peremption?: Date;
   image_url?: string;
   image_id?: string;
 }
@@ -46,6 +49,7 @@ export interface UpdateProduitDto {
   tva_pourcentage?: number;
   gere_peremption?: boolean;
   est_actif?: boolean;
+  stock_minimum?: number;
   raison_changement_prix?: string;
   // Ajustement de stock (optionnel lors de la modification)
   stock_ajustements?: Array<{
@@ -320,6 +324,9 @@ export class ProduitService {
           produit_id: produit.id,
           type: 'ENTREE_INITIALE',
           quantite: quantiteInitiale,
+          quantite_minimum: data.stock_minimum !== undefined ? Number(data.stock_minimum) : undefined,
+          numero_lot: data.numero_lot,
+          date_peremption: data.date_peremption ? new Date(data.date_peremption) : undefined,
           raison: 'Stock initial à la création du produit'
         }, tx);
 
@@ -377,6 +384,14 @@ export class ProduitService {
         image_id: data.image_id
       }
     });
+
+    // Mise à jour du seuil d'alerte stock (appliqué à tous les magasins existants pour ce produit)
+    if (data.stock_minimum !== undefined) {
+      await this.prisma.stock_magasin.updateMany({
+        where: { produit_id: id },
+        data: { quantite_minimum: Math.floor(Number(data.stock_minimum)) }
+      });
+    }
 
     // Mise à jour du conditionnement par défaut via les champs root
     if (defaultConditionnement) {

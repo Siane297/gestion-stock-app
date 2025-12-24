@@ -146,3 +146,29 @@ export const getTotalStock = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Récupère les lots d'un produit dans un magasin
+ */
+export const getLotsByStock = async (req: Request, res: Response) => {
+  try {
+    const { magasin_id, produit_id } = req.query;
+    if (!magasin_id || !produit_id) {
+        return res.status(400).json({ success: false, message: 'magasin_id et produit_id requis' });
+    }
+
+    const stockService = new StockService(req.tenantPrisma);
+    const lots = await stockService.getLotsByStock(magasin_id as string, produit_id as string);
+
+    res.json({
+      success: true,
+      data: lots
+    });
+  } catch (error: any) {
+    logger.error('Erreur lors de la récupération des lots:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Erreur lors de la récupération des lots',
+    });
+  }
+};

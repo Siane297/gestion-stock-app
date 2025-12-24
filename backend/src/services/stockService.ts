@@ -24,6 +24,7 @@ export interface CreateMouvementDto {
   numero_lot?: string;     // Pour mouvement manuel
   date_peremption?: Date; // Pour mouvement manuel
   magasin_dest_id?: string; // Pour transfert
+  quantite_minimum?: number; // Nouveau: Pour définir le seuil d'alerte lors de l'initialisation
 }
 
 export interface StockUpdateResult {
@@ -224,10 +225,21 @@ export class StockService {
           magasin_id: data.magasin_id,
           produit_id: data.produit_id,
           quantite: data.quantite,
-          quantite_minimum: 0
+          quantite_minimum: data.quantite_minimum !== undefined ? data.quantite_minimum : 0
         }
       });
     } else {
+      // Pour une mise à jour, on peut aussi mettre à jour le seuil si spécifié
+      const updateData: any = {
+        quantite: isDecrement
+          ? { decrement: data.quantite }
+          : { increment: data.quantite }
+      };
+
+      if (data.quantite_minimum !== undefined) {
+        updateData.quantite_minimum = data.quantite_minimum;
+      }
+
       newStock = await prismaClient.stock_magasin.update({
         where: {
           magasin_id_produit_id: {
@@ -235,11 +247,7 @@ export class StockService {
             produit_id: data.produit_id
           }
         },
-        data: {
-          quantite: isDecrement
-            ? { decrement: data.quantite }
-            : { increment: data.quantite }
-        }
+        data: updateData
       });
     }
 
@@ -467,7 +475,25 @@ export class StockService {
 
     return result;
   }
-
+ 
+  /**
+   * Récupère le détail des stocks par lot pour un produit et un magasin
+   */
+  async getLotsByStock(magasin_id: string, produit_id: string): Promise<any[]> {
+    return this.prisma.stock_lot.findMany({
+      where: {
+        magasin_id,
+        lot: { produit_id }
+      },
+      include: {
+        lot: true
+      },
+      orderBy: {
+        lot: { date_peremption: 'asc' }
+      }
+    });
+  }
+ 
   /**
    * Obtenir le stock total d'un produit (tous magasins)
    */

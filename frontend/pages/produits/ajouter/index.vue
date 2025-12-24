@@ -2,18 +2,19 @@
   <div>
     <div class="mt-6">
       <!-- Formulaire dynamique -->
-      <ProduitFormulaire
-        title="Ajouter un produit"
-        description="Remplissez le formulaire pour créer un nouveau produit dans le catalogue"
-        :groups="productGroups"
-        submit-label="Enregistrer"
-        cancel-label="Annuler"
-        :loading="loading"
-        @submit="handleSubmit"
-        @cancel="handleCancel"
-        @addClick="handleAddClick"
-        ref="formRef"
-      />
+       <ProduitFormulaire
+         title="Ajouter un produit"
+         description="Remplissez le formulaire pour créer un nouveau produit dans le catalogue"
+         :groups="productGroups"
+         submit-label="Enregistrer"
+         cancel-label="Annuler"
+         :loading="loading"
+         @submit="handleSubmit"
+         @cancel="handleCancel"
+         @addClick="handleAddClick"
+         @change="handleFormChange"
+         ref="formRef"
+       />
     </div>
 
     <!-- Popup pour ajouter une catégorie -->
@@ -83,6 +84,11 @@ const categories = ref<Array<{ id: string; nom: string }>>([]);
 const unites = ref<Array<{ id: string; nom: string }>>([]);
 const magasins = ref<Array<{ id: string; nom: string }>>([]);
 const loadingLists = ref(false);
+const formState = ref<Record<string, any>>({});
+ 
+const handleFormChange = (data: Record<string, any>) => {
+  formState.value = data;
+};
 
 // États du popup catégorie et unité
 const showCategoryDialog = ref(false);
@@ -238,14 +244,32 @@ const productGroups = computed(() => [
         helpText: "Nombre d'unités disponibles en stock pour ce produit."
       },
       {
-        name: "gere_peremption",
-        label: "Gère la péremption",
-        type: "checkbox" as const,
+        name: "stock_minimum",
+        label: "Seuil d'alerte (Stock min)",
+        type: "number" as const,
+        placeholder: "Ex: 10",
         required: false,
-        helpText: "Cochez cette case pour activer le suivi des lots et dates de péremption.",
+        min: 0,
+        helpText: "Vous recevrez une alerte si le stock descend sous ce seuil."
       },
-    ]
-  },
+       {
+         name: "gere_peremption",
+         label: "Gère la péremption",
+         type: "checkbox" as const,
+         required: false,
+         helpText: "Cochez cette case pour activer le suivi des lots et dates de péremption.",
+       },
+        {
+          name: "numero_lot",
+          name2: "date_peremption",
+          label: "Informations du Lot Initial",
+          type: "lot-fields" as const,
+          icon: "pi pi-box",
+          visible: !!formState.value.gere_peremption,
+          fullWidth: true
+        },
+     ]
+   },
   {
     title: "Vente & Formats",
     icon: "pi pi-shopping-bag",
@@ -278,12 +302,15 @@ const handleSubmit = async (data: Record<string, any>) => {
         : undefined,
       gere_peremption: data.gere_peremption || false,
       description: data.description || undefined,
-      est_actif: true,
-      // Stock initial (si fourni)
-      magasin_id: data.magasin_id || undefined,
-      quantite_initiale: data.quantite_initiale && data.quantite_initiale > 0 
-        ? Number(data.quantite_initiale) 
-        : undefined,
+       est_actif: true,
+       // Stock initial (si fourni)
+       magasin_id: data.magasin_id || undefined,
+       quantite_initiale: data.quantite_initiale && data.quantite_initiale > 0 
+         ? Number(data.quantite_initiale) 
+         : undefined,
+       stock_minimum: data.stock_minimum !== undefined ? Number(data.stock_minimum) : undefined,
+       numero_lot: data.numero_lot || undefined,
+       date_peremption: data.date_peremption || undefined,
       conditionnements: data.conditionnements
         ? data.conditionnements.map((c: any) => ({
             nom: c.nom,

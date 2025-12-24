@@ -23,21 +23,21 @@
         <p class="text-sm font-medium">Aucune vente enregistrée</p>
       </div>
 
-      <div v-else class="space-y-3">
+      <div v-else class="">
         <div v-for="(prod, index) in products" :key="index" 
           class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-all duration-300 border border-transparent hover:border-gray-100">
           
           <!-- Rang & Image Wrapper -->
           <div class="relative shrink-0">
-            <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center overflow-hidden border-2 border-gray-50 shadow-sm group-hover:scale-105 transition-transform duration-300">
+            <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-gris/40 group-hover:scale-105 transition-transform duration-300">
                 <img v-if="prod.image_url" :src="prod.image_url" :alt="prod.name" class="w-full h-full object-cover">
-                <span v-else class="text-2xl">📦</span>
+                <span v-else class="text-xl">📦</span>
             </div>
             <!-- Badge de Rang -->
-            <div class="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shadow-md z-10"
+            <!-- <div class="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shadow-md z-10"
                  :class="getRankClass(index)">
                 {{ index + 1 }}
-            </div>
+            </div> -->
           </div>
 
           <!-- Infos Produit -->

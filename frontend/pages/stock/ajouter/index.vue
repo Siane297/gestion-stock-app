@@ -58,14 +58,16 @@ const loadData = async () => {
 };
 
 const handleFormChange = (data: any) => {
-    currentFormState.value = data;
+    // console.log("Form change detected:", data.produit_id);
+    currentFormState.value = { ...data };
 };
 
 // Find selected product to get its packaging options
 const selectedProduct = computed(() => {
-    // console.log("Finding product for ID:", currentFormState.value.produit_id);
     if (!currentFormState.value.produit_id) return null;
-    return produits.value.find(p => p.id === currentFormState.value.produit_id);
+    const prod = produits.value.find(p => p.id === currentFormState.value.produit_id);
+    // console.log("Selected product found:", prod?.nom, "Gère péremption:", prod?.gere_peremption);
+    return prod;
 });
 
 const conditionnementOptions = computed(() => {
@@ -112,8 +114,38 @@ const stockFields = computed(() => {
         optionLabel: 'nom',
         optionValue: 'id',
         placeholder: 'Sélectionner un magasin',
-        fullWidth: true
+        // fullWidth: true
     },
+     {
+        name: 'type',
+        label: 'Type de Mouvement',
+        type: 'select' as const,
+        placeholder: 'Sélectionner un type de mouvement',
+        required: true,
+        options: [
+            { label: 'Achat', value: 'ENTREE_ACHAT' },
+            { label: 'Retour client', value: 'ENTREE_RETOUR' },
+            // { label: 'Vente', value: 'SORTIE_VENTE' },
+            { label: 'Périssable', value: 'SORTIE_PERISSABLE' },
+            { label: 'Ajustement', value: 'AJUSTEMENT' },
+            { label: 'Transfert', value: 'TRANSFERT' },
+        ],
+        optionLabel: 'label',
+        optionValue: 'value',
+        value: currentFormState.value.type // Bind to state
+    },
+    // Show destination store only if Transfer
+    ...(currentFormState.value.type === 'TRANSFERT' ? [{
+        name: 'magasin_dest_id',
+        label: 'Boutique de Destination',
+        type: 'select' as const,
+        required: true,
+        options: magasins.value.filter(m => m.id !== currentFormState.value.magasin_id),
+        optionLabel: 'nom',
+        optionValue: 'id',
+        placeholder: 'Sélectionner la boutique cible',
+        value: currentFormState.value.magasin_dest_id // Bind value to state to ensure FormulaireDynamique picks it up if already set, or inits it.
+    }] : []),
     {
         name: 'produit_id',
         label: 'Produit',
@@ -124,7 +156,7 @@ const stockFields = computed(() => {
         optionValue: 'id',
         placeholder: 'Sélectionner un produit',
         filter: true,
-        fullWidth: true,
+        // fullWidth: true,
         value: currentFormState.value.produit_id
     },
     // Only show conditionnement if product is selected
@@ -140,36 +172,17 @@ const stockFields = computed(() => {
         value: currentFormState.value.conditionnement_id || 'UNIT', // Use current value or default
         fullWidth: true
     }] : []),
-    {
-        name: 'type',
-        label: 'Type de Mouvement',
-        type: 'select' as const,
-        placeholder: 'Sélectionner un type de mouvement',
-        required: true,
-        options: [
-            { label: 'Entrée', value: 'ENTREE_ACHAT' },
-            { label: 'Retour', value: 'ENTREE_RETOUR' },
-            { label: 'Vente', value: 'SORTIE_VENTE' },
-            { label: 'Périssable', value: 'SORTIE_PERISSABLE' },
-            { label: 'Ajustement', value: 'AJUSTEMENT' },
-            { label: 'Transfert', value: 'TRANSFERT' },
-        ],
-        optionLabel: 'label',
-        optionValue: 'value',
-        value: currentFormState.value.type // Bind to state
+     {
+        name: 'numero_lot',
+        name2: 'date_peremption',
+        label: "Informations du Lot",
+        type: 'lot-fields' as const,
+        icon: 'pi pi-box',
+        visible: !!selectedProduct.value?.gere_peremption,
+        required: !!selectedProduct.value?.gere_peremption && ['ENTREE_ACHAT', 'ENTREE_RETOUR'].includes(currentFormState.value.type),
+        fullWidth: true
     },
-    // Show destination store only if Transfer
-    ...(currentFormState.value.type === 'TRANSFERT' ? [{
-        name: 'magasin_dest_id',
-        label: 'Magasin de Destination',
-        type: 'select' as const,
-        required: true,
-        options: magasins.value.filter(m => m.id !== currentFormState.value.magasin_id),
-        optionLabel: 'nom',
-        optionValue: 'id',
-        placeholder: 'Sélectionner le magasin cible',
-        value: currentFormState.value.magasin_dest_id // Bind value to state to ensure FormulaireDynamique picks it up if already set, or inits it.
-    }] : []),
+   
     {
         name: 'quantite',
         label: 'Quantité',
@@ -184,7 +197,9 @@ const stockFields = computed(() => {
         type: 'textarea' as const,
         required: false,
         placeholder: 'Justification du mouvement (optionnel)'
-    }
+    },
+    // LOT INFO (Conditional Visibility)
+   
     ];
     return fields;
 });
@@ -210,6 +225,8 @@ const handleSubmit = async (data: any) => {
             type: data.type,
             quantite: quantiteFinale,
             raison: data.raison,
+            numero_lot: data.numero_lot,
+            date_peremption: data.date_peremption,
             magasin_dest_id: data.magasin_dest_id // Optional param
         };
 

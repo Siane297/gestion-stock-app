@@ -98,6 +98,11 @@ export const useStockApi = () => {
     return response.data || null;
   };
 
+  const getLotsByStock = async (magasinId: string, produitId: string): Promise<any[]> => {
+    const response = await get<ApiResponse<any[]>>('/api/stock/lots', { params: { magasin_id: magasinId, produit_id: produitId } });
+    return response.data || [];
+  };
+
   const getStockById = async (id: string): Promise<StockMagasin | null> => {
       // Temporaire: On récupère tout et on filtre (Idéalement endpoint dédié)
       const stocks = await getStocks(); 
@@ -111,5 +116,6 @@ export const useStockApi = () => {
     getTotalStock,
     createMouvement,
     setMinimumStock,
+    getLotsByStock
   };
 };

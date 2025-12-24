@@ -151,13 +151,21 @@ export class DashboardService {
       // Initialize daily slots
       const end = new Date();
       let curr = new Date(startDate);
+      
+      const formatDate = (d: Date) => {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+      };
+
       while(curr <= end) {
-        chartData[curr.toISOString().split('T')[0] as string] = 0;
+        chartData[formatDate(curr)] = 0;
         curr.setDate(curr.getDate() + 1);
       }
       
       sales.forEach(s => {
-        const key = s.date_creation.toISOString().split('T')[0] as string;
+        const key = formatDate(s.date_creation);
         if (chartData[key] !== undefined) {
              chartData[key] += s.montant_total;
         }

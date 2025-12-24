@@ -19,11 +19,12 @@
         submit-label="Enregistrer les modifications"
         cancel-label="Annuler"
         :loading="loading"
-        @submit="handleSubmit"
-        @cancel="handleCancel"
-        @addClick="handleAddClick"
-        ref="formRef"
-      />
+         @submit="handleSubmit"
+         @cancel="handleCancel"
+         @addClick="handleAddClick"
+         @change="(data) => formState = data"
+         ref="formRef"
+       />
     </div>
 
     <!-- Popup pour ajouter une catégorie -->
@@ -92,10 +93,11 @@ const formRef = ref<InstanceType<typeof ProduitFormulaire> | null>(null);
 const loading = ref(false);
 const loadingInitial = ref(true);
 
-// Listes
 const categories = ref<Array<{ id: string; nom: string }>>([]);
 const unites = ref<Array<{ id: string; nom: string }>>([]);
+const magasins = ref<Array<{ id: string; nom: string }>>([]);
 const loadingLists = ref(false);
+const formState = ref<Record<string, any>>({});
 
 // États du popup catégorie et unité
 const showCategoryDialog = ref(false);
@@ -293,12 +295,25 @@ const productGroups = computed(() => {
       icon: "pi pi-cog",
       fields: [
         {
-          name: "gere_peremption",
-          label: "Gère la péremption",
-          type: "checkbox" as const,
-          required: false,
-          value: produit.value.gere_peremption, 
-          helpText: "Activer le suivi des lots et dates de péremption."
+            name: "stock_minimum",
+            label: "Seuil d'alerte (Stock min)",
+            type: "number" as const,
+            placeholder: "Ex: 10",
+            required: false,
+            min: 0,
+            value: produit.value.stocks?.[0]?.quantite_minimum || 0,
+            helpText: "Vous recevrez une alerte si le stock descend sous ce seuil."
+        },
+        // Informations du Lot (Visible seulement si produit gère la péremption)
+        {
+            name: "numero_lot",
+            name2: "date_peremption",
+            label: "Informations du Lot Initial",
+            type: "lot-fields" as const,
+            icon: "pi pi-box",
+            visible: !!produit.value.gere_peremption,
+            fullWidth: true,
+            helpText: "Note: La gestion des lots se fait via les mouvements de stock."
         },
         {
           name: 'est_actif',
@@ -371,6 +386,7 @@ const handleSubmit = async (data: Record<string, any>) => {
       description: data.description || undefined,
       gere_peremption: data.gere_peremption,
       est_actif: data.est_actif,
+      stock_minimum: data.stock_minimum !== undefined ? Number(data.stock_minimum) : undefined,
       conditionnements: condsPayload.length > 0 ? condsPayload : undefined
     };
 
