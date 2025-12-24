@@ -5,11 +5,14 @@ import { logger } from '../config/logger.js';
 /**
  * Récupère tous les stocks avec filtres
  */
+/**
+ * Récupère tous les stocks avec filtres
+ */
 export const getStocks = async (req: Request, res: Response) => {
   try {
-    const stockService = new StockService(req.tenantPrisma);
+    const stockDetailService = new StockDetailService(req.tenantPrisma);
     
-    const stocks = await stockService.getStocksWithAlerts({
+    const stocks = await stockDetailService.getStocksWithAlerts({
       magasin_id: req.query.magasin_id as string,
       produit_id: req.query.produit_id as string,
       alertOnly: req.query.alerte === 'true'
@@ -71,9 +74,9 @@ export const createMouvement = async (req: Request, res: Response) => {
  */
 export const getMouvements = async (req: Request, res: Response) => {
   try {
-    const stockService = new StockService(req.tenantPrisma);
+    const stockDetailService = new StockDetailService(req.tenantPrisma);
     
-    const mouvements = await stockService.getMouvements({
+    const mouvements = await stockDetailService.getMouvements({
       magasin_id: req.query.magasin_id as string,
       produit_id: req.query.produit_id as string,
       type: req.query.type as any,
@@ -130,9 +133,9 @@ export const getTotalStock = async (req: Request, res: Response) => {
     if (!produit_id) {
       return res.status(400).json({ success: false, message: 'produit_id requis' });
     }
-    const stockService = new StockService(req.tenantPrisma);
+    const stockDetailService = new StockDetailService(req.tenantPrisma);
 
-    const total = await stockService.getTotalStock(produit_id);
+    const total = await stockDetailService.getTotalStock(produit_id);
 
     res.json({
       success: true,
@@ -157,8 +160,8 @@ export const getLotsByStock = async (req: Request, res: Response) => {
         return res.status(400).json({ success: false, message: 'magasin_id et produit_id requis' });
     }
 
-    const stockService = new StockService(req.tenantPrisma);
-    const lots = await stockService.getLotsByStock(magasin_id as string, produit_id as string);
+    const stockDetailService = new StockDetailService(req.tenantPrisma);
+    const lots = await stockDetailService.getLotsByStock(magasin_id as string, produit_id as string);
 
     res.json({
       success: true,
@@ -171,4 +174,32 @@ export const getLotsByStock = async (req: Request, res: Response) => {
       message: error.message || 'Erreur lors de la récupération des lots',
     });
   }
+};
+
+import { StockDetailService } from '../services/stockDetailService.js';
+
+/**
+ * Récupère le détail complet du stock pour un produit
+ */
+export const getProductDetails = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { magasin_id } = req.query;
+        
+        if (!id) return res.status(400).json({ success: false, message: 'ID requis' });
+        
+        const stockDetailService = new StockDetailService(req.tenantPrisma);
+        const details = await stockDetailService.getProductStockDetails(id, magasin_id as string);
+
+        res.json({
+            success: true,
+            data: details
+        });
+    } catch (error: any) {
+        logger.error('Erreur lors de la récupération du détail stock produit:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Erreur interne'
+        });
+    }
 };

@@ -184,6 +184,11 @@ export const createProduit = async (req: Request, res: Response) => {
     if (productData.gere_peremption === 'true') productData.gere_peremption = true;
     if (productData.gere_peremption === 'false') productData.gere_peremption = false;
 
+    // Ajouter l'ID de l'utilisateur qui crée le produit pour le stock initial
+    const user = req.user as any;
+    if (user?.userId) {
+        productData.utilisateur_id = user.userId;
+    }
 
     const produit = await produitService.create(productData);
 
@@ -287,6 +292,12 @@ export const updateProduit = async (req: Request, res: Response) => {
     if (productData.est_actif === 'false') productData.est_actif = false;
     if (productData.gere_peremption === 'true') productData.gere_peremption = true;
     if (productData.gere_peremption === 'false') productData.gere_peremption = false;
+
+    // Ajouter l'ID de l'utilisateur pour les ajustements de stock
+    const user = req.user as any;
+    if (user?.userId) {
+        productData.utilisateur_id = user.userId;
+    }
 
     const produit = await produitService.update(id, productData);
 

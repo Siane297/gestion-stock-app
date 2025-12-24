@@ -139,7 +139,7 @@ const achatFields = computed(() => {
       },
       {
         name: 'magasin_id',
-        label: 'Magasin de réception',
+        label: 'Boutique de réception',
         type: 'select' as const,
         required: true,
         options: magasins.value,

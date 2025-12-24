@@ -109,6 +109,16 @@ export const useStockApi = () => {
       return stocks.find(s => s.id === id) || null;
   };
 
+
+  
+  const getProductStockDetails = async (produitId: string, magasinId?: string | null): Promise<ProductStockDetails | null> => {
+      const store = useMagasinStore();
+      const magId = magasinId === undefined ? (store.currentMagasinId || undefined) : magasinId; // undefined = all, null = all explicit
+
+      const response = await get<ApiResponse<ProductStockDetails>>(`/api/stock/products/${produitId}/details`, { params: { magasin_id: magId } });
+      return response.data || null;
+  }
+
   return {
     getStocks,
     getStockById,
@@ -116,6 +126,39 @@ export const useStockApi = () => {
     getTotalStock,
     createMouvement,
     setMinimumStock,
-    getLotsByStock
+    getLotsByStock,
+    getProductStockDetails
   };
 };
+
+export interface ProductStockDetails {
+    product: {
+        id: string;
+        nom: string;
+        image_url?: string;
+        code_barre?: string;
+        prix_vente: number;
+        unite: { nom: string; symbole?: string };
+        categorie: { nom: string };
+        gere_peremption: boolean;
+    };
+    kpi: {
+        total_stock: number;
+        stock_value: number;
+        rotation_30d: number;
+        is_low_stock: boolean;
+    };
+    stocks_by_store: {
+        id: string; // Stock ID
+        quantite: number;
+        magasin: { id: string; nom: string };
+    }[];
+    lots: {
+        id: string; // Lot ID
+        numero_lot: string;
+        date_peremption: string;
+        quantite: number;
+        magasin_nom: string;
+    }[];
+    recent_movements: MouvementStock[];
+}

@@ -6,6 +6,7 @@ import {
     setMinimumStock,
     getTotalStock,
     getLotsByStock,
+    getProductDetails,
 } from '../controllers/stockController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -21,5 +22,6 @@ router.get('/total/:produit_id', requirePermission(Module.STOCK, Action.VOIR), g
 router.post('/mouvements', requirePermission(Module.STOCK, Action.CREER), createMouvement);
 router.post('/minimum', requirePermission(Module.STOCK, Action.MODIFIER), setMinimumStock);
 router.get('/lots', requirePermission(Module.STOCK, Action.VOIR), getLotsByStock);
+router.get('/products/:id/details', requirePermission(Module.STOCK, Action.VOIR), getProductDetails);
 
 export default router;

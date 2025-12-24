@@ -35,6 +35,7 @@ export interface CreateProduitDto {
   date_peremption?: Date;
   image_url?: string;
   image_id?: string;
+  utilisateur_id?: string;
 }
 
 export interface UpdateProduitDto {
@@ -70,6 +71,7 @@ export interface UpdateProduitDto {
   }>;
   image_url?: string;
   image_id?: string;
+  utilisateur_id?: string;
 }
 
 
@@ -327,7 +329,8 @@ export class ProduitService {
           quantite_minimum: data.stock_minimum !== undefined ? Number(data.stock_minimum) : undefined,
           numero_lot: data.numero_lot,
           date_peremption: data.date_peremption ? new Date(data.date_peremption) : undefined,
-          raison: 'Stock initial à la création du produit'
+          raison: 'Stock initial à la création du produit',
+          utilisateur_id: data.utilisateur_id
         }, tx);
 
         logger.info(`Stock initial créé: ${quantiteInitiale} unités pour le produit ${produit.id} dans le magasin ${data.magasin_id}`);
@@ -481,7 +484,8 @@ export class ProduitService {
           quantite: Math.abs(quantiteAjustement),
           raison: quantiteAjustement > 0 
             ? `${raison} - ajout` // Pour que isIncrement détecte 'ajout'
-            : raison
+            : raison,
+          utilisateur_id: data.utilisateur_id
         });
 
         logger.info(`Ajustement de stock: ${quantiteAjustement} unités pour le produit ${id} dans le magasin ${ajustement.magasin_id}`);
