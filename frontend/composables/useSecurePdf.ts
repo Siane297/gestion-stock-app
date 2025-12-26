@@ -144,7 +144,7 @@ export const useSecurePdf = () => {
           const config = useRuntimeConfig();
           const apiBase = config.public.apiBase || 'http://localhost:3001';
           
-          const response = await fetch(`${apiBase}/api/ventes/${venteId}/pdf`, {
+          const response = await fetch(`${apiBase}/api/pdf/receipt/${venteId}`, {
               method: 'GET',
               headers: { 
                   'Authorization': `Bearer ${accessToken.value}`,
@@ -212,7 +212,7 @@ export const useSecurePdf = () => {
           const config = useRuntimeConfig();
           const apiBase = config.public.apiBase || 'http://localhost:3001';
           
-          const response = await fetch(`${apiBase}/api/ventes/${venteId}/proforma`, {
+          const response = await fetch(`${apiBase}/api/pdf/proforma/${venteId}`, {
               method: 'GET',
               headers: { 
                   'Authorization': `Bearer ${accessToken.value}`,

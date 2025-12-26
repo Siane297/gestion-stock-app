@@ -2,6 +2,8 @@ import express from 'express';
 import { PdfController } from '../controllers/pdfController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { identifyTenant, requireTenant } from '../middleware/tenantMiddleware.js';
+import { requirePermission } from '../middleware/permissionMiddleware.js';
+import { Module, Action } from '../types/permissions.js';
 import rateLimit from 'express-rate-limit';
 
 const router: express.Router = express.Router();
@@ -11,7 +13,7 @@ const router: express.Router = express.Router();
  */
 const pdfRateLimit = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10, // Maximum 10 PDF par 5 minutes par IP
+  max: 20, // Augmenté pour permettre plusieurs téléchargements
   message: {
     success: false,
     message: 'Trop de demandes de génération PDF. Veuillez patienter.',
@@ -26,68 +28,31 @@ const pdfRateLimit = rateLimit({
  */
 
 /**
- * @route   POST /api/pdf/employees
- * @desc    Générer PDF de la liste des employés du tenant
+ * @route   GET /api/pdf/receipt/:id
+ * @desc    Générer le ticket de caisse d'une vente
  * @access  Private (tenant-aware)
  */
-router.post('/employees', 
+router.get('/receipt/:id',
   pdfRateLimit,
   authenticate,
   identifyTenant,
   requireTenant,
-  PdfController.generateEmployeesPdf
+  requirePermission(Module.VENTES, Action.VOIR),
+  PdfController.generateReceiptPdf
 );
 
 /**
- * @route   POST /api/pdf/attendances  
- * @desc    Générer PDF de l'historique des pointages du tenant
+ * @route   GET /api/pdf/proforma/:id
+ * @desc    Générer la facture proforma d'une vente
  * @access  Private (tenant-aware)
  */
-router.post('/attendances',
-  pdfRateLimit, 
-  authenticate,
-  identifyTenant,
-  requireTenant,
-  PdfController.generateAttendancePdf
-);
-
-/**
- * @route   POST /api/pdf/users
- * @desc    Générer PDF de la liste des utilisateurs du tenant  
- * @access  Private (tenant-aware)
- */
-router.post('/users',
-  pdfRateLimit,
-  authenticate, 
-  identifyTenant,
-  requireTenant,
-  PdfController.generateUsersPdf
-);
-
-/**
- * @route   POST /api/pdf/bilans  
- * @desc    Générer PDF des bilans de présence du tenant
- * @access  Private (tenant-aware)
- */
-router.post('/bilans',
-  pdfRateLimit, 
-  authenticate,
-  identifyTenant,
-  requireTenant,
-  PdfController.generateBilanPdf
-);
-
-/**
- * @route   POST /api/pdf/conges  
- * @desc    Générer PDF de la liste des congés du tenant
- * @access  Private (tenant-aware)
- */
-router.post('/conges',
+router.get('/proforma/:id',
   pdfRateLimit,
   authenticate,
   identifyTenant,
   requireTenant,
-  PdfController.generateCongesPdf
+  requirePermission(Module.VENTES, Action.VOIR),
+  PdfController.generateProformaPdf
 );
 
 export default router;

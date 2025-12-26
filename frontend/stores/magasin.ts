@@ -31,11 +31,13 @@ export const useMagasinStore = defineStore('magasin', () => {
              localStorage.setItem('selected_magasin_id', newUser.magasin_id);
           }
        } else if (hasGlobalAccess) {
-          // Pour un accès global, on ne force que si rien n'est sélectionné
-          if (currentMagasinId.value === null && !localStorage.getItem('selected_magasin_id')) {
-             if (newUser.magasin_id) {
-                currentMagasinId.value = newUser.magasin_id;
-                localStorage.setItem('selected_magasin_id', newUser.magasin_id);
+          // Pour un accès global, on force le magasin par défaut (le premier ou celui assigné)
+          // si rien n'est sélectionné ou si on veut qu'il soit "toujours" connecté à sa première boutique
+          if (!currentMagasinId.value || !localStorage.getItem('selected_magasin_id')) {
+             const defaultId = newUser.magasin_id || null;
+             if (defaultId) {
+                currentMagasinId.value = defaultId;
+                localStorage.setItem('selected_magasin_id', defaultId);
              }
           }
        }
@@ -58,10 +60,17 @@ export const useMagasinStore = defineStore('magasin', () => {
       // 'all' est représenté par null
       if (targetId === 'all') targetId = null;
 
-      // 1. Si targetId est null (Toutes les boutiques), vérifier si c'est autorisé
+      // 1. Si targetId est null (Toutes les boutiques), on vérifie si c'est autorisé
       if (targetId === null) {
         if (hasGlobalAccess) {
-          currentMagasinId.value = null;
+          // Si on a explicitement "all" dans le localStorage, on respecte le choix
+          const stored = localStorage.getItem('selected_magasin_id');
+          if (stored === 'all') {
+            currentMagasinId.value = null;
+          } else {
+            // Sinon par défaut (premier chargement ou autre), on prend la boutique assignée ou la première
+            currentMagasinId.value = user.value?.magasin_id || magasins.value[0]?.id || null;
+          }
         } else {
           // Sinon fallback vers le magasin assigné
           currentMagasinId.value = user.value?.magasin_id || magasins.value[0]?.id || null;

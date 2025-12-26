@@ -17,7 +17,7 @@
             margin: 0;
             padding: 0;
         }
-        .container { padding: 40px; }
+        .container { padding: 20px; }
         
         /* Header */
         .header {
@@ -93,7 +93,13 @@
         td {
             padding: 12px;
             color: #000;
-            border-bottom: 1px solid var(--border-color);
+            /* border-bottom: 1px solid var(--border-color); */
+        }
+        tbody tr:nth-child(even) {
+            background-color: rgba(6, 70, 84, 0.05); /* Vert très clair / faible opacité */
+        }
+        tbody tr:nth-child(odd) {
+            background-color: #ffffff;
         }
         .text-right { text-align: right; }
         .qty-col { width: 60px; text-align: center; }
@@ -123,12 +129,29 @@
 
         /* Footer */
         .footer {
-            margin-top: 60px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             text-align: center;
             font-size: 9pt;
             color: var(--secondary-color);
             border-top: 1px solid var(--border-color);
-            padding-top: 20px;
+            padding: 10px 20px;
+            background-color: white;
+            z-index: 1000;
+        }
+        
+        /* Ajustement pour laisser de la place au footer sur chaque page */
+        body {
+            margin-bottom: 50px;
+        }
+        
+        @media print {
+            .footer {
+                position: fixed;
+                bottom: 5mm;
+            }
         }
     </style>
 </head>
@@ -186,13 +209,15 @@
             <tbody>
                 {{#each vente.details}}
                 <tr>
-                    <td style="vertical-align: top;">
-                        <div style="font-weight: bold; color: #000000;">{{this.produit}}</div>
-                        <div style="font-size: 8.5pt; color: #064654; margin-top: 2px;">{{this.conditionnement}}</div>
+                    <td style="vertical-align: middle;">
+                        <span style="font-weight: bold; color: #000000;">{{this.produit}}</span>
+                        {{#if this.conditionnement}}
+                        <span style="font-size: 8.5pt; font-weight: bold; color: #064654; margin-left: 4px;">({{this.conditionnement}})</span>
+                        {{/if}}
                     </td>
-                    <td class="qty-col">{{this.quantite}}</td>
-                    <td class="price-col">{{this.prixUnitaire}} {{../company.currencySymbol}}</td>
-                    <td class="price-col">{{this.total}} {{../company.currencySymbol}}</td>
+                    <td class="qty-col" style="vertical-align: middle;">{{this.quantite}}</td>
+                    <td class="price-col" style="vertical-align: middle;">{{this.prixUnitaire}} {{../company.currencySymbol}}</td>
+                    <td class="price-col" style="vertical-align: middle;">{{this.total}} {{../company.currencySymbol}}</td>
                 </tr>
                 {{/each}}
             </tbody>
@@ -205,7 +230,7 @@
                     <span>TOTAL</span>
                     <span>{{vente.montantTotal}} {{company.currencySymbol}}</span>
                 </div>
-                <div class="total-row" style="font-size: 10pt; color: #666; border-top: 1px dashed var(--border-color);">
+                <div class="total-row" style="font-size: 10pt; color: #000;font-weight: bold; border-top: 1px solid;">
                     <span>Montant Payé</span>
                     <span>{{vente.montantPaye}} {{company.currencySymbol}}</span>
                 </div>

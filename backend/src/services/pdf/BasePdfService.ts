@@ -39,19 +39,6 @@ export abstract class BasePdfService {
       format: 'A4',
       margins: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
     },
-    // Format landscape pour pointages/attendances (colonnes Entrée/Sortie)
-    attendance: {
-      orientation: 'landscape', 
-      format: 'A4',
-      margins: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
-    },
-    // Format portrait pour bilans (rapports textuels)
-    bilan: {
-      orientation: 'landscape',
-      format: 'A4', 
-      margins: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
-    },
-    // Format portrait pour utilisateurs (listes et rapports)
     users: {
       orientation: 'portrait',
       format: 'A4',
@@ -67,7 +54,7 @@ export abstract class BasePdfService {
     proforma: {
       orientation: 'portrait',
       format: 'A4',
-      margins: { top: '10mm', right: '10mm', bottom: '15mm', left: '10mm' }
+      margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' }
     }
   };
 

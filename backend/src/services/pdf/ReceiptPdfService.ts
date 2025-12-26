@@ -41,7 +41,11 @@ export class ReceiptPdfService extends BasePdfService {
         currencySymbol
       },
       vente: {
-        numeroVente: vente.numero_vente || `VENTE-${vente.id.substring(0, 8)}`,
+        numeroVente: (() => {
+          const segments = (vente.numero_vente || '').split('-');
+          const sequence = segments[segments.length - 1] || vente.id.substring(0, 8);
+          return `TC-${sequence}`;
+        })(),
         date: vente.date_creation ? new Date(vente.date_creation) : new Date(),
         client: vente.client 
           ? { 

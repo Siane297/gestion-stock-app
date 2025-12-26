@@ -107,6 +107,36 @@
         font-size: 9px;
         color: #666;
       }
+      /* Styles du tableau des articles */
+      .receipt-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      .receipt-table th {
+        text-align: left;
+        border-bottom: 1px solid #000;
+        padding: 5px 2px;
+        font-size: 10px;
+        text-transform: uppercase;
+      }
+      .receipt-table td {
+        padding: 6px 2px;
+        vertical-align: top;
+      }
+      .col-qty { width: 50px; text-align: center; }
+      .th-qty { text-align: center !important; }
+      .col-total { width: 80px; text-align: left; font-weight: bold; }
+      .item-name-cell {
+        font-weight: bold;
+        word-break: break-word;
+      }
+      .item-cond {
+        font-weight: normal;
+        font-size: 9px;
+        color: #333;
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -153,21 +183,30 @@
       <!-- Séparateur -->
       <div class="separator"></div>
 
-      <!-- Liste des articles -->
-      <div class="receipt-items">
-        {{#each vente.details}}
-        <div class="item">
-          <div class="item-name">
-            {{this.produit}} {{#if this.conditionnement}}
-            ({{this.conditionnement}}) {{/if}}
-          </div>
-          <div class="item-details">
-            <span>{{this.quantite}} x {{this.prixUnitaire}} {{../vente.currencySymbol}}</span>
-            <strong>{{this.total}} {{../vente.currencySymbol}}</strong>
-          </div>
-        </div>
-        {{/each}}
-      </div>
+      <!-- Liste des articles en tableau -->
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th>Désignation</th>
+            <th class="col-qty th-qty">QTÉ</th>
+            <th class="col-total">TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each vente.details}}
+          <tr>
+            <td class="item-name-cell">
+              {{this.produit}}
+              {{#if this.conditionnement}}
+              <span class="item-cond">({{this.conditionnement}})</span>
+              {{/if}}
+            </td>
+            <td class="col-qty">{{this.quantite}}</td>
+            <td class="col-total">{{this.total}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
 
       <!-- Total -->
       <div class="receipt-total">

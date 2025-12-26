@@ -76,15 +76,15 @@
                 </thead>
                 <tbody class="divide-y divide-gray-50">
                     <tr v-for="detail in vente.details" :key="detail.id" class="text-sm hover:bg-gray-50/50">
-                        <td class="px-4 py-3 font-medium text-gray-700">{{ detail.produit?.nom }}</td>
-                        <td class="px-4 py-3 text-center text-gray-500">
+                        <td class="px-4 py-3 font-medium text-noir">{{ detail.produit?.nom }}</td>
+                        <td class="px-4 py-3 text-center text-noir">
                             {{ detail.quantite }} <span class="text-xs opacity-70">({{ detail.conditionnement?.nom || 'Unité' }})</span>
                         </td>
-                        <td class="px-4 py-3 text-right text-gray-600">{{ formatPrice(detail.prix_unitaire) }}</td>
+                        <td class="px-4 py-3 text-right text-noir">{{ formatPrice(detail.prix_unitaire) }}</td>
                         <td class="px-4 py-3 text-right text-red-500 font-medium">
                             {{ detail.remise > 0 ? '-' + formatPrice(detail.remise) : '-' }}
                         </td>
-                        <td class="px-4 py-3 text-right font-bold text-gray-800">{{ formatPrice(detail.prix_total) }}</td>
+                        <td class="px-4 py-3 text-right font-bold text-noir">{{ formatPrice(detail.prix_total) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -95,15 +95,15 @@
       <div class="flex justify-end pt-4">
         <div class="w-72 space-y-3 bg-bleu/20 p-6 rounded-3xl border border-gray-100 shadow-sm">
             <div class="flex justify-between items-center text-sm">
-                <span class="text-gray-500">Sous-total</span>
-                <span class="font-medium text-gray-700">{{ formatPrice(vente.montant_total + (vente.montant_remise || 0)) }}</span>
+                <span class="text-noir">Sous-total</span>
+                <span class="font-medium text-noir">{{ formatPrice(vente.montant_total + (vente.montant_remise || 0)) }}</span>
             </div>
             <div v-if="vente.montant_remise > 0" class="flex justify-between items-center text-sm text-red-500">
                 <span class="font-medium">Remise Globale</span>
                 <span class="font-bold">-{{ formatPrice(vente.montant_remise) }}</span>
             </div>
             <div class="flex justify-between items-center pt-3 border-t border-gray-200">
-                <span class="text-lg font-black text-gray-800 uppercase tracking-widest">Total</span>
+                <span class="text-lg font-black text-noir uppercase tracking-widest">Total</span>
                 <span class="text-2xl font-black text-primary">{{ formatPrice(vente.montant_total) }}</span>
             </div>
             <div class="flex justify-between items-center pt-2 border-t border-dashed border-gray-100 text-sm">
