@@ -21,6 +21,7 @@ model magasin {
     caisses          caisse[]
     tenantUser       TenantUser?        @relation(fields: [tenantUserId], references: [id])
     tenantUserId     String?
+    inventaires      inventaire[]
 
     @@map("magasins")
 }

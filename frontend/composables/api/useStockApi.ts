@@ -37,6 +37,7 @@ export interface CreateMouvementDto {
   numero_lot?: string;
   date_peremption?: Date;
   magasin_dest_id?: string;
+  isAjoutStock?: boolean; // Pour AJUSTEMENT: true = entrée, false = sortie
 }
 
 export interface SetMinimumStockDto {

@@ -55,6 +55,12 @@ export abstract class BasePdfService {
       orientation: 'portrait',
       format: 'A4',
       margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' }
+    },
+    // Format A4 pour rapport d'inventaire
+    inventaire: {
+      orientation: 'portrait',
+      format: 'A4',
+      margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' }
     }
   };
 
@@ -394,6 +400,14 @@ export abstract class BasePdfService {
     
     // Helper pour numérotation des lignes (commence à 1)
     handlebars.registerHelper('inc', (index: number) => index + 1);
+
+    // Helper pour vérifier si une valeur est positive (> 0)
+    handlebars.registerHelper('ifPositive', function(this: any, value: number, options: any) {
+      if (value > 0) {
+        return options.fn(this);
+      }
+      return options.inverse(this);
+    });
   }
 
   /**

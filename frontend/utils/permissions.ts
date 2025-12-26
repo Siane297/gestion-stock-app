@@ -13,6 +13,7 @@ export enum Module {
   TABLEAU_DE_BORD = 'tableau_de_bord',
   PRODUITS = 'produits',
   STOCK = 'stock',
+  INVENTAIRE = 'inventaire',
   ACHATS = 'achats',
   VENTES = 'ventes',
   CLIENTS = 'clients',
@@ -73,6 +74,11 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     `${Module.RAPPORTS}:${Action.EXPORTER}`,
     `${Module.PARAMETRES}:${Action.VOIR}`,
     `${Module.PARAMETRES}:${Action.MODIFIER}`,
+    `${Module.INVENTAIRE}:${Action.VOIR}`,
+    `${Module.INVENTAIRE}:${Action.CREER}`,
+    `${Module.INVENTAIRE}:${Action.MODIFIER}`,
+    `${Module.INVENTAIRE}:${Action.SUPPRIMER}`,
+    `${Module.INVENTAIRE}:${Action.VALIDER}`,
   ],
 
   [TenantUserRole.STOCK_MANAGER]: [
@@ -101,6 +107,11 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     `${Module.RAPPORTS}:${Action.VOIR}`,
     `${Module.RAPPORTS}:${Action.EXPORTER}`,
     `${Module.PARAMETRES}:${Action.VOIR}`,
+    `${Module.INVENTAIRE}:${Action.VOIR}`,
+    `${Module.INVENTAIRE}:${Action.CREER}`,
+    `${Module.INVENTAIRE}:${Action.MODIFIER}`,
+    `${Module.INVENTAIRE}:${Action.SUPPRIMER}`,
+    `${Module.INVENTAIRE}:${Action.VALIDER}`,
   ],
 
   [TenantUserRole.SELLER]: [
@@ -117,6 +128,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     `${Module.CAISSES}:${Action.VOIR}`,
     `${Module.BOUTIQUES}:${Action.VOIR}`,
     `${Module.RAPPORTS}:${Action.VOIR}`,
+    `${Module.INVENTAIRE}:${Action.VOIR}`,
+    `${Module.INVENTAIRE}:${Action.MODIFIER}`,
   ],
 
   [TenantUserRole.ACCOUNTANT]: [

@@ -44,11 +44,13 @@ model TenantUser {
   // Boutiques où l'utilisateur est gérant (pour STORE_MANAGER)
   magasins_geres magasin[] @relation("MagasinGerant")
 
-  mouvements_stock mouvements_stock[]
-  ventes           vente[]
-  audit_logs       audit_log[]
-  sessions_caisse  session_caisse[]
-  magasins         magasin[]
+  mouvements_stock       mouvements_stock[]
+  ventes                 vente[]
+  audit_logs             audit_log[]
+  sessions_caisse        session_caisse[]
+  magasins               magasin[]
+  inventaires_debut      inventaire[]       @relation("inventaire_debut")
+  inventaires_validation inventaire[]       @relation("inventaire_validation")
 
   @@map("tenant_users")
 }

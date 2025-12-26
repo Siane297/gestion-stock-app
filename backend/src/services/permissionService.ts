@@ -57,6 +57,11 @@ export class PermissionService {
       `${Module.RAPPORTS}:${Action.EXPORTER}`,
       `${Module.PARAMETRES}:${Action.VOIR}`,
       `${Module.PARAMETRES}:${Action.MODIFIER}`,
+      `${Module.INVENTAIRE}:${Action.VOIR}`,
+      `${Module.INVENTAIRE}:${Action.CREER}`,
+      `${Module.INVENTAIRE}:${Action.MODIFIER}`,
+      `${Module.INVENTAIRE}:${Action.SUPPRIMER}`,
+      `${Module.INVENTAIRE}:${Action.VALIDER}`,
     ]);
 
     // STOCK_MANAGER - Gestion stock et achats
@@ -86,6 +91,11 @@ export class PermissionService {
       `${Module.RAPPORTS}:${Action.VOIR}`,
       `${Module.RAPPORTS}:${Action.EXPORTER}`,
       `${Module.PARAMETRES}:${Action.VOIR}`,
+      `${Module.INVENTAIRE}:${Action.VOIR}`,
+      `${Module.INVENTAIRE}:${Action.CREER}`,
+      `${Module.INVENTAIRE}:${Action.MODIFIER}`,
+      `${Module.INVENTAIRE}:${Action.SUPPRIMER}`,
+      `${Module.INVENTAIRE}:${Action.VALIDER}`,
     ]);
 
     // SELLER - Ventes, caisse et relation client
@@ -103,6 +113,8 @@ export class PermissionService {
       `${Module.CAISSES}:${Action.VOIR}`,
       `${Module.BOUTIQUES}:${Action.VOIR}`,
       `${Module.RAPPORTS}:${Action.VOIR}`,
+      `${Module.INVENTAIRE}:${Action.VOIR}`,
+      `${Module.INVENTAIRE}:${Action.MODIFIER}`,
     ]);
 
     // ACCOUNTANT - Rapports financiers

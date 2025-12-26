@@ -28,22 +28,32 @@ C'est le cœur du système. Il gère :
 
 ### B. Les Services Spécialisés
 
-Chaque type de document possède son service dédié (ex: `ReceiptPdfService`, `ProformaPdfService`).
+Chaque type de document possède son service dédié (ex: `ReceiptPdfService`, `ProformaPdfService`, `InventairePdfService`).
 
 - Ils préparent les données (formatage des prix, dates, logos).
+- Ils assurent que les relations de données complexes sont aplaties pour le template.
 - Ils appellent `generatePdf(templateName, data, configType)`.
 
-**Exemple de Service :**
+**Exemple : InventairePdfService**
 
 ```typescript
-export class ExamplePdfService extends BasePdfService {
-  public static async generate(data: any, companyInfo: any): Promise<Buffer> {
-    const formattedData = {
-      title: "Mon Rapport",
-      items: data.map((i) => ({ name: i.nom, price: i.prix.toLocaleString() })),
-      logo: await this.getLocalLogo("logo-2.png"), // Helper pour Base64
+export class InventairePdfService extends BasePdfService {
+  public static async generateInventaire(
+    inventaire: any,
+    companyInfo: any
+  ): Promise<Buffer> {
+    const data = {
+      inventaire: {
+        numero: inventaire.numero,
+        details: inventaire.details.map((d) => ({
+          produit: d.produit.nom,
+          ecart: d.ecart,
+          statusClass: d.ecart > 0 ? "text-success" : "text-danger",
+        })),
+      },
+      company: companyInfo,
     };
-    return this.generatePdf("template-name", formattedData, "portrait-a4");
+    return this.generatePdf("inventaire", data, "inventaire");
   }
 }
 ```
@@ -106,10 +116,11 @@ const generateProformaPdf = async (venteId: string) => {
 ## 4. Comment ajouter un nouveau PDF ?
 
 1.  **Template** : Créer un fichier `.html` dans `backend/templates/`.
-2.  **Config** : Ajouter une configuration (format, marges) dans `BasePdfService.ts` si nécessaire.
-3.  **Service** : Créer un nouveau service PDF pour formater les données.
-4.  **Route** : Ajouter un controller et une route dans le backend.
-5.  **Frontend** : Ajouter une méthode dans `useSecurePdf.ts` pour appeler l'API.
+2.  **Config** : Ajouter une configuration (format, marges) dans `BasePdfService.ts` sous `PDF_CONFIGS`.
+3.  **Helpers** : Si nécessaire, enregistrer un nouveau helper Handlebars dans `BasePdfService.registerHandlebarsHelpers()` (ex: `ifPositive` pour afficher un signe "+" conditionnel).
+4.  **Service** : Créer un nouveau service PDF pour formater les données.
+5.  **Route** : Ajouter un controller et une route dans `backend/src/routes/pdfRoutes.ts`.
+6.  **Frontend** : Ajouter une méthode dans `frontend/composables/useSecurePdf.ts`.
 
 ---
 

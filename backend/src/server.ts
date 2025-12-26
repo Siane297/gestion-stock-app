@@ -34,6 +34,7 @@ import venteRoutes from './routes/venteRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import caisseRoutes from './routes/caisseRoutes.js';
+import inventaireRoutes from './routes/inventaireRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
 // Middleware
@@ -208,6 +209,7 @@ app.use('/api/ventes', identifyTenant, requireTenant, venteRoutes);
 app.use('/api/audit', identifyTenant, requireTenant, auditRoutes);
 app.use('/api/dashboard', identifyTenant, requireTenant, dashboardRoutes);
 app.use('/api/caisses', identifyTenant, requireTenant, caisseRoutes);
+app.use('/api/inventaire', identifyTenant, requireTenant, inventaireRoutes);
 app.use('/api/users', identifyTenant, userRoutes);
 
 // Route de base

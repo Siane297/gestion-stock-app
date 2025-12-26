@@ -482,9 +482,8 @@ export class ProduitService {
           produit_id: id,
           type: typeMovement,
           quantite: Math.abs(quantiteAjustement),
-          raison: quantiteAjustement > 0 
-            ? `${raison} - ajout` // Pour que isIncrement détecte 'ajout'
-            : raison,
+          isAjoutStock: quantiteAjustement > 0, // Paramètre explicite pour le sens du mouvement
+          raison: raison,
           utilisateur_id: data.utilisateur_id
         });
 

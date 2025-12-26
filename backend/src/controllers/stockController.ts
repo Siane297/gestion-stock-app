@@ -39,7 +39,7 @@ export const createMouvement = async (req: Request, res: Response) => {
     const stockService = new StockService(req.tenantPrisma);
     const userId = (req as any).user?.userId;
     
-    const { magasin_id, produit_id, type, quantite, raison, vente_id, achat_id, numero_lot, date_peremption, magasin_dest_id } = req.body;
+    const { magasin_id, produit_id, type, quantite, raison, vente_id, achat_id, numero_lot, date_peremption, magasin_dest_id, isAjoutStock } = req.body;
 
     const result = await stockService.createMouvement({
       magasin_id,
@@ -52,7 +52,8 @@ export const createMouvement = async (req: Request, res: Response) => {
       achat_id,
       numero_lot,
       date_peremption: date_peremption ? new Date(date_peremption) : undefined,
-      magasin_dest_id // Pass the destination store ID
+      magasin_dest_id,
+      isAjoutStock // Ajout du paramètre pour les ajustements
     });
 
     res.status(201).json({

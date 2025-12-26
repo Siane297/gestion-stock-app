@@ -1,0 +1,55 @@
+// Gestion des inventaires physiques
+enum StatutInventaire {
+    BROUILLON
+    EN_COURS
+    TERMINE
+    VALIDE
+}
+
+model inventaire {
+    id                        String           @id @default(uuid())
+    numero                    String           @unique
+    magasin_id                String
+    statut                    StatutInventaire @default(BROUILLON)
+    date_debut                DateTime?
+    date_fin                  DateTime?
+    date_validation           DateTime?
+    utilisateur_debut_id      String?
+    utilisateur_validation_id String?
+    commentaire               String?
+    date_creation             DateTime         @default(now())
+    date_modification         DateTime         @updatedAt
+
+    magasin                magasin             @relation(fields: [magasin_id], references: [id], onDelete: Cascade)
+    utilisateur_debut      TenantUser?         @relation("inventaire_debut", fields: [utilisateur_debut_id], references: [id], onDelete: SetNull)
+    utilisateur_validation TenantUser?         @relation("inventaire_validation", fields: [utilisateur_validation_id], references: [id], onDelete: SetNull)
+    details                inventaire_detail[]
+
+    @@index([magasin_id])
+    @@index([statut])
+    @@index([date_creation])
+    @@map("inventaires")
+}
+
+model inventaire_detail {
+    id                 String   @id @default(uuid())
+    inventaire_id      String
+    produit_id         String
+    lot_id             String?
+    quantite_theorique Int      @default(0)
+    quantite_comptee   Int?
+    ecart              Int?
+    valeur_ecart       Float?
+    est_compte         Boolean  @default(false)
+    date_creation      DateTime @default(now())
+    date_modification  DateTime @updatedAt
+
+    inventaire inventaire   @relation(fields: [inventaire_id], references: [id], onDelete: Cascade)
+    produit    produit      @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+    lot        lot_produit? @relation(fields: [lot_id], references: [id], onDelete: SetNull)
+
+    @@unique([inventaire_id, produit_id, lot_id])
+    @@index([inventaire_id])
+    @@index([produit_id])
+    @@map("inventaires_detail")
+}

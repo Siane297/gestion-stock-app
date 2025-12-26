@@ -171,6 +171,12 @@ const menuCategories: MenuCategory[] = [
         permission: 'stock:voir',
       },
       {
+        name: 'Inventaire',
+        icon: 'tabler:clipboard-check',
+        link: '/inventaire',
+        permission: 'inventaire:voir',
+      },
+      {
         name: 'Boutique/Magasin',
         icon: 'tabler:building-store',
         link: '/store',

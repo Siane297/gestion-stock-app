@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ReceiptPdfService } from '../services/pdf/ReceiptPdfService.js';
 import { ProformaPdfService } from '../services/pdf/ProformaPdfService.js';
+import { InventairePdfService } from '../services/pdf/InventairePdfService.js';
 import { prismaPublic } from '../services/tenantService.js';
 
 /**
@@ -227,6 +228,109 @@ export class PdfController {
       res.status(500).json({ 
         success: false, 
         message: 'Erreur lors de la génération de la proforma.' 
+      });
+    }
+  }
+
+  /**
+   * Générer un rapport d'inventaire PDF
+   */
+  public static async generateInventairePdf(req: Request, res: Response): Promise<void> {
+    try {
+      console.log('📄 [PDF-Controller] Début génération rapport inventaire');
+      
+      if (!req.tenantPrisma) {
+        res.status(400).json({ success: false, message: 'Contexte tenant manquant.' });
+        return;
+      }
+
+      const inventaireId = req.params.id;
+      const userId = req.user?.userId;
+      const companyId = req.user?.companyId;
+
+      if (!userId || !companyId) {
+        res.status(401).json({ success: false, message: 'Authentification requise.' });
+        return;
+      }
+
+      // Récupérer inventaire + relations
+      const [inventaire, company] = await Promise.all([
+        req.tenantPrisma.inventaire.findUnique({
+          where: { id: inventaireId },
+          include: {
+            magasin: { select: { nom: true } },
+            utilisateur_debut: { include: { employee: { select: { fullName: true } } } },
+            utilisateur_validation: { include: { employee: { select: { fullName: true } } } },
+            details: {
+              include: {
+                produit: {
+                  include: { unite: { select: { nom: true } } }
+                },
+                lot: { select: { numero_lot: true } }
+              }
+            }
+          }
+        }),
+        prismaPublic.company.findUnique({
+          where: { id: companyId },
+          select: { 
+            name: true, 
+            address: true, 
+            telephoneOrganisation: true, 
+            emailOrganisation: true,
+            logo: true,
+            currency: true,
+            country: true
+          }
+        })
+      ]);
+
+      if (!inventaire) {
+        res.status(404).json({ success: false, message: 'Inventaire non trouvé.' });
+        return;
+      }
+
+      // Calculer les stats si nécessaire (normalement déjà calculées par le service inventaire avant validation)
+      // Mais on prépare un objet stats propre
+      const stats = {
+          total_produits: inventaire.details.length,
+          produits_comptes: inventaire.details.filter((d: any) => d.est_compte).length,
+          ecart_total: inventaire.details.reduce((acc: number, d: any) => acc + (d.ecart || 0), 0),
+          valeur_ecart_positif: inventaire.details.filter((d: any) => (d.ecart || 0) > 0).reduce((acc: number, d: any) => acc + (d.valeur_ecart || 0), 0),
+          valeur_ecart_negatif: inventaire.details.filter((d: any) => (d.ecart || 0) < 0).reduce((acc: number, d: any) => acc + (d.valeur_ecart || 0), 0)
+      };
+
+      const companyInfo = {
+        name: company?.name || 'Entreprise',
+        address: company?.address || undefined,
+        phone: company?.telephoneOrganisation || undefined,
+        email: company?.emailOrganisation || undefined,
+        logo: company?.logo || undefined,
+        currency: company?.currency || undefined,
+        country: company?.country || 'Comoros'
+      };
+
+      // Générer le PDF
+      const pdfBuffer = await InventairePdfService.generateInventaire(
+        { ...inventaire, stats }, 
+        companyInfo, 
+        { tenantId: companyId, userId }
+      );
+
+      const filename = `Inventaire-${inventaire.numero}.pdf`;
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.send(pdfBuffer);
+
+      console.log(`✅ [PDF-Controller] Rapport inventaire généré: ${filename}`);
+
+    } catch (error) {
+      console.error('❌ [PDF-Controller] Erreur génération rapport inventaire:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erreur lors de la génération du rapport inventaire.' 
       });
     }
   }

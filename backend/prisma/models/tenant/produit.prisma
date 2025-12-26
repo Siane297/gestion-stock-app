@@ -36,15 +36,16 @@ model produit {
     date_creation      DateTime @default(now())
     date_modification  DateTime @updatedAt
 
-    categorie        categorie_produit?        @relation(fields: [categorie_id], references: [id], onDelete: SetNull)
-    unite            unite_produit?            @relation(fields: [unite_id], references: [id], onDelete: SetNull)
-    prix_historiques historique_prix[]
-    stocks           stock_magasin[]
-    mouvements_stock mouvements_stock[]
-    ventes_details   vente_detail[]
-    achats_details   achat_detail[]
-    conditionnements conditionnement_produit[]
-    lots             lot_produit[]
+    categorie          categorie_produit?        @relation(fields: [categorie_id], references: [id], onDelete: SetNull)
+    unite              unite_produit?            @relation(fields: [unite_id], references: [id], onDelete: SetNull)
+    prix_historiques   historique_prix[]
+    stocks             stock_magasin[]
+    mouvements_stock   mouvements_stock[]
+    ventes_details     vente_detail[]
+    achats_details     achat_detail[]
+    conditionnements   conditionnement_produit[]
+    lots               lot_produit[]
+    inventaires_detail inventaire_detail[]
 
     @@map("produits")
 }
@@ -91,9 +92,10 @@ model lot_produit {
     date_fabrication DateTime?
     date_creation    DateTime  @default(now())
 
-    produit    produit            @relation(fields: [produit_id], references: [id], onDelete: Cascade)
-    stocks_lot stock_lot[]
-    mouvements mouvements_stock[]
+    produit            produit             @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+    stocks_lot         stock_lot[]
+    mouvements         mouvements_stock[]
+    inventaires_detail inventaire_detail[]
 
     @@unique([produit_id, numero_lot])
     @@map("lots_produit")

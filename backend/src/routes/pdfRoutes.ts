@@ -55,4 +55,18 @@ router.get('/proforma/:id',
   PdfController.generateProformaPdf
 );
 
+/**
+ * @route   GET /api/pdf/inventaire/:id
+ * @desc    Générer le rapport PDF d'un inventaire
+ * @access  Private (tenant-aware)
+ */
+router.get('/inventaire/:id',
+  pdfRateLimit,
+  authenticate,
+  identifyTenant,
+  requireTenant,
+  requirePermission(Module.INVENTAIRE, Action.VOIR),
+  PdfController.generateInventairePdf
+);
+
 export default router;

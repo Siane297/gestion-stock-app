@@ -19,6 +19,7 @@ export default defineNuxtRouteMiddleware((to) => {
     { path: '/employees', permission: 'personnel:voir' },
     { path: '/produits', permission: 'produits:voir' },
     { path: '/stock', permission: 'stock:voir' },
+    { path: '/inventaire', permission: 'inventaire:voir' },
     { path: '/caisse', permission: 'caisses:voir' },
     { path: '/point-vente', permission: 'ventes:creer' },
     { path: '/vente', permission: 'ventes:voir' },

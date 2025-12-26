@@ -97,8 +97,8 @@
                         {{ formatDate(data.date_creation) }}
                     </template>
                     <template #column-quantite="{ data }: { data: any }">
-                         <span :class="data.quantite > 0 && ['ENTREE_ACHAT', 'ENTREE_INITIALE', 'ENTREE_RETOUR'].includes(data.type) ? 'text-green-600' : 'text-red-600'" class="font-bold">
-                             {{ ['ENTREE_ACHAT', 'ENTREE_INITIALE', 'ENTREE_RETOUR'].includes(data.type) ? '+' : '-' }}{{ data.quantite }}
+                         <span :class="isPositiveMovement(data) ? 'text-green-600' : 'text-red-600'" class="font-bold">
+                             {{ isPositiveMovement(data) ? '+' : '-' }}{{ data.quantite }}
                          </span>
                     </template>
                     <template #column-utilisateur="{ data }: { data: any }">
@@ -112,10 +112,10 @@
 
              <!-- Onglet 2: Lots (Conditionnel) -->
              <div v-else-if="activeTab === 'lots'">
-                 <div v-if="!details.lots.length" class="p-10 flex flex-col items-center justify-center text-gray-400">
+                 <!-- <div v-if="!details.lots.length" class="p-10 flex flex-col items-center justify-center text-gray-400">
                       <Icon icon="tabler:box-off" class="text-4xl mb-2" />
                       <p>Aucun lot actif pour ce produit.</p>
-                 </div>
+                 </div> -->
                  <TableSimple 
                     v-if="details.product.gere_peremption"
                     :data="details.lots" 
@@ -224,6 +224,30 @@ const getTypeBadgeClass = (type: string) => {
     if (['ENTREE_ACHAT', 'ENTREE_INITIALE', 'ENTREE_RETOUR'].includes(type)) return 'bg-green-100 text-green-700';
     if (type === 'AJUSTEMENT') return 'bg-orange-100 text-orange-700';
     return 'bg-red-100 text-red-700';
+};
+
+// Détermine si un mouvement est positif (entrée) ou négatif (sortie)
+const isPositiveMovement = (data: any): boolean => {
+    const type = data.type;
+    const raison = data.raison?.toLowerCase() || '';
+    
+    // Types d'entrée classiques
+    if (['ENTREE_ACHAT', 'ENTREE_INITIALE', 'ENTREE_RETOUR'].includes(type)) {
+        return true;
+    }
+    
+    // Pour AJUSTEMENT, on détecte via la raison
+    if (type === 'AJUSTEMENT') {
+        // Si la raison contient "surplus" ou "ajout", c'est une entrée
+        if (raison.includes('surplus') || raison.includes('ajout')) {
+            return true;
+        }
+        // Sinon c'est une sortie (manque, retrait, etc.)
+        return false;
+    }
+    
+    // Tous les autres types (SORTIE_VENTE, SORTIE_PERISSABLE, TRANSFERT) sont des sorties
+    return false;
 };
 
 const isExpired = (dateStr: string) => new Date(dateStr) < new Date();

@@ -127,7 +127,8 @@ const stockFields = computed(() => {
             { label: 'Retour client', value: 'ENTREE_RETOUR' },
             { label: 'Vente', value: 'SORTIE_VENTE' },
             { label: 'Périssable', value: 'SORTIE_PERISSABLE' },
-            { label: 'Ajustement', value: 'AJUSTEMENT' },
+            { label: 'Ajustement (+)', value: 'AJUSTEMENT_PLUS' },
+            { label: 'Ajustement (-)', value: 'AJUSTEMENT_MOINS' },
             { label: 'Transfert', value: 'TRANSFERT' },
         ],
         optionLabel: 'label',
@@ -219,15 +220,36 @@ const handleSubmit = async (data: any) => {
              }
         }
 
+        // Déterminer le type réel et si c'est un ajout pour les ajustements
+        let typeReel = data.type;
+        let isAjoutStock: boolean | undefined = undefined;
+        
+        if (data.type === 'AJUSTEMENT_PLUS') {
+            typeReel = 'AJUSTEMENT';
+            isAjoutStock = true;
+            // Assurer que la raison contient "Ajout" pour l'affichage frontend
+            if (!data.raison?.toLowerCase().includes('ajout')) {
+                data.raison = data.raison ? `Ajout: ${data.raison}` : 'Ajout manuel';
+            }
+        } else if (data.type === 'AJUSTEMENT_MOINS') {
+            typeReel = 'AJUSTEMENT';
+            isAjoutStock = false;
+            // Assurer que la raison contient "Retrait" ou "Manque" pour l'affichage frontend
+            if (!data.raison?.toLowerCase().includes('retrait') && !data.raison?.toLowerCase().includes('manque')) {
+                data.raison = data.raison ? `Retrait: ${data.raison}` : 'Retrait manuel';
+            }
+        }
+
         const payload: CreateMouvementDto = {
             magasin_id: data.magasin_id,
             produit_id: data.produit_id,
-            type: data.type,
+            type: typeReel,
             quantite: quantiteFinale,
             raison: data.raison,
             numero_lot: data.numero_lot,
             date_peremption: data.date_peremption,
-            magasin_dest_id: data.magasin_dest_id // Optional param
+            magasin_dest_id: data.magasin_dest_id,
+            isAjoutStock: isAjoutStock
         };
 
         const actionLabel = data.type === 'TRANSFERT' ? 'Transfert' : 'Mouvement';

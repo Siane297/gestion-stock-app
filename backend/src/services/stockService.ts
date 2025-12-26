@@ -25,6 +25,7 @@ export interface CreateMouvementDto {
   date_peremption?: Date; // Pour mouvement manuel
   magasin_dest_id?: string; // Pour transfert
   quantite_minimum?: number; // Nouveau: Pour définir le seuil d'alerte lors de l'initialisation
+  isAjoutStock?: boolean; // Pour AJUSTEMENT: true = entrée/ajout, false = sortie/retrait
 }
 
 export interface StockUpdateResult {
@@ -124,12 +125,13 @@ export class StockService {
     }
 
     // Déterminer l'opération (incrément ou décrément) sur le magasin source
+    // Pour AJUSTEMENT: utiliser le paramètre explicite isAjoutStock s'il est fourni
     const isIncrement = ['ENTREE_ACHAT', 'ENTREE_INITIALE', 'ENTREE_RETOUR'].includes(data.type) ||
-      (data.type === 'AJUSTEMENT' && data.raison?.toLowerCase().includes('ajout'));
+      (data.type === 'AJUSTEMENT' && data.isAjoutStock === true);
     
     // TRANSFERT est une sortie pour le magasin source
     const isDecrement = ['SORTIE_VENTE', 'SORTIE_PERISSABLE', 'TRANSFERT'].includes(data.type) ||
-      (data.type === 'AJUSTEMENT' && !data.raison?.toLowerCase().includes('ajout'));
+      (data.type === 'AJUSTEMENT' && data.isAjoutStock === false);
 
     // Vérification du stock actuel
     const currentStock = await prismaClient.stock_magasin.findUnique({

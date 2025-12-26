@@ -7,6 +7,7 @@ export enum Module {
   TABLEAU_DE_BORD = 'tableau_de_bord',
   PRODUITS = 'produits',
   STOCK = 'stock',
+  INVENTAIRE = 'inventaire',
   ACHATS = 'achats',
   VENTES = 'ventes',
   CLIENTS = 'clients',
