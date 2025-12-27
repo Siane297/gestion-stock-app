@@ -1,23 +1,23 @@
 <template>
     <div class="flex flex-col gap-6 w-full">
         <!-- 1. Header de Page (Navigation et Actions Rapides) -->
-        <div class="w-full flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-            <div class="flex items-center gap-4">
-                <button @click="router.back()" class="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600"
+        <div class="w-full flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <button @click="router.back()" class="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600 flex-shrink-0"
                     title="Retour">
                     <Icon icon="lucide:arrow-left" class="text-xl" />
                 </button>
-                <div>
-                    <h1 class="text-xl font-bold text-noir">Détail de la vente</h1>
-                    <p class="text-xs text-gray-500">Consultez et gérez les informations de cette vente</p>
+                <div class="min-w-0">
+                    <h1 class="text-lg md:text-xl font-bold text-noir truncate">Détail de la vente</h1>
+                    <p class="text-xs text-gray-500 truncate">Consultez et gérez les informations</p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
                 <AppButton label="Ticket" icon="pi pi-receipt" variant="outline" size="sm" :loading="printingReceipt"
-                    @click="handlePrintReceipt" />
+                    class="w-full sm:w-auto" @click="handlePrintReceipt" />
                 <AppButton label="Proforma (A4)" icon="pi pi-print" variant="primary" size="sm"
-                    :loading="printingProforma" @click="handlePrintProforma" />
+                    class="w-full sm:w-auto" :loading="printingProforma" @click="handlePrintProforma" />
             </div>
         </div>
 

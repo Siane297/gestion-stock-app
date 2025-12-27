@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:visible="visible" modal header="Détails du Produit" :style="{ width: '60rem' }" class="p-fluid">
+  <Dialog v-model:visible="visible" modal header="Détails du Produit" :style="{ width: '60rem' }" :breakpoints="{ '960px': '75vw', '640px': '95vw' }" class="p-fluid">
     <div v-if="loading" class="flex flex-col items-center justify-center p-12 gap-4">
       <Icon icon="tabler:loader-2" class="text-4xl text-primary animate-spin" />
       <p class="text-gray-500 font-medium">Chargement des détails...</p>

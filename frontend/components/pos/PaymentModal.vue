@@ -4,6 +4,7 @@
     modal 
     header="Encaisser la commande" 
     :style="{ width: '500px' }" 
+    :breakpoints="{ '960px': '75vw', '640px': '95vw' }"
     :closable="true"
     @update:visible="val => $emit('update:visible', val)"
   >

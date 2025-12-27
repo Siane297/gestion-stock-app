@@ -1,7 +1,9 @@
 <template>
-    <div class="flex bg-white p-4 rounded-lg border-2 border-gris/40 gap-4 relative min-h-screen">
+    <div
+        class="flex flex-col lg:flex-row bg-white p-4 rounded-lg border-2 border-gris/40 gap-4 relative min-h-screen pb-24 lg:pb-4">
         <!-- Overlay Verrouillage -->
-        <div v-if="caisseStore.isLocked" class="absolute inset-0 z-[100] backdrop-blur-md flex flex-col items-center justify-center p-4">
+        <div v-if="caisseStore.isLocked"
+            class="absolute inset-0 z-[100] backdrop-blur-md flex flex-col items-center justify-center p-4">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
                     <Icon icon="tabler:lock" class="text-3xl text-white" />
@@ -9,16 +11,12 @@
                 <h2 class="text-2xl font-bold text-noir mb-2">Interface Verrouillée</h2>
                 <p class="text-noir/60">Saisissez votre PIN pour continuer</p>
             </div>
-            
-            <PinPad 
-                :loading="unlocking" 
-                :error="pinError"
-                @submit="handleUnlock"
-            />
+
+            <PinPad :loading="unlocking" :error="pinError" @submit="handleUnlock" />
         </div>
 
         <!-- Zone Marge Gauche (Catalogue) -->
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex-1 flex flex-col min-w-0" :class="activeMobileTab === 'catalog' ? 'block' : 'hidden lg:flex'">
 
             <!-- Grid Content -->
             <div class="flex-1 overflow-y-auto ">
@@ -37,18 +35,14 @@
 
                     <!-- Actions Rapides -->
                     <div class="flex gap-2">
-                        <button 
-                            @click="caisseStore.lock()" 
+                        <button @click="caisseStore.lock()"
                             class="p-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors"
-                            title="Verrouiller"
-                        >
+                            title="Verrouiller">
                             <Icon icon="tabler:lock" class="text-xl" />
                         </button>
-                        <button 
-                            @click="handleLogout" 
+                        <button @click="handleLogout"
                             class="p-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
-                            title="Fermer la session"
-                        >
+                            title="Fermer la session">
                             <Icon icon="tabler:power" class="text-xl" />
                         </button>
                     </div>
@@ -88,23 +82,35 @@
         </div>
 
         <!-- Zone Droite (Panier) -->
-        <div class="w-[350px]">
+        <div class="w-full lg:w-[350px]" :class="activeMobileTab === 'cart' ? 'block' : 'hidden lg:block'">
             <CartPanel />
         </div>
 
+        <!-- Mobile Bottom Navigation -->
+        <div
+            class="fixed bottom-0 left-0 right-0 z-40 lg:hidden flex gap-2 bg-white/95 backdrop-blur-md p-5 border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <AppButton @click="activeMobileTab = 'catalog'" class="flex-1"
+                :variant="activeMobileTab === 'catalog' ? 'primary' : 'secondary'" icon="pi pi-list"
+                label="Catalogue" />
+            <AppButton @click="activeMobileTab = 'cart'" class="flex-1 !overflow-visible"
+                :variant="activeMobileTab === 'cart' ? 'primary' : 'secondary'">
+                <div class="flex items-center justify-center gap-2 relative w-full">
+                    <Icon icon="tabler:shopping-cart" class="text-xl" />
+                    <span>Panier</span>
+                    <div v-if="store.cart.length > 0"
+                        class="absolute -top-4 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-20">
+                        {{ store.cart.length }}
+                    </div>
+                </div>
+            </AppButton>
+        </div>
+
         <!-- Dialogue de Clôture -->
-        <FormPopupDynamique
-            v-model:visible="showClosureDialog"
-            title="Clôture de Session"
+        <FormPopupDynamique v-model:visible="showClosureDialog" title="Clôture de Session"
             description="Veuillez compter votre caisse et enregistrer le montant final avant de quitter."
-            headerTitle="Fermer la Session"
-            submitLabel="Clôturer et Quitter"
-            cancelLabel="Annuler"
-            :fields="closureFields"
-            :loading="closureLoading"
-            @submit="handleClosureSubmit"
-        />
-        
+            headerTitle="Fermer la Session" submitLabel="Clôturer et Quitter" cancelLabel="Annuler"
+            :fields="closureFields" :loading="closureLoading" @submit="handleClosureSubmit" />
+
         <!-- Toast supprimé car global dans App.vue -->
     </div>
 </template>
@@ -112,6 +118,7 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue';
 import { Icon } from '@iconify/vue';
+import AppButton from '~/components/button/AppButton.vue';
 import { usePos } from '~/composables/api/usePos';
 import { useCaisseApi } from '~/composables/api/useCaisseApi';
 import { useCaisseStore } from '~/stores/caisse';
@@ -140,6 +147,7 @@ const toast = useToast();
 // État de clôture de session
 const showClosureDialog = ref(false);
 const closureLoading = ref(false);
+const activeMobileTab = ref<'catalog' | 'cart'>('catalog');
 
 const closureFields: FormField[] = [
     {
@@ -197,11 +205,11 @@ const handleClosureSubmit = async (data: any) => {
             notes: data.notes_fermeture
         });
 
-        toast.add({ 
-            severity: 'success', 
-            summary: 'Session clôturée', 
-            detail: 'La session a été fermée avec succès. Redirection...', 
-            life: 2000 
+        toast.add({
+            severity: 'success',
+            summary: 'Session clôturée',
+            detail: 'La session a été fermée avec succès. Redirection...',
+            life: 2000
         });
 
         // Nettoyer et rediriger
@@ -212,11 +220,11 @@ const handleClosureSubmit = async (data: any) => {
 
     } catch (err: any) {
         console.error('Erreur clôture:', err);
-        toast.add({ 
-            severity: 'error', 
-            summary: 'Erreur clôture', 
-            detail: err.message || 'Impossible de fermer la session', 
-            life: 5000 
+        toast.add({
+            severity: 'error',
+            summary: 'Erreur clôture',
+            detail: err.message || 'Impossible de fermer la session',
+            life: 5000
         });
     } finally {
         closureLoading.value = false;
@@ -239,6 +247,10 @@ const uniqueCategories = computed(() => {
 const handleAddToCart = (item: any) => {
     // Add sound effect?
     store.addToCart(item);
+    // Optionnel : Notification visuelle sur mobile
+    if (window.innerWidth < 1024) {
+        toast.add({ severity: 'success', summary: 'Ajouté', detail: 'Produit ajouté au panier', life: 1000 });
+    }
 };
 </script>
 

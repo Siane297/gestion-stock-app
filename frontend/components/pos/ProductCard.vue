@@ -5,7 +5,11 @@
         isOutOfStock ? 'opacity-60 cursor-not-allowed border-red-200 bg-red-50/10' : 'cursor-pointer hover:shadow-md hover:border-primary/50'
     ]"
     @click="handleClick"
-  >
+    >
+    <div v-if="itemQuantity > 0" class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md z-20 animate-bounce-in">
+      {{ itemQuantity }}
+    </div>
+
     <!-- Badge Pack -->
     <div v-if="item.packLabel" class="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 shadow-sm">
       {{ item.packLabel }}
@@ -58,7 +62,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { PosProductItem } from '~/composables/api/usePos';
+import { usePos } from '~/composables/api/usePos';
 import { useCurrency } from '~/composables/useCurrency';
 
 const props = defineProps<{
@@ -68,6 +74,13 @@ const props = defineProps<{
 const emit = defineEmits(['add']);
 
 const { formatPrice } = useCurrency();
+const store = usePos();
+
+// Calculer la quantité de cet article dans le panier
+const itemQuantity = computed(() => {
+  const cartItem = store.cart.find(ci => ci.uniqueId === props.item.uniqueId);
+  return cartItem ? cartItem.quantity : 0;
+});
 
 const isOutOfStock = computed(() => {
     return (props.item.stockAvailable || 0) <= 0;
