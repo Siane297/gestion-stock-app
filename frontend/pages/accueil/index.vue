@@ -8,19 +8,19 @@
          <div class="absolute inset-0 bg-gradient-to-r from-side/50 to-side/40"></div>
       </div>
 
-      <div class="flex items-center justify-between relative z-10">
-        <div class=" space-y-1">
-          <h1 class="text-2xl font-bold text-white">Tableau de bord</h1>
-          <p class="text-white/70 text-sm">Vue d'ensemble de votre activité</p>
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between relative z-10 gap-4">
+        <div class="space-y-1">
+          <h1 class="text-xl md:text-2xl font-bold text-white">Tableau de bord</h1>
+          <p class="text-white/70 text-xs md:text-sm">Vue d'ensemble de votre activité</p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
           <!-- Période Selector (PrimeVue) -->
           <Dropdown v-model="selectedPeriod" :options="periodOptions" optionLabel="label" optionValue="value"
-            class="w-48" @change="fetchDashboardStats" />
+            class="flex-1 sm:w-48 !rounded-xl" @change="fetchDashboardStats" />
             
           <button @click="fetchDashboardStats"
-              class="p-3 bg-white hover:bg-primary border border-white/20 rounded-lg text-noir transition-colors shadow-sm"
+              class="p-3 bg-white hover:bg-gray-100 border border-white/20 rounded-xl text-noir transition-colors shadow-sm flex-shrink-0"
               title="Rafraîchir">
               <Icon icon="tabler:refresh" :class="{ 'animate-spin': loading }" />
           </button>

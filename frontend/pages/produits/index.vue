@@ -6,41 +6,27 @@
     />
 
     <div class="mt-6">
-        <TableGeneric
-            :columns="columns"
-            :data="produits"
+        <ProductGrid
+            :produits="produits"
             :loading="loading"
-            :global-action="hasPermission('produits', 'creer') ? {
-                label: 'Nouveau Produit',
-                icon: 'pi pi-plus',
-                variant: 'primary',
-                link: '/produits/ajouter'
-            } : undefined"
-            :show-edit="hasPermission('produits', 'modifier')"
-            :show-delete="hasPermission('produits', 'supprimer')"
-            :search-fields="['nom', 'code_barre', 'categorie.nom']"
-            delete-label-field="nom"
-            @action:view="handleView"
-            @action:edit="handleEdit"
-            @action:delete="handleDelete"
+            :server-url="serverUrl"
+            :can-edit="hasPermission('produits', 'modifier')"
+            :can-delete="hasPermission('produits', 'supprimer')"
+            @view="handleView"
+            @edit="handleEdit"
+            @delete="handleDelete"
         >
-             <!-- Custom rendering pour nom (Image + Nom) -->
-             <template #column-nom="{ data }: { data: any }">
-                 <div class="flex items-center gap-3">
-                     <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200 overflow-hidden flex-shrink-0">
-                         <img v-if="data.image_url" :src="getFullImageUrl(data.image_url)" :alt="data.nom" class="w-full h-full object-cover" />
-                         <i v-else class="pi pi-image text-gray-400 text-lg"></i>
-                          <!-- <span v-else class="text-2xl">📦</span> -->
-                     </div>
-                     <span class="font-medium text-gray-800">{{ data.nom }}</span>
-                 </div>
-             </template>
-
-             <!-- Custom rendering pour status (exemple) -->
-             <template #column-est_actif="{ data }: { data: any }">
-                 <Tag :severity="data.est_actif ? 'success' : 'danger'" :value="data.est_actif ? 'Actif' : 'Inactif'" />
-             </template>
-        </TableGeneric>
+            <template #actions>
+                <AppButton 
+                    v-if="hasPermission('produits', 'creer')"
+                    label="Nouveau Produit" 
+                    icon="pi pi-plus" 
+                    variant="primary"
+                    class="w-full lg:w-auto"
+                    @click="router.push('/produits/ajouter')"
+                />
+            </template>
+        </ProductGrid>
     </div>
 
     <!-- Modal Détail Produit -->
@@ -59,10 +45,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
+import { useRouter } from 'vue-router';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
-import BannerHeader from '~/components/banner/BannerHeader.vue';
 import ProduitDetailModal from '~/components/produit/ProduitDetailModal.vue';
+import ProductGrid from '~/components/produit/ProductGrid.vue';
+import AppButton from '~/components/button/AppButton.vue';
 import { useProduitApi, type Produit } from '~/composables/api/useProduitApi';
 import { usePermissions } from '~/composables/usePermissions';
 import Tag from 'primevue/tag';
@@ -81,13 +68,6 @@ const loading = ref(false);
 const showDetailModal = ref(false);
 const detailLoading = ref(false);
 const selectedProduit = ref<Produit | null>(null);
-
-const columns: TableColumn[] = [
-    { field: 'nom', header: 'Nom du Produit', sortable: true, customRender: true },
-    { field: 'categorie.nom', header: 'Catégorie', sortable: true, type: 'tag' },
-    { field: 'unite.nom', header: 'Unité', sortable: true },
-    { field: 'est_actif', header: 'Statut', sortable: true, customRender: true }, // Utilise le slot #column-est_actif
-];
 
 const apiBase = config.public.apiBase as string;
 let serverUrl = '';
