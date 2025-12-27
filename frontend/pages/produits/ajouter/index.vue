@@ -225,14 +225,13 @@ const productGroups = computed(() => [
     fields: [
       {
         name: "magasin_id",
-        label: "Magasin pour stock initial",
+        label: "Boutique pour stock initial",
         type: "select" as const,
-        placeholder: "Sélectionnez un magasin",
+        placeholder: "Sélectionnez une boutique",
         required: false,
         options: magasins.value,
         optionLabel: "nom",
         optionValue: "id",
-        helpText: "Si vous êtes votre propre fournisseur, saisissez directement la quantité en stock."
       },
       {
         name: "quantite_initiale",
@@ -250,7 +249,6 @@ const productGroups = computed(() => [
         placeholder: "Ex: 10",
         required: false,
         min: 0,
-        helpText: "Vous recevrez une alerte si le stock descend sous ce seuil."
       },
        {
          name: "gere_peremption",

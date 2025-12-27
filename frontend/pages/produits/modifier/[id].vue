@@ -305,16 +305,16 @@ const productGroups = computed(() => {
             helpText: "Vous recevrez une alerte si le stock descend sous ce seuil."
         },
         // Informations du Lot (Visible seulement si produit gère la péremption)
-        {
-            name: "numero_lot",
-            name2: "date_peremption",
-            label: "Informations du Lot Initial",
-            type: "lot-fields" as const,
-            icon: "pi pi-box",
-            visible: !!produit.value.gere_peremption,
-            fullWidth: true,
-            helpText: "Note: La gestion des lots se fait via les mouvements de stock."
-        },
+        // {
+        //     name: "numero_lot",
+        //     name2: "date_peremption",
+        //     label: "Informations du Lot Initial",
+        //     type: "lot-fields" as const,
+        //     icon: "pi pi-box",
+        //     visible: !!produit.value.gere_peremption,
+        //     fullWidth: true,
+        //     helpText: "Note: La gestion des lots se fait via les mouvements de stock."
+        // },
         {
           name: 'est_actif',
           label: 'Produit Actif',

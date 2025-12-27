@@ -51,10 +51,10 @@ onMounted(async () => {
 const caisseFields = computed(() => [
     {
         name: 'magasin_id',
-        label: 'Magasin',
+        label: 'Boutique',
         type: 'select' as const,
         required: true,
-        placeholder: 'Sélectionnez un magasin',
+        placeholder: 'Sélectionnez une boutique',
         options: magasins.value.map(m => ({ label: m.nom, value: m.id })),
         optionLabel: 'label',
         optionValue: 'value'
