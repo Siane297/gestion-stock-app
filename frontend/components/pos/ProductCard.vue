@@ -16,9 +16,11 @@
     </div>
 
     <!-- Image / Placeholder -->
-    <div class="h-20 w-full bg-bleu/50 rounded-lg flex items-center justify-center overflow-hidden mb-0.5 relative">
-      <img v-if="item.image" :src="item.image" alt="Product" class="h-full w-full object-cover" :class="{ 'grayscale': isOutOfStock }" />
-      <span v-else class="text-xl opacity-50">📦</span>
+    <div class="h-20 w-full border border-gray-100 rounded-lg flex items-center justify-center overflow-hidden mb-0.5 relative p-1">
+      <img v-if="item.image" :src="item.image" alt="Product" class="h-full w-full object-contain" :class="{ 'grayscale': isOutOfStock }" />
+      <div v-else class="w-full h-full bg-gray-50 flex items-center justify-center rounded-md">
+         <span class="text-xl opacity-50">📦</span>
+      </div>
       
       <!-- Overlay Add -->
       <div v-if="!isOutOfStock" class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
