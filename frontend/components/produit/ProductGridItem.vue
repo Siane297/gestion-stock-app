@@ -2,27 +2,27 @@
     <div
         class="bg-white rounded-2xl border-2 border-gris/40 p-4 hover:shadow-sm shadow-primary/20 transition-shadow relative group">
         <!-- Header: Image & Badges -->
-        <div class="flex items-center justify-between gap-3 mb-3">
+        <div class="flex flex-col items-start gap-3 mb-3">
             <div
-                class="w-16 h-16 rounded-xl bg-gray-100 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                class="w-full h-28 rounded-xl bg-gray-100 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                 <img v-if="produit.image_url" :src="getFullImageUrl(produit.image_url)" :alt="produit.nom"
                     class="w-full h-full object-cover" />
-                <span v-else class="text-3xl">📦</span>
+                <i v-else class="pi pi-image text-3xl text-gray-400"></i>
             </div>
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 w-full text-left">
                 <div class="flex items-start justify-between">
-                    <h3 class="font-bold text-gray-800 text-sm leading-tight line-clamp-2" :title="produit.nom">
+                    <h3 class="font-bold text-gray-800 text-sm leading-tight line-clamp-2 w-full" :title="produit.nom">
                         {{ produit.nom }}
                     </h3>
 
                 </div>
-                <p class="text-xs text-primary font-medium mt-1 truncate">Cat: {{ produit.categorie?.nom || 'Sans catégorie' }}</p>
+                <p class="text-[11px] sm:text-xs text-primary font-medium mt-1 truncate"> <span class="font-bold text-noir">Catégorie : </span> {{ produit.categorie?.nom || 'Sans catégorie' }}</p>
             </div>
         </div>
 
         <!-- Details -->
         <div class="flex items-center justify-between pt-3 border-t border-gris/70 mt-1">
-            <Badge :value="produit.unite?.nom || 'Unité'" severity="info"
+            <Badge :value="produit.unite?.nom || 'Unité'"  severity="info"
                 class="!font-medium !bg-primary !text-[10px]" />
             <button @click="toggleMenu"
                 class="p-1.5 hover:bg-bleu/60 text-gray-400 hover:text-gray-600 rounded-lg transition-colors flex-shrink-0">
