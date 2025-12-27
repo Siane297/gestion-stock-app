@@ -229,6 +229,7 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
       email: user.email,
       role: user.role,
       companyId: company.id,
+      tenantId: schemaName,
       isOwner: true,
       globalScope: true, // Le créateur a accès à tout par défaut
       customPermissions: ['*'], // Wildcard pour l'owner initial
@@ -336,6 +337,7 @@ router.post('/login', validateRequest(loginSchema), async (req: Request, res: Re
           email: adminUser.email,
           role: adminUser.role,
           ...(adminUser.companyId && { companyId: adminUser.companyId }),
+          ...(adminUser.company?.schemaName && { tenantId: adminUser.company.schemaName }),
           isOwner: adminUser.role === 'ADMIN' || adminUser.role === 'SUPER_ADMIN', // À affiner si besoin
           globalScope: true, // Les admins ont accès à tout par défaut
           customPermissions: ['*'],

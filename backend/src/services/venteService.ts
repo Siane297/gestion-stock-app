@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../config/logger.js';
 import { StockService } from './stockService.js';
+import { NotificationService } from './NotificationService.js';
+import { TypeNotification } from '../types/notificationTypes.js';
+import { socketService } from './socketService.js';
 
 // Enums (alignés avec Prisma)
 export type StatutVente = 'BROUILLON' | 'EN_ATTENTE' | 'PAYEE' | 'ANNULEE' | 'REMBOURSEE';
@@ -48,10 +51,14 @@ export interface VenteFilters {
 export class VenteService {
   private prisma: PrismaClient;
   private stockService: StockService;
+  private notificationService: NotificationService;
+  private tenantId?: string;
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient, tenantId?: string) {
     this.prisma = prisma;
-    this.stockService = new StockService(prisma);
+    this.stockService = new StockService(prisma, tenantId);
+    this.notificationService = new NotificationService(prisma);
+    this.tenantId = tenantId;
   }
 
   /**
@@ -237,8 +244,54 @@ export class VenteService {
       }
 
       logger.info(`Vente créée: ${vente.id} - Total: ${vente.montant_total}`);
+      
+      // c. Notifications (Hors transaction)
+      this.triggerSaleNotifications(vente, data.utilisateur_id);
+
       return vente;
     });
+  }
+
+  /**
+   * Déclenche les notifications pour une vente
+   */
+  private async triggerSaleNotifications(vente: any, authorId: string): Promise<void> {
+    try {
+      const emetteur = await this.prisma.tenantUser.findUnique({
+        where: { id: authorId },
+        include: { employee: true }
+      });
+
+      const nomEmetteur = emetteur?.employee ? emetteur.employee.fullName : authorId;
+      
+      // Récupérer la devise du tenant
+      const devise = await this.notificationService.getCurrencySymbol(this.tenantId || '');
+
+      // Créer les notifications en base pour tous les autres
+      const notifications = await this.notificationService.createNotificationForAllExceptEmitter(authorId, {
+        type: TypeNotification.VENTE_NOUVELLE,
+        titre: 'Nouvelle Vente',
+        message: `${nomEmetteur} a effectué une vente de ${vente.montant_total} ${devise} (Ticket: ${vente.numero_vente})`,
+        reference_type: 'vente',
+        reference_id: vente.id,
+        metadata: {
+          numero_vente: vente.numero_vente,
+          montant_total: vente.montant_total
+        }
+      });
+
+      if (notifications.length > 0 && this.tenantId) {
+        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', {
+          type: TypeNotification.VENTE_NOUVELLE,
+          titre: 'Nouvelle Vente',
+          message: `${nomEmetteur} a effectué une vente de ${vente.montant_total} ${devise} (Ticket: ${vente.numero_vente})`,
+          reference_type: 'vente',
+          reference_id: vente.id
+        });
+      }
+    } catch (error) {
+      logger.error('Erreur lors du déclenchement des notifications de vente:', error);
+    }
   }
 
   /**

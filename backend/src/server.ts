@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser';
 // Configuration
 import { connectDatabase } from './config/database.js';
 import { logger } from './config/logger.js';
+import { socketService } from './services/socketService.js';
 
 // Routes
 import authRoutes from './routes/authRoutes.js';
@@ -36,6 +37,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import caisseRoutes from './routes/caisseRoutes.js';
 import inventaireRoutes from './routes/inventaireRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -210,6 +212,7 @@ app.use('/api/audit', identifyTenant, requireTenant, auditRoutes);
 app.use('/api/dashboard', identifyTenant, requireTenant, dashboardRoutes);
 app.use('/api/caisses', identifyTenant, requireTenant, caisseRoutes);
 app.use('/api/inventaire', identifyTenant, requireTenant, inventaireRoutes);
+app.use('/api/notifications', identifyTenant, requireTenant, notificationRoutes);
 app.use('/api/users', identifyTenant, userRoutes);
 
 // Route de base
@@ -246,8 +249,8 @@ const startServer = async () => {
     // Initialiser le cron de vérification des abonnements
     initSubscriptionCron();
     
-    // Démarrage du serveur
-    app.listen(PORT, () => {
+    // Initialiser Socket.io
+    const httpServer = app.listen(PORT, () => {
       if (process.env.NODE_ENV !== 'production') {
         logger.info(`🚀 Serveur démarré sur le port ${PORT}`);
         logger.info(`🌍 Environnement: ${process.env.NODE_ENV || 'development'}`);
@@ -257,6 +260,8 @@ const startServer = async () => {
         logger.info(`🚀 Serveur démarré sur le port ${PORT} [Production]`);
       }
     });
+
+    socketService.initialize(httpServer, allowedOrigins);
   } catch (error) {
     logger.error('❌ Erreur lors du démarrage du serveur:', error);
     process.exit(1);

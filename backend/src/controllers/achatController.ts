@@ -7,7 +7,7 @@ import { logger } from '../config/logger.js';
  */
 export const getAllAchats = async (req: Request, res: Response) => {
   try {
-    const achatService = new AchatService(req.tenantPrisma);
+    const achatService = new AchatService(req.tenantPrisma, req.tenantSchema);
     const filters: any = {};
     const user = req.user;
 
@@ -56,7 +56,7 @@ export const getAchatById = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const achatService = new AchatService(req.tenantPrisma);
+    const achatService = new AchatService(req.tenantPrisma, req.tenantSchema);
     const achat = await achatService.getById(id);
 
     res.json({
@@ -78,8 +78,12 @@ export const getAchatById = async (req: Request, res: Response) => {
  */
 export const createAchat = async (req: Request, res: Response) => {
   try {
-    const achatService = new AchatService(req.tenantPrisma);
-    const achat = await achatService.create(req.body);
+    const achatService = new AchatService(req.tenantPrisma, req.tenantSchema);
+    const userId = (req as any).user?.userId || (req as any).userId;
+    const achat = await achatService.create({
+      ...req.body,
+      utilisateur_id: userId
+    });
 
     res.status(201).json({
       success: true,
@@ -106,7 +110,7 @@ export const updateAchat = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const achatService = new AchatService(req.tenantPrisma);
+    const achatService = new AchatService(req.tenantPrisma, req.tenantSchema);
     const result = await achatService.update(id, req.body);
 
     res.json({
@@ -134,7 +138,7 @@ export const updateAchatStatut = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const achatService = new AchatService(req.tenantPrisma);
+    const achatService = new AchatService(req.tenantPrisma, req.tenantSchema);
     const userId = (req as any).user?.userId;
 
     const result = await achatService.updateStatut(id, {
@@ -162,7 +166,7 @@ export const deleteAchat = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const achatService = new AchatService(req.tenantPrisma);
+    const achatService = new AchatService(req.tenantPrisma, req.tenantSchema);
     const result = await achatService.delete(id);
 
     res.json(result);

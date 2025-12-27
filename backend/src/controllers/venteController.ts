@@ -7,7 +7,7 @@ import { logger } from '../config/logger.js';
  */
 export const getAllVentes = async (req: Request, res: Response) => {
   try {
-    const venteService = new VenteService(req.tenantPrisma);
+    const venteService = new VenteService(req.tenantPrisma, req.tenantSchema);
     
     const ventes = await venteService.getAll({
       magasin_id: req.query.magasin_id as string,
@@ -37,7 +37,7 @@ export const getVenteById = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const venteService = new VenteService(req.tenantPrisma);
+    const venteService = new VenteService(req.tenantPrisma, req.tenantSchema);
     const vente = await venteService.getById(id);
 
     res.json({
@@ -59,7 +59,7 @@ export const getVenteById = async (req: Request, res: Response) => {
  */
 export const createVente = async (req: Request, res: Response) => {
   try {
-    const venteService = new VenteService(req.tenantPrisma);
+    const venteService = new VenteService(req.tenantPrisma, req.tenantSchema);
     const userId = (req as any).user?.userId;
 
     const vente = await venteService.create({
@@ -92,7 +92,7 @@ export const updateVenteStatut = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const venteService = new VenteService(req.tenantPrisma);
+    const venteService = new VenteService(req.tenantPrisma, req.tenantSchema);
     const userId = (req as any).user?.userId;
 
     const result = await venteService.updateStatut(id, {

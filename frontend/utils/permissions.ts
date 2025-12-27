@@ -147,6 +147,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     `${Module.RAPPORTS}:${Action.VOIR}`,
     `${Module.RAPPORTS}:${Action.EXPORTER}`,
     `${Module.PARAMETRES}:${Action.VOIR}`,
+    `${Module.INVENTAIRE}:${Action.VOIR}`,
   ],
 
   [TenantUserRole.USER]: [

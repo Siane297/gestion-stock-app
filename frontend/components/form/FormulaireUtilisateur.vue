@@ -594,6 +594,7 @@ const permissionModules = [
   { id: "tableau_de_bord", name: "Tableau de bord", icon: "tabler:home", actions: ["voir"] },
   { id: "produits", name: "Produits", icon: "tabler:box", actions: ["voir", "creer", "modifier", "supprimer", "exporter"] },
   { id: "stock", name: "Stock", icon: "tabler:archive", actions: ["voir", "creer", "modifier", "valider"] },
+  { id: "inventaire", name: "Inventaire", icon: "tabler:clipboard-check", actions: ["voir", "creer", "modifier", "supprimer", "valider", "exporter"] },
   { id: "achats", name: "Achats", icon: "tabler:shopping-cart", actions: ["voir", "creer", "modifier", "valider"] },
   { id: "ventes", name: "Ventes", icon: "tabler:coins", actions: ["voir", "creer", "modifier", "supprimer", "exporter"] },
   { id: "clients", name: "Clients", icon: "tabler:user-check", actions: ["voir", "creer", "modifier"] },
@@ -603,6 +604,7 @@ const permissionModules = [
   { id: "utilisateurs", name: "Utilisateurs", icon: "tabler:user-cog", actions: ["voir", "creer", "modifier", "supprimer"] },
   { id: "boutiques", name: "Boutiques", icon: "tabler:building-store", actions: ["voir", "creer", "modifier"] },
   { id: "comptabilite", name: "Comptabilité", icon: "tabler:calculator", actions: ["voir", "exporter"] },
+  { id: "rapports", name: "Rapports", icon: "tabler:chart-bar", actions: ["voir", "exporter"] },
   { id: "parametres", name: "Paramètres", icon: "tabler:settings", actions: ["voir", "modifier"] },
 ];
 

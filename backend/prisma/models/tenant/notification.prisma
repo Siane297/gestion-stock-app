@@ -1,0 +1,36 @@
+enum TypeNotification {
+    VENTE_NOUVELLE
+    VENTE_IMPORTANTE
+    ACHAT_NOUVELLE_COMMANDE
+    ACHAT_RECEPTION_PARTIELLE
+    ACHAT_RECEPTION_COMPLETE
+    STOCK_FAIBLE
+    STOCK_RUPTURE
+    INVENTAIRE_NOUVEAU
+    INVENTAIRE_VALIDE
+    SYSTEME_INFO
+    SYSTEME_ALERTE
+}
+
+model notification {
+    id              String           @id @default(uuid())
+    type            TypeNotification
+    titre           String
+    message         String
+    reference_type  String? // Type de ressource: "vente", "achat", "produit", etc.
+    reference_id    String? // ID de la ressource liée
+    destinataire_id String? // Si null, notification pour tous
+    emetteur_id     String? // Utilisateur qui a déclenché l'action
+    est_lue         Boolean          @default(false)
+    date_lecture    DateTime?
+    metadata        Json? // Données additionnelles (JSON)
+    date_creation   DateTime         @default(now())
+
+    destinataire TenantUser? @relation("notifications_recues", fields: [destinataire_id], references: [id], onDelete: Cascade)
+    emetteur     TenantUser? @relation("notifications_envoyees", fields: [emetteur_id], references: [id], onDelete: SetNull)
+
+    @@index([destinataire_id, est_lue])
+    @@index([date_creation])
+    @@index([type])
+    @@map("notifications")
+}

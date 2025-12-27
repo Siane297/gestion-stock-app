@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../config/logger.js';
 import { StockService } from './stockService.js';
+import { NotificationService } from './NotificationService.js';
+import { TypeNotification } from '../types/notificationTypes.js';
+import { socketService } from './socketService.js';
 
 // Types
 export type StatutAchat = 'COMMANDE' | 'RECU_PARTIELLEMENT' | 'RECU_COMPLET' | 'FACTURE_RECU' | 'PAYE' | 'ANNULE';
@@ -28,6 +31,7 @@ export interface UpdateAchatDto {
     notes?: string;
     create_reliquat?: boolean;
     details?: Array<AchatDetailDto & { id?: string }>; // id si mise à jour ligne existante
+    utilisateur_id?: string;
 }
 
 export interface CreateAchatDto {
@@ -40,6 +44,7 @@ export interface CreateAchatDto {
   date_livraison_prevue?: Date;
   notes?: string;
   details: AchatDetailDto[];
+  utilisateur_id?: string;
 }
 
 export interface UpdateAchatStatutDto {
@@ -53,10 +58,14 @@ export interface UpdateAchatStatutDto {
 export class AchatService {
   private prisma: PrismaClient;
   private stockService: StockService;
+  private notificationService: NotificationService;
+  private tenantId?: string;
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient, tenantId?: string) {
     this.prisma = prisma;
-    this.stockService = new StockService(prisma);
+    this.stockService = new StockService(prisma, tenantId);
+    this.notificationService = new NotificationService(prisma);
+    this.tenantId = tenantId;
   }
 
   /**
@@ -230,6 +239,10 @@ export class AchatService {
     });
 
     logger.info(`Achat créé: ${result.id} - ${data.details.length} produits`);
+    
+    // Notifications (Hors transaction)
+    this.triggerAchatNotifications(result, data.utilisateur_id || 'system', TypeNotification.ACHAT_NOUVELLE_COMMANDE);
+    
     return result;
   }
 
@@ -507,8 +520,74 @@ export class AchatService {
             await tx.achat.update({ where: { id }, data: { montant_total: total } });
         }
         
-        return tx.achat.findUnique({ where: { id }, include: { details: true } });
+        const updatedAchat = await tx.achat.findUnique({ where: { id }, include: { details: true } });
+        
+        // Notifications (Hors transaction)
+        if (updatedAchat) {
+          const type = updatedAchat.statut === 'RECU_COMPLET' 
+            ? TypeNotification.ACHAT_RECEPTION_COMPLETE 
+            : TypeNotification.ACHAT_RECEPTION_PARTIELLE;
+          this.triggerAchatNotifications(updatedAchat, 'system', type);
+        }
+
+        return updatedAchat;
     });
+  }
+
+  /**
+   * Déclenche les notifications pour un achat
+   */
+  private async triggerAchatNotifications(achat: any, authorId: string, type: TypeNotification): Promise<void> {
+    try {
+      const emetteur = await this.prisma.tenantUser.findUnique({
+        where: { id: authorId },
+        include: { employee: true }
+      });
+
+      const nomEmetteur = emetteur?.employee ? emetteur.employee.fullName : (authorId === 'system' ? 'Système' : authorId);
+      
+      let message = '';
+      let titre = '';
+
+      switch (type) {
+        case TypeNotification.ACHAT_NOUVELLE_COMMANDE:
+          titre = 'Nouvel Achat';
+          message = `${nomEmetteur} a créé une nouvelle commande d'achat (N°: ${achat.numero_commande || achat.id})`;
+          break;
+        case TypeNotification.ACHAT_RECEPTION_PARTIELLE:
+          titre = 'Réception Partielle';
+          message = `Réception partielle enregistrée pour l'achat ${achat.numero_commande || achat.id}`;
+          break;
+        case TypeNotification.ACHAT_RECEPTION_COMPLETE:
+          titre = 'Réception terminée';
+          message = `Toutes les marchandises ont été reçues pour l'achat ${achat.numero_commande || achat.id}`;
+          break;
+      }
+
+      const notifications = await this.notificationService.createNotificationForAllExceptEmitter(authorId, {
+        type,
+        titre,
+        message,
+        reference_type: 'achat',
+        reference_id: achat.id,
+        metadata: {
+          numero_commande: achat.numero_commande,
+          statut: achat.statut
+        }
+      });
+
+      if (notifications.length > 0 && this.tenantId) {
+        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', {
+          type,
+          titre,
+          message,
+          reference_type: 'achat',
+          reference_id: achat.id
+        });
+      }
+    } catch (error) {
+      logger.error('Erreur lors du déclenchement des notifications d\'achat:', error);
+    }
   }
 
   /**

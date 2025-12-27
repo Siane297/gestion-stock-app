@@ -1,0 +1,313 @@
+<template>
+    <div class="flex flex-col gap-6 w-full">
+        <!-- 1. Header de Page (Navigation et Actions Rapides) -->
+        <div class="w-full flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button @click="router.back()" class="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600"
+                    title="Retour">
+                    <Icon icon="lucide:arrow-left" class="text-xl" />
+                </button>
+                <div>
+                    <h1 class="text-xl font-bold text-noir">Détail de la vente</h1>
+                    <p class="text-xs text-gray-500">Consultez et gérez les informations de cette vente</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <AppButton label="Ticket" icon="pi pi-receipt" variant="outline" size="sm" :loading="printingReceipt"
+                    @click="handlePrintReceipt" />
+                <AppButton label="Proforma (A4)" icon="pi pi-print" variant="primary" size="sm"
+                    :loading="printingProforma" @click="handlePrintProforma" />
+            </div>
+        </div>
+
+        <!-- 2. États de Chargement -->
+        <div v-if="loading"
+            class="flex flex-col items-center justify-center py-20 gap-4 bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <Icon icon="tabler:loader-2" class="text-5xl text-primary animate-spin" />
+            <p class="text-gray-500 font-medium">Chargement des détails de la vente...</p>
+        </div>
+
+        <!-- 3. Contenu de la Vente -->
+        <div v-else-if="vente" class="flex flex-col gap-6">
+            <!-- 3.1 Informations Générales (Prend 100% de la largeur) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-side2 p-6 rounded-3xl">
+                <!-- Bloc Vente -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 text-white/60">
+                        <Icon icon="tabler:info-circle" class="text-xl" />
+                        <span class="font-bold uppercase tracking-widest text-[10px]">Informations Vente</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between border-b border-white/10 pb-1">
+                            <span class="text-xs text-white/70">ID Vente</span>
+                            <span class="text-xs font-bold text-white">#{{ vente.id.substring(0, 8).toUpperCase() }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-white/10 pb-1">
+                            <span class="text-xs text-white/70">Date & Heure</span>
+                            <span class="text-xs font-bold text-white">{{ formatDate(vente.date_creation) }} à {{ formatTime(vente.date_creation) }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-white/10 pb-1">
+                            <span class="text-xs text-white/70">Magasin</span>
+                            <span class="text-xs font-bold text-white">{{ vente.magasin?.nom }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-white/70">Vendeur</span>
+                            <span class="text-xs font-bold text-white">{{ vente.utilisateur?.employee?.fullName || vente.utilisateur?.email }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloc Client -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 text-white/60">
+                        <Icon icon="tabler:user" class="text-xl" />
+                        <span class="font-bold uppercase tracking-widest text-[10px]">Client & Paiement</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between border-b border-white/10 pb-1">
+                            <span class="text-xs text-white/70">Client</span>
+                            <span class="text-xs font-bold text-white">{{ vente.client?.nom || 'Client de passage' }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-white/10 pb-1">
+                            <span class="text-xs text-white/70">Méthode</span>
+                            <span class="text-xs font-bold text-white">{{ vente.methode_paiement }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-white/70">Statut actuel</span>
+                            <Badge :value="vente.statut" :severity="getSeverity(vente.statut)" class="!text-[10px] !px-2 !py-0.5 !rounded-full" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3.2 Détails et Sidebar -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Colonne Gauche : Liste des Produits -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-l-4 border-primary pl-3">
+                            <h4 class="font-bold text-noir text-sm uppercase tracking-wider">Produits commandés</h4>
+                            <span class="text-xs text-gray-500 font-medium">{{ vente.details?.length || 0 }} articles</span>
+                        </div>
+
+                        <TableSimple :columns="columns" :data="vente.details || []" :showActions="false"
+                            class="!rounded-2xl overflow-visible">
+                            <template #column-quantite_display="{ data }">
+                                <div class="flex items-center gap-4">
+                                    <span class="font-bold text-noir">{{ data.quantite }}</span>
+                                    <span class=" text-[13px] text-vert font-medium">{{ data.conditionnement?.nom || 'Unité' }}</span>
+                                </div>
+                            </template>
+                            <template #column-remise="{ data }">
+                                <span v-if="data.remise > 0" class="text-red-500 font-bold text-xs">-{{ formatPrice(data.remise) }}</span>
+                                <span v-else class="text-gray-300">-</span>
+                            </template>
+                            <template #column-prix_total="{ data }">
+                                <span class="text-primary font-black text-sm">{{ formatPrice(data.prix_total) }}</span>
+                            </template>
+                        </TableSimple>
+                    </div>
+
+                    <!-- Notes -->
+                    <div v-if="vente.notes" class="p-5 bg-orange-50 border border-orange-100 rounded-3xl">
+                        <div class="flex items-center gap-2 text-orange-600 mb-2">
+                            <Icon icon="tabler:note" class="text-xl" />
+                            <span class="text-[10px] font-black uppercase tracking-widest">Observations</span>
+                        </div>
+                        <p class="text-sm text-orange-900 leading-relaxed italic">{{ vente.notes }}</p>
+                    </div>
+                </div>
+
+                <!-- Colonne Droite : Management et Résumé -->
+                <div class="space-y-6">
+                    <!-- Gestion du statut -->
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                        <div class="flex items-center gap-2 text-noir">
+                            <Icon icon="tabler:settings" class="text-xl text-primary" />
+                            <span class="font-bold text-sm">Gestion du statut</span>
+                        </div>
+                        <div class="space-y-3">
+                            <Select v-model="localStatut" :options="statutOptions" optionLabel="label" optionValue="value"
+                                placeholder="Changer le statut" class="w-full !rounded-xl !text-sm !bg-gray-50" />
+                            <AppButton label="Mettre à jour" :loading="updating" :disabled="localStatut === vente.statut"
+                                variant="primary" fullWidth @click="handleStatusUpdate" />
+                        </div>
+                    </div>
+
+                    <!-- Résumé Financier -->
+                    <div class="bg-primary p-6 rounded-[2rem] text-white space-y-6 relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <Icon icon="tabler:calculator" class="text-xl" />
+                            <span class="font-bold uppercase tracking-widest text-[10px]">Résumé de la vente</span>
+                        </div>
+                        <div class="space-y-4">
+                            <!-- <div class="flex justify-between items-center text-sm opacity-80">
+                                <span>Sous-total</span>
+                                <span class="font-bold">{{ formatPrice(vente.montant_total + (vente.montant_remise || 0)) }}</span>
+                            </div> -->
+                            <div v-if="vente.montant_remise > 0" class="flex justify-between items-center text-sm">
+                                <span class="text-red-400 font-medium">Remise Globale</span>
+                                <span class="text-red-400 font-black">-{{ formatPrice(vente.montant_remise) }}</span>
+                            </div>
+                            <hr class="border-white/30" />
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-white/80">Total Net</span>
+                                <span class="text-3xl font-black text-white">{{ formatPrice(vente.montant_total) }}</span>
+                            </div>
+                            <hr class="border-white/30" />
+                            <div class="grid grid-cols-2 gap-4 pt-2">
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-[10px] font-bold text-white/80 uppercase">Payé</span>
+                                    <span class="text-sm font-bold">{{ formatPrice(vente.montant_paye) }}</span>
+                                </div>
+                                <div class="flex flex-col gap-0.5 items-end">
+                                    <span class="text-[10px] font-bold text-white/80 uppercase">Rendu</span>
+                                    <span class="text-sm font-bold text-green-400">{{ formatPrice(vente.montant_rendu) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. État Erreur / Non trouvé -->
+        <div v-else class="bg-white py-20 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center text-center px-6">
+            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                <Icon icon="tabler:alert-triangle" class="text-red-500 text-4xl" />
+            </div>
+            <h3 class="text-xl font-bold text-noir">Vente introuvable</h3>
+            <p class="text-gray-500 mt-2 max-w-sm">Désolé, nous ne parvenons pas à récupérer les informations de cette vente.</p>
+            <AppButton label="Retourner aux ventes" variant="outline" class="mt-8" @click="navigateTo('/vente')" />
+        </div>
+    </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { Icon } from '@iconify/vue';
+import Select from 'primevue/select';
+import Badge from 'primevue/badge';
+import { useToast } from 'primevue/usetoast';
+import AppButton from '~/components/button/AppButton.vue';
+import TableSimple from '~/components/table/TableSimple.vue';
+import { useVenteApi, type Vente, type StatutVente } from '~/composables/api/useVenteApi';
+import { useCurrency } from '~/composables/useCurrency';
+import { useSecurePdf } from '~/composables/useSecurePdf';
+
+// --- Page Meta ---
+definePageMeta({
+    hideBreadcrumb: true
+});
+
+// --- State ---
+const route = useRoute();
+const router = useRouter();
+const toast = useToast();
+const { getVenteById, updateVenteStatut } = useVenteApi();
+const { formatPrice } = useCurrency();
+const { generateReceiptPdf, generateProformaPdf } = useSecurePdf();
+
+const vente = ref<Vente | null>(null);
+const loading = ref(true);
+const updating = ref(false);
+const printingReceipt = ref(false);
+const printingProforma = ref(false);
+const localStatut = ref<StatutVente | null>(null);
+
+// --- Table Configuration ---
+import { type TableColumn } from '~/components/table/TableSimple.vue';
+const columns: TableColumn[] = [
+    { field: 'produit.nom', header: 'Produit' },
+    { field: 'quantite_display', header: 'Qté / Cond.', customRender: true },
+    { field: 'prix_unitaire', header: 'Unit.', type: 'price' },
+    // { field: 'remise', header: 'Remise', customRender: true },
+    { field: 'prix_total', header: 'Total', customRender: true },
+];
+
+const statutOptions = [
+    { label: 'Payée', value: 'PAYEE' },
+    { label: 'En attente', value: 'EN_ATTENTE' },
+    { label: 'Annulée', value: 'ANNULEE' },
+    { label: 'Remboursée', value: 'REMBOURSEE' },
+];
+
+// --- Initialization ---
+const fetchVenteDetails = async () => {
+    const id = route.params.id as string;
+    if (!id) return;
+
+    loading.value = true;
+    try {
+        const data = await getVenteById(id);
+        if (data) {
+            vente.value = data;
+            localStatut.value = data.statut;
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement de la vente:', error);
+        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les détails', life: 3000 });
+    } finally {
+        loading.value = false;
+    }
+};
+
+// --- Actions ---
+const handleStatusUpdate = async () => {
+    if (!vente.value || !localStatut.value || localStatut.value === vente.value.statut) return;
+
+    updating.value = true;
+    try {
+        const success = await updateVenteStatut(vente.value.id, localStatut.value);
+        if (success) {
+            toast.add({ severity: 'success', summary: 'Succès', detail: 'Statut mis à jour', life: 2000 });
+            vente.value.statut = localStatut.value;
+        }
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Mise à jour échouée', life: 3000 });
+    } finally {
+        updating.value = false;
+    }
+};
+
+const handlePrintReceipt = async () => {
+    if (!vente.value) return;
+    printingReceipt.value = true;
+    try {
+        await generateReceiptPdf(vente.value.id, 'download');
+    } finally {
+        printingReceipt.value = false;
+    }
+};
+
+const handlePrintProforma = async () => {
+    if (!vente.value) return;
+    printingProforma.value = true;
+    try {
+        await generateProformaPdf(vente.value.id, 'download');
+    } finally {
+        printingProforma.value = false;
+    }
+};
+
+// --- Formatters ---
+const formatDate = (date: string) => new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric', month: 'long', year: 'numeric'
+});
+const formatTime = (date: string) => new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const getSeverity = (status: string) => {
+    switch (status) {
+        case 'PAYEE': return 'success';
+        case 'EN_ATTENTE': return 'warning';
+        case 'ANNULEE': return 'danger';
+        case 'REMBOURSEE': return 'info';
+        default: return 'secondary';
+    }
+};
+
+onMounted(fetchVenteDetails);
+</script>

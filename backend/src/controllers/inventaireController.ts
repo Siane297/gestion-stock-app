@@ -7,7 +7,7 @@ import { logger } from '../config/logger.js';
  */
 export const getAllInventaires = async (req: Request, res: Response) => {
   try {
-    const inventaireService = new InventaireService(req.tenantPrisma);
+    const inventaireService = new InventaireService(req.tenantPrisma, req.tenantSchema);
     
     const inventaires = await inventaireService.getAll({
       magasin_id: req.query.magasin_id as string,
@@ -38,7 +38,7 @@ export const getInventaireById = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const inventaireService = new InventaireService(req.tenantPrisma);
+    const inventaireService = new InventaireService(req.tenantPrisma, req.tenantSchema);
     const inventaire = await inventaireService.getById(id);
 
     res.json({
@@ -60,7 +60,7 @@ export const getInventaireById = async (req: Request, res: Response) => {
  */
 export const createInventaire = async (req: Request, res: Response) => {
   try {
-    const inventaireService = new InventaireService(req.tenantPrisma);
+    const inventaireService = new InventaireService(req.tenantPrisma, req.tenantSchema);
     const userId = (req as any).user?.userId;
 
     const inventaire = await inventaireService.create(req.body, userId);
@@ -88,7 +88,7 @@ export const startInventaire = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const inventaireService = new InventaireService(req.tenantPrisma);
+    const inventaireService = new InventaireService(req.tenantPrisma, req.tenantSchema);
     const userId = (req as any).user?.userId;
 
     const inventaire = await inventaireService.start(id, userId);
@@ -117,7 +117,7 @@ export const updateComptage = async (req: Request, res: Response) => {
     if (!id || !detailId) {
       return res.status(400).json({ success: false, message: 'ID inventaire et détail requis' });
     }
-    const inventaireService = new InventaireService(req.tenantPrisma);
+    const inventaireService = new InventaireService(req.tenantPrisma, req.tenantSchema);
 
     const detail = await inventaireService.updateComptage(id, detailId, req.body);
 
@@ -145,7 +145,7 @@ export const finalizeInventaire = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const inventaireService = new InventaireService(req.tenantPrisma);
+    const inventaireService = new InventaireService(req.tenantPrisma, req.tenantSchema);
 
     const inventaire = await inventaireService.finalize(id);
 
@@ -173,7 +173,7 @@ export const validateInventaire = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const inventaireService = new InventaireService(req.tenantPrisma);
+    const inventaireService = new InventaireService(req.tenantPrisma, req.tenantSchema);
     const userId = (req as any).user?.userId;
 
     const inventaire = await inventaireService.validate(id, userId);
@@ -202,7 +202,7 @@ export const deleteInventaire = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const inventaireService = new InventaireService(req.tenantPrisma);
+    const inventaireService = new InventaireService(req.tenantPrisma, req.tenantSchema);
 
     await inventaireService.delete(id);
 

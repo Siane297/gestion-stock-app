@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../config/logger.js';
+import { NotificationService } from './NotificationService.js';
+import { socketService } from './socketService.js';
+import { TypeNotification } from '../types/notificationTypes.js';
 
 // Types pour les mouvements de stock
 export type TypeMouvementStock = 
@@ -50,9 +53,13 @@ export interface StockAlertResult {
  */
 export class StockService {
   private prisma: PrismaClient;
+  private notificationService: NotificationService;
+  private tenantId?: string;
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient, tenantId?: string) {
     this.prisma = prisma;
+    this.notificationService = new NotificationService(prisma);
+    this.tenantId = tenantId;
   }
 
   /**
@@ -274,10 +281,6 @@ export class StockService {
             }
         });
 
-        // Créer un mouvement miroir pour l'entrée ?
-        // Pour la traçabilité complète, c'est mieux d'avoir une ligne "ENTREE_TRANSFERT" ou juste un TRANSFERT entrant.
-        // Mais gardons simple : On trace juste que le stock B a augmenté.
-        // Idéalement, on crée un deuxième mouvement pour le magasin B.
         await prismaClient.mouvements_stock.create({
             data: {
               magasin_id: data.magasin_dest_id,
@@ -304,7 +307,57 @@ export class StockService {
 
     logger.info(`Mouvement de stock enregistré : ${data.type} de ${data.quantite} unités pour le produit ${data.produit_id} dans le magasin ${data.magasin_id}`);
 
+    // Vérifier les alertes de stock après chaque mouvement
+    this.checkStockAlerts(newStock.magasin_id, newStock.produit_id, newStock.quantite, newStock.quantite_minimum);
+
     return { mouvement, newStock };
+  }
+
+  /**
+   * Vérifie si le stock est descendu sous le seuil d'alerte
+   */
+  private async checkStockAlerts(magasinId: string, produitId: string, quantite: number, quantiteMinimum: number): Promise<void> {
+    if (quantiteMinimum > 0 && quantite <= quantiteMinimum) {
+      try {
+        const produit = await this.prisma.produit.findUnique({
+          where: { id: produitId },
+          include: { unite: true }
+        });
+
+        const magasin = await this.prisma.magasin.findUnique({
+          where: { id: magasinId }
+        });
+
+        const type = quantite === 0 ? TypeNotification.STOCK_RUPTURE : TypeNotification.STOCK_FAIBLE;
+        const titre = quantite === 0 ? 'Rupture de Stock !' : 'Alerte Stock Faible';
+        const message = `${produit?.nom} est en ${quantite === 0 ? 'rupture' : 'stock faible'} dans le magasin ${magasin?.nom}. Quantité actuelle: ${quantite} ${produit?.unite?.nom || ''}`;
+
+        const notifications = await this.notificationService.createNotificationForAllExceptEmitter('system', {
+          type,
+          titre,
+          message,
+          reference_type: 'produit',
+          reference_id: produitId,
+          metadata: {
+            magasin_id: magasinId,
+            quantite,
+            quantite_minimum: quantiteMinimum
+          }
+        });
+
+        if (notifications.length > 0 && this.tenantId) {
+          socketService.emitToTenant(this.tenantId, 'notification:new', {
+            type,
+            titre,
+            message,
+            reference_type: 'produit',
+            reference_id: produitId
+          });
+        }
+      } catch (error) {
+        logger.error('Erreur lors du déclenchement des alertes de stock:', error);
+      }
+    }
   }
 
   /**

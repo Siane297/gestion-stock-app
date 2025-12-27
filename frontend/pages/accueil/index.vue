@@ -59,21 +59,14 @@
 
     <!-- Recent Sales Table (Full Width) -->
     <div class="grid grid-cols-1">
-      <RecentSalesList :loading="loading" :sales="recentSales" @action:view="viewDetails" />
+      <RecentSalesList :loading="loading" :sales="recentSales" @action:view="data => navigateTo(`/vente/detail-vente/${data.id}`)" />
     </div>
-
-    <!-- Modale Détail Vente -->
-    <VenteDetailModal 
-        v-model:visible="showDetailModal"
-        :vente="selectedVente"
-        :loading="detailLoading"
-        @status-updated="fetchDashboardStats"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Icon } from '@iconify/vue';
 import Dropdown from 'primevue/dropdown';
@@ -81,7 +74,6 @@ import CardStat from '~/components/card/CardStat.vue';
 import SalesEvolutionChart from '~/components/chart/SalesEvolutionChart.vue';
 import TopProductsList from '~/components/TopProductsList.vue';
 import RecentSalesList from '~/components/dashboard/RecentSalesList.vue';
-import VenteDetailModal from '~/components/vente/VenteDetailModal.vue';
 import TopCategoriesChart from '~/components/chart/TopCategoriesChart.vue';
 import { useMagasinStore } from '~/stores/magasin';
 import { useDashboardApi } from '~/composables/api/useDashboardApi';
@@ -122,11 +114,6 @@ const recentSales = ref<any[]>([]);
 const salesData = ref<{ date: string, amount: number }[]>([]);
 const loading = ref(true);
 
-// Détail Vente
-const showDetailModal = ref(false);
-const detailLoading = ref(false);
-const selectedVente = ref<Vente | null>(null);
-
 const store = useMagasinStore();
 const { currentMagasinId } = storeToRefs(store);
 const { getDashboardStats } = useDashboardApi();
@@ -152,19 +139,9 @@ const fetchDashboardStats = async () => {
   }
 };
 
-const viewDetails = async (vente: any) => {
-    selectedVente.value = vente;
-    showDetailModal.value = true;
-    detailLoading.value = true;
-    try {
-        // Recharger l'objet complet avec les détails si nécessaire
-        const fullVente = await getVenteById(vente.id);
-        if (fullVente) selectedVente.value = fullVente as any;
-    } catch (e) {
-        console.error("Erreur lors du chargement des détails de la vente:", e);
-    } finally {
-        detailLoading.value = false;
-    }
+const router = useRouter();
+const navigateTo = (path: string) => {
+    return router.push(path);
 };
 
 // Recharger quand le magasin change
@@ -179,10 +156,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-:deep(.dashboard-dropdown) {
-  
-}
-
 :deep(.dashboard-dropdown .p-dropdown-label) {
   color: white;
   font-size: 0.875rem;

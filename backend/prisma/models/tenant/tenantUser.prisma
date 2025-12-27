@@ -52,5 +52,9 @@ model TenantUser {
   inventaires_debut      inventaire[]       @relation("inventaire_debut")
   inventaires_validation inventaire[]       @relation("inventaire_validation")
 
+  // Relations pour les notifications
+  notifications_recues   notification[] @relation("notifications_recues")
+  notifications_envoyees notification[] @relation("notifications_envoyees")
+
   @@map("tenant_users")
 }

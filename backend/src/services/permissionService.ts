@@ -133,6 +133,7 @@ export class PermissionService {
       `${Module.RAPPORTS}:${Action.VOIR}`,
       `${Module.RAPPORTS}:${Action.EXPORTER}`,
       `${Module.PARAMETRES}:${Action.VOIR}`,
+      `${Module.INVENTAIRE}:${Action.VOIR}`,
     ]);
 
     // USER - Consultation uniquement

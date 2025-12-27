@@ -21,20 +21,20 @@
       </div>
     </div>
 
-    <!-- Right Section: Search, Notifications, Profile -->
+    <!-- Right Section: Notifications, Profile -->
     <div class="flex items-center gap-4">
-      <!-- Search Bar (optional) -->
-      <div class="hidden md:flex items-center gap-2 bg-primary/10 border border-[#a7d2e1] px-4 py-2.5 rounded-full">
-        <Icon icon="lucide:search" class="text-gray-400 text-lg" />
-        <input type="text" placeholder="Rechercher..."
-          class="bg-transparent border-none outline-none text-sm text-noir placeholder-gray-400 w-64" />
-      </div>
+      <!-- Notification Bell -->
+      <NotificationBell 
+        :is-open="isNotificationsOpen" 
+        @toggle="toggleNotifications"
+        @close="isNotificationsOpen = false"
+      />
 
       <!-- User Menu -->
       <div class="relative">
         <!-- Desktop: Avatar + Nom + Rôle -->
         <button @click="toggleUserMenu"
-          class="hidden lg:flex items-center gap-6 px-2 py-2 bg-bleu/60  rounded-full transition-colors">
+          class="hidden lg:flex items-center gap-6 px-2 py-2 bg-bleu/60 border border-[#a7d2e1]  rounded-full transition-colors">
           <AvatarInitials :name="userName" :subtitle="userRole" size="md" :show-name="true" />
           <Icon icon="lucide:chevron-down" class="text-noir w-5 h-auto transition-transform"
             :class="{ 'rotate-180': isUserMenuOpen }" />
@@ -43,7 +43,7 @@
 
 
         <!-- Mobile: Avatar + Menu Burger (Mobile/Tablet uniquement) -->
-        <div class="bg-bleu/60 lg:hidden px-3 py-2 rounded-full flex items-center gap-2">
+        <div class="bg-bleu/60 border border-[#a7d2e1] lg:hidden px-3 py-2 rounded-full flex items-center gap-2">
             <button @click="toggleUserMenu" class="">
             <AvatarInitials :name="userName" size="sm" :show-name="false" />
             </button>
@@ -92,6 +92,8 @@ import AppLogo from '~/components/logo/AppLogo.vue';
 
 import AvatarInitials from '~/components/avatar/AvatarInitials.vue';
 import ConfirmationDialog from '~/components/dialog/ConfirmationDialog.vue';
+import NotificationBell from '~/components/notifications/NotificationBell.vue';
+import { useNotifications } from '~/composables/useNotifications';
 
 defineEmits(['toggle-sidebar']);
 
@@ -178,7 +180,7 @@ const trialBadgeIcon = computed(() => {
 });
 
 // Notifications
-const notificationCount = ref(3); // À remplacer par vraies données
+const { connect: connectNotifications } = useNotifications();
 const isNotificationsOpen = ref(false);
 
 // Menu items
@@ -187,6 +189,11 @@ const menuItems = [
     label: 'Mon profil',
     icon: 'tabler:user',
     link: '/profile',
+  },
+  {
+    label: 'Notifications',
+    icon: 'tabler:bell',
+    link: '/notifications',
   },
   {
     label: 'Paramètres',
@@ -219,6 +226,8 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
   // Charger les données utilisateur
   await fetchUser();
+  // Initialiser les notifications temps réel
+  connectNotifications();
 });
 
 onUnmounted(() => {

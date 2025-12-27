@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../config/logger.js';
 import { StockService } from './stockService.js';
+import { NotificationService } from './NotificationService.js';
+import { socketService } from './socketService.js';
+import { TypeNotification } from '../types/notificationTypes.js';
 
 // Types pour l'inventaire
 export type StatutInventaire = 'BROUILLON' | 'EN_COURS' | 'TERMINE' | 'VALIDE';
@@ -38,10 +41,14 @@ export interface InventaireStats {
 export class InventaireService {
   private prisma: PrismaClient;
   private stockService: StockService;
+  private notificationService: NotificationService;
+  private tenantId?: string;
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient, tenantId?: string) {
     this.prisma = prisma;
-    this.stockService = new StockService(prisma);
+    this.stockService = new StockService(prisma, tenantId);
+    this.notificationService = new NotificationService(prisma);
+    this.tenantId = tenantId;
   }
 
   /**
@@ -144,6 +151,9 @@ export class InventaireService {
       }
       
       logger.info(`Inventaire créé: ${inventaire.numero} avec ${detailsToCreate.length} lignes`);
+      
+      // Notifications (Hors transaction)
+      this.triggerInventaireNotifications(inventaire, utilisateurId || 'system', TypeNotification.INVENTAIRE_NOUVEAU);
       
       return this.getById(inventaire.id, tx);
     });
@@ -407,8 +417,64 @@ export class InventaireService {
       });
       
       logger.info(`Inventaire validé: ${updated.numero} - Stocks remplacés par quantités comptées`);
+      
+      // Notifications (Hors transaction)
+      this.triggerInventaireNotifications(updated, utilisateurId, TypeNotification.INVENTAIRE_VALIDE);
+      
       return this.getById(id, tx);
     });
+  }
+
+  /**
+   * Déclenche les notifications pour un inventaire
+   */
+  private async triggerInventaireNotifications(inventaire: any, authorId: string, type: TypeNotification): Promise<void> {
+    try {
+      const emetteur = await this.prisma.tenantUser.findUnique({
+        where: { id: authorId },
+        include: { employee: true }
+      });
+
+      const nomEmetteur = emetteur?.employee ? emetteur.employee.fullName : (authorId === 'system' ? 'Système' : authorId);
+      
+      let message = '';
+      let titre = '';
+
+      switch (type) {
+        case TypeNotification.INVENTAIRE_NOUVEAU:
+          titre = 'Nouvel Inventaire';
+          message = `${nomEmetteur} a ouvert un nouvel inventaire (N°: ${inventaire.numero})`;
+          break;
+        case TypeNotification.INVENTAIRE_VALIDE:
+          titre = 'Inventaire Validé';
+          message = `L'inventaire ${inventaire.numero} a été validé. Les stocks ont été mis à jour.`;
+          break;
+      }
+
+      const notifications = await this.notificationService.createNotificationForAllExceptEmitter(authorId, {
+        type,
+        titre,
+        message,
+        reference_type: 'inventaire',
+        reference_id: inventaire.id,
+        metadata: {
+          numero: inventaire.numero,
+          magasin_id: inventaire.magasin_id
+        }
+      });
+
+      if (notifications.length > 0 && this.tenantId) {
+        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', {
+          type,
+          titre,
+          message,
+          reference_type: 'inventaire',
+          reference_id: inventaire.id
+        });
+      }
+    } catch (error) {
+      logger.error('Erreur lors du déclenchement des notifications d\'inventaire:', error);
+    }
   }
 
   /**

@@ -28,7 +28,7 @@
             :show-edit="false"
             :show-delete="false"
             :show-view="hasPermission('ventes', 'voir')"
-            @action:view="viewDetails"
+            @action:view="data => router.push(`/vente/detail-vente/${data.id}`)"
         >
             <!-- Date -->
             <template #column-date_creation="{ data }">
@@ -81,26 +81,19 @@
         </TableGeneric>
     </div>
 
-    <!-- Modale Détail Vente -->
-    <VenteDetailModal 
-        v-model:visible="showDetailModal"
-        :vente="selectedVente"
-        :loading="detailLoading"
-        @status-updated="loadData"
-    />
-
+    <!-- Toast -->
     <Toast />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import VenteFilters from '~/components/vente/VenteFilters.vue';
 import VenteStatsCards from '~/components/vente/VenteStatsCards.vue';
-import VenteDetailModal from '~/components/vente/VenteDetailModal.vue';
 import { useVenteApi, type Vente, type VenteStats } from '~/composables/api/useVenteApi';
 import { useMagasinApi } from '~/composables/api/useMagasinApi';
 import Badge from 'primevue/badge';
@@ -112,6 +105,7 @@ const { getVentes, getVenteStats, updateVenteStatut, getVenteById } = useVenteAp
 const { getMagasins } = useMagasinApi();
 const { hasPermission } = usePermissions();
 const toast = useToast();
+const router = useRouter();
 
 // État
 const ventes = ref<Vente[]>([]);
@@ -123,11 +117,6 @@ const loading = ref(false);
 const selectedMagasinId = ref<string | null>(null);
 const selectedStatut = ref<string | null>(null);
 const selectedPaiement = ref<string | null>(null);
-
-// Détail
-const showDetailModal = ref(false);
-const detailLoading = ref(false);
-const selectedVente = ref<Vente | null>(null);
 
 const columns: TableColumn[] = [
   { field: 'date_creation', header: 'Date / Heure', sortable: true, customRender: true },
@@ -171,19 +160,8 @@ const loadData = async () => {
     }
 };
 
-const viewDetails = async (vente: Vente) => {
-    selectedVente.value = vente;
-    showDetailModal.value = true;
-    detailLoading.value = true;
-    try {
-        // Recharger l'objet complet avec les détails si nécessaire
-        const fullVente = await getVenteById(vente.id);
-        if (fullVente) selectedVente.value = fullVente;
-    } catch (e) {
-        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les détails de la vente', life: 3000 });
-    } finally {
-        detailLoading.value = false;
-    }
+const navigateTo = (path: string) => {
+    return useRouter().push(path);
 };
 
 // Utils
