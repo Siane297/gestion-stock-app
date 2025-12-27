@@ -4,10 +4,12 @@
         <!-- Header: Image & Badges -->
         <div class="flex flex-col items-start gap-3 mb-3">
             <div
-                class="w-full h-28 rounded-xl bg-gray-100 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                class="w-full h-28 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 p-1">
                 <img v-if="produit.image_url" :src="getFullImageUrl(produit.image_url)" :alt="produit.nom"
-                    class="w-full h-full object-cover" />
-                <i v-else class="pi pi-image text-3xl text-gray-400"></i>
+                    class="w-full h-full object-contain" />
+                <div v-else class="w-full h-full bg-gray-50 flex items-center justify-center rounded-lg">
+                    <i class="pi pi-image text-3xl text-gray-400"></i>
+                </div>
             </div>
             <div class="flex-1 min-w-0 w-full text-left">
                 <div class="flex items-start justify-between">
