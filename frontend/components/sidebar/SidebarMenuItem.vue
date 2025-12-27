@@ -11,7 +11,7 @@
       <div class="flex items-center gap-3">
         <Icon 
           :icon="item.icon" 
-          class="text-xl transition-transform group-hover:scale-110"
+          class="text-xl transition-transform "
         />
         <span class="font-medium">{{ item.name }}</span>
       </div>
@@ -58,7 +58,7 @@
   >
     <Icon 
       :icon="item.icon" 
-      class="text-xl transition-transform group-hover:scale-110"
+      class="text-xl transition-transform "
       :class="isActive(item.link) ? 'text-white' : 'text-white'"
     />
     <span class="font-medium text-[14px]">{{ item.name }}</span>
