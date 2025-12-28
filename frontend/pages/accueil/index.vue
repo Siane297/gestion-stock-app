@@ -29,6 +29,8 @@
       
       <!-- KPI Cards Grid -->
       <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <CardStat label="Total Produits" :value="stats.total_products_count" icon="tabler:package"
+          variant="primary" :loading="loading" />
         <CardStat :label="`CA (${periodLabel})`" :value="formatPriceCompact(stats.revenue.value)" 
           icon="tabler:coin" variant="primary" :loading="loading" 
           :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
@@ -40,9 +42,6 @@
         <CardStat :label="`Bénéfice (${periodLabel})`" :value="formatPriceCompact(stats.profit?.value || 0)" 
           icon="tabler:trending-up" variant="success" :loading="loading" 
           :trend="stats.profit?.trend" :trend-label="trendComparisonLabel" />
-
-        <CardStat label="Total Produits" :value="stats.total_products_count" icon="tabler:package"
-          variant="primary" :loading="loading" />
           
         <CardStat label="Achats en Attente" :value="stats.pending_purchases" icon="tabler:truck-delivery"
           variant="warning" :loading="loading" />
