@@ -12,7 +12,7 @@ import { TenantUserRole, UserPermissionContext } from '../types/permissions.js';
  */
 export const getAllProduits = async (req: Request, res: Response) => {
   try {
-    const produitService = new ProduitService(req.tenantPrisma);
+    const produitService = new ProduitService(req.tenantPrisma, (req as any).schemaName);
     const user = req.user as any;
     if (!user) return res.status(401).json({ success: false, message: 'Non authentifié' });
     
@@ -80,7 +80,7 @@ export const getProduitById = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const produitService = new ProduitService(req.tenantPrisma);
+    const produitService = new ProduitService(req.tenantPrisma, (req as any).schemaName);
     const produit = await produitService.getById(id);
 
     res.json({
@@ -103,7 +103,7 @@ export const getProduitById = async (req: Request, res: Response) => {
 
 export const createProduit = async (req: Request, res: Response) => {
   try {
-    const produitService = new ProduitService(req.tenantPrisma);
+    const produitService = new ProduitService(req.tenantPrisma, (req as any).schemaName);
     const productData = req.body;
 
     // Map pour stocker les fichiers uploadés : filename -> { url, public_id }
@@ -216,7 +216,7 @@ export const updateProduit = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const produitService = new ProduitService(req.tenantPrisma);
+    const produitService = new ProduitService(req.tenantPrisma, (req as any).schemaName);
     const productData = req.body;
 
     // Map pour stocker les fichiers uploadés
@@ -326,7 +326,7 @@ export const deleteProduit = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const produitService = new ProduitService(req.tenantPrisma);
+    const produitService = new ProduitService(req.tenantPrisma, (req as any).schemaName);
     const result = await produitService.delete(id);
 
     res.json({
@@ -353,7 +353,7 @@ export const getPriceHistory = async (req: Request, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID requis' });
     }
-    const produitService = new ProduitService(req.tenantPrisma);
+    const produitService = new ProduitService(req.tenantPrisma, (req as any).schemaName);
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
     const history = await produitService.getPriceHistory(id, limit);
 

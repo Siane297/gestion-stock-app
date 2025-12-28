@@ -1,6 +1,8 @@
 <template>
 
   <div class="h-screen overflow-hidden bg-slot">
+    <GlobalLoader :loading="pageLoading" />
+    
     <!-- Sidebar -->
     <AppSidebar :is-open="isSidebarOpen" @close="closeSidebar" />
 
@@ -23,6 +25,22 @@
 import AppSidebar from '~/components/sidebar/AppSidebar.vue';
 import AppHeader from '~/components/header/AppHeader.vue';
 import AppBreadcrumb from '~/components/common/AppBreadcrumb.vue'; // Import Breadcrumb
+import GlobalLoader from '~/components/common/GlobalLoader.vue';
+
+const pageLoading = ref(false);
+const nuxtApp = useNuxtApp();
+
+// Gestion du chargement page
+nuxtApp.hook('page:start', () => {
+  pageLoading.value = true;
+});
+
+nuxtApp.hook('page:finish', () => {
+  // Petit délai pour éviter le flash trop rapide et assurer une transition fluide
+  setTimeout(() => {
+    pageLoading.value = false;
+  }, 500);
+});
 
 // Gérer l'état du sidebar pour mobile
 const isSidebarOpen = ref(false);

@@ -250,10 +250,19 @@ async function loadCaisses() {
 
 function selectCaisse(caisse: any) {
   selectedCaisse.value = caisse;
+  
+  // Si la caisse a déjà une session active, on va reprendre cette session
+  const activeSession = caisse.sessions?.find((s: any) => s.statut === 'OUVERTE');
+  if (activeSession) {
+    // Mode reprise de session : on saute l'étape du fond initial
+    fondInitialSaisi.value = true;
+  } else {
+    // Nouvelle session : demander le fond initial
+    fondInitialSaisi.value = false;
+    fondInitial.value = 0;
+  }
+  
   step.value = 'pin-entry';
-  // Réinitialiser l'étape PIN
-  fondInitialSaisi.value = false;
-  fondInitial.value = 0;
   error.value = null;
 }
 
@@ -264,22 +273,35 @@ async function handlePinSubmit(pin: string) {
   error.value = null;
 
   try {
+    // Vérifier si la caisse a déjà une session active (mode reprise ou nouvelle)
+    const activeSession = (selectedCaisse.value as any).sessions?.find((s: any) => s.statut === 'OUVERTE');
+    
+    // Le backend gère les deux cas :
+    // - Nouvelle session : crée et retourne la session
+    // - Reprise : si même utilisateur (PIN), retourne la session existante
     const session = await ouvrirSessionParPin(selectedCaisse.value.id, {
       pin,
-      fond_initial: fondInitial.value,
-      notes: `Ouverture via terminal tactile le ${new Date().toLocaleString()}`
+      fond_initial: activeSession ? activeSession.fond_initial : fondInitial.value,
+      notes: activeSession 
+        ? `Reprise via terminal tactile le ${new Date().toLocaleString()}`
+        : `Ouverture via terminal tactile le ${new Date().toLocaleString()}`
     });
 
     if (session) {
-      // Mettre à jour le store
       caisseStore.setSession(session);
-      // Rediriger vers le POS
       router.push('/point-vente');
     } else {
       error.value = "Impossible d'ouvrir la session";
     }
   } catch (err: any) {
-    error.value = "Code PIN incorrect ou session déjà ouverte";
+    // Message d'erreur plus spécifique
+    if (err.message?.includes('occupée') || err.message?.includes('déjà ouverte')) {
+      error.value = "Cette caisse est occupée par un autre utilisateur";
+    } else if (err.message?.includes('PIN')) {
+      error.value = "Code PIN incorrect";
+    } else {
+      error.value = err.message || "Code PIN incorrect";
+    }
     pinPadRef.value?.reset();
   } finally {
     loading.value = false;
@@ -293,17 +315,11 @@ onMounted(async () => {
     return;
   }
 
-  // 2. Vérifier si l'utilisateur a une session active sur le serveur (cas du refresh)
-  try {
-    const { getMaSession } = useCaisseApi();
-    const mySession = await getMaSession();
-    if (mySession) {
-      caisseStore.setSession(mySession);
-      router.push('/point-vente');
-      return;
-    }
-  } catch (e) {
-    console.warn("Erreur vérification session active au démarrage", e);
+  // 2. Vérifier via le store (qui utilise le localStorage, pas le JWT)
+  await caisseStore.checkCurrentSession();
+  if (caisseStore.hasActiveSession) {
+    router.push('/point-vente');
+    return;
   }
 
   // 3. Charger les boutiques si profil gestion

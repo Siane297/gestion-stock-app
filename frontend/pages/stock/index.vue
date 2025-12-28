@@ -26,17 +26,23 @@
             @action:edit="handleEdit"
             @action:delete="handleDelete"
         >
-             <!-- Quantité avec indicateur couleur -->
+             <!-- Quantité -->
              <template #column-quantite="{ data }: { data: any }">
-                 <div class="flex items-center gap-2">
-                     <span :class="getStockColorClass(data.quantite, data.quantite_minimum)" class="font-bold text-lg">
+                 <div class="flex items-center gap-1">
+                     <span :class="getStockColorClass(data.quantite, data.quantite_minimum)" class="font-bold">
                         {{ data.quantite }}
                      </span>
-                     <span class="">
-                       ({{ data.produit.unite?.nom }})
+                     <span class="text-xs text-gray-500">
+                       {{ data.produit.unite?.nom }}
                      </span>
-                     <Tag v-if="data.quantite <= data.quantite_minimum" severity="danger" value="Bas" class="text-xs py-0 px-2" />
                  </div>
+             </template>
+
+             <!-- Statut avec Badges -->
+             <template #column-statut="{ data }: { data: any }">
+                <Badge v-if="data.quantite === 0" severity="danger" value="Rupture" />
+                <Badge v-else-if="data.quantite <= data.quantite_minimum" severity="warn" value="Faible" />
+                <Badge v-else severity="success" value="En Stock" />
              </template>
 
              <!-- Seuil Min -->
@@ -74,8 +80,9 @@ const showOnlyAlerts = ref(false);
 const columns: TableColumn[] = [
     { field: 'magasin.nom', header: 'Boutique', sortable: true },
     { field: 'produit.nom', header: 'Produit', sortable: true },
-    { field: 'quantite', header: 'Quantité Disponible', sortable: true, customRender: true },
+    { field: 'quantite', header: 'Quantité', sortable: true, customRender: true },
     { field: 'quantite_minimum', header: 'Seuil Alerte', sortable: true, customRender: true },
+    { field: 'statut', header: 'Statut', sortable: false, customRender: true },
 ];
 
 const loadStocks = async () => {

@@ -224,13 +224,6 @@ export class CaisseService {
     logger.info(`Caisse supprimée: ${existing.code}`);
   }
 
-  // ============================================
-  // GESTION DES SESSIONS DE CAISSE
-  // ============================================
-
-  /**
-   * Ouvrir une nouvelle session de caisse
-   */
   async ouvrirSession(data: OuvrirSessionDto): Promise<any> {
     // Vérifier que la caisse existe et est active
     const caisse = await this.prisma.caisse.findUnique({
@@ -241,9 +234,20 @@ export class CaisseService {
 
     // Vérifier qu'il n'y a pas déjà une session ouverte sur cette caisse
     const sessionOuverte = await this.prisma.session_caisse.findFirst({
-      where: { caisse_id: data.caisse_id, statut: 'OUVERTE' }
+      where: { caisse_id: data.caisse_id, statut: 'OUVERTE' },
+      include: {
+        caisse: { select: { id: true, nom: true, code: true, magasin_id: true } },
+        utilisateur: { select: { email: true, employee: { select: { fullName: true } } } }
+      }
     });
+    
     if (sessionOuverte) {
+      // Si c'est le même utilisateur, on retourne sa session existante (reprise)
+      if (sessionOuverte.utilisateur_id === data.utilisateur_id) {
+        logger.info(`Session reprise: Caisse ${caisse.code} par ${sessionOuverte.utilisateur.email}`);
+        return sessionOuverte;
+      }
+      // Sinon, c'est un autre utilisateur qui occupe la caisse
       throw new Error('Une session est déjà ouverte sur cette caisse. Fermez-la d\'abord.');
     }
 

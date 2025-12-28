@@ -14,7 +14,7 @@ export class NotificationService {
    * Créer une nouvelle notification
    * IMPORTANT: exclut automatiquement l'emetteur de la notification
    */
-  async createNotification(data: CreateNotificationDto): Promise<any> {
+  async createNotification(data: CreateNotificationDto): Promise<NotificationResponse> {
     const notification = await this.prisma.notification.create({
       data: {
         type: data.type,
@@ -40,7 +40,7 @@ export class NotificationService {
       },
     });
 
-    return notification;
+    return this.mapToResponse(notification);
   }
 
   /**
@@ -119,7 +119,14 @@ export class NotificationService {
       },
     });
 
-    return notifications.map((notif) => ({
+    return notifications.map((notif) => this.mapToResponse(notif));
+  }
+
+  /**
+   * Mapper un objet Prisma Notification vers NotificationResponse
+   */
+  private mapToResponse(notif: any): NotificationResponse {
+    return {
       id: notif.id,
       type: notif.type,
       titre: notif.titre,
@@ -129,15 +136,15 @@ export class NotificationService {
       est_lue: notif.est_lue,
       date_lecture: notif.date_lecture?.toISOString(),
       date_creation: notif.date_creation.toISOString(),
-      emetteur: (notif as any).emetteur
+      emetteur: notif.emetteur
         ? {
-            id: (notif as any).emetteur.id,
-            nom: (notif as any).emetteur.employee?.fullName || 'Utilisateur',
+            id: notif.emetteur.id,
+            nom: notif.emetteur.employee?.fullName || 'Utilisateur',
             prenom: '',
           }
         : undefined,
       metadata: notif.metadata as Record<string, any>,
-    }));
+    };
   }
 
   /**

@@ -215,6 +215,7 @@ export class VenteService {
           }
         },
         include: {
+          magasin: { select: { nom: true } },
           details: {
             include: {
               produit: true,
@@ -227,7 +228,7 @@ export class VenteService {
       // b. Déstockage
       // On utilise le StockService mais avec la transaction en cours si possible.
       // StockService.increment/decrement accepte 'tx' en dernier argument.
-      const stockServiceTx = new StockService(tx as any); 
+      const stockServiceTx = new StockService(tx as any, this.tenantId); 
       
       for (const check of itemsToCheckStock) {
         await stockServiceTx.decrementStock(
@@ -271,7 +272,7 @@ export class VenteService {
       const notifications = await this.notificationService.createNotificationForAllExceptEmitter(authorId, {
         type: TypeNotification.VENTE_NOUVELLE,
         titre: 'Nouvelle Vente',
-        message: `${nomEmetteur} a effectué une vente de ${vente.montant_total} ${devise} (Ticket: ${vente.numero_vente})`,
+        message: `${nomEmetteur} a effectué une vente de ${vente.montant_total} ${devise} pour la boutique ${vente.magasin.nom}`,
         reference_type: 'vente',
         reference_id: vente.id,
         metadata: {
@@ -281,13 +282,8 @@ export class VenteService {
       });
 
       if (notifications.length > 0 && this.tenantId) {
-        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', {
-          type: TypeNotification.VENTE_NOUVELLE,
-          titre: 'Nouvelle Vente',
-          message: `${nomEmetteur} a effectué une vente de ${vente.montant_total} ${devise} (Ticket: ${vente.numero_vente})`,
-          reference_type: 'vente',
-          reference_id: vente.id
-        });
+        // Envoyer la première notification complète (avec id, date_creation, etc.)
+        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', notifications[0]);
       }
     } catch (error) {
       logger.error('Erreur lors du déclenchement des notifications de vente:', error);
@@ -395,7 +391,7 @@ export class VenteService {
     return this.prisma.$transaction(async (tx) => {
       // 1. Si on annule une vente qui était payée ou en attente, on rend le stock
       if (data.statut === 'ANNULEE' && (existing.statut === 'PAYEE' || existing.statut === 'EN_ATTENTE')) {
-        const stockServiceTx = new StockService(tx as any);
+        const stockServiceTx = new StockService(tx as any, this.tenantId);
         
         for (const detail of existing.details) {
           // Calcul de la quantité en unité de base

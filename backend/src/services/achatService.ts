@@ -290,7 +290,7 @@ export class AchatService {
    */
   private async handleReception(id: string, achat: any, data: UpdateAchatStatutDto): Promise<any> {
     return this.prisma.$transaction(async (tx: any) => {
-      const stockServiceTx = new StockService(tx);
+      const stockServiceTx = new StockService(tx, this.tenantId);
 
       // Mise à jour du stock via réception
       await stockServiceTx.processAchatReception(
@@ -319,7 +319,7 @@ export class AchatService {
    */
   private async handleCancellationWithStockReversal(id: string, achat: any, data: UpdateAchatStatutDto): Promise<any> {
     return this.prisma.$transaction(async (tx: any) => {
-      const stockServiceTx = new StockService(tx);
+      const stockServiceTx = new StockService(tx, this.tenantId);
 
       // Retirer du stock les quantités qui avaient été reçues
       for (const detail of achat.details) {
@@ -463,7 +463,7 @@ export class AchatService {
              
              // Application mouvements stock
              if (stockMovements.length > 0) {
-                 const stockServiceTx = new StockService(tx as any);
+                 const stockServiceTx = new StockService(tx as any, this.tenantId);
                  for (const mvmt of stockMovements) {
                      // Gestion Lot (si nécessaire)
                      let lot_id = undefined;
@@ -577,13 +577,8 @@ export class AchatService {
       });
 
       if (notifications.length > 0 && this.tenantId) {
-        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', {
-          type,
-          titre,
-          message,
-          reference_type: 'achat',
-          reference_id: achat.id
-        });
+        // Envoyer la première notification complète (avec id, date_creation, etc.)
+        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', notifications[0]);
       }
     } catch (error) {
       logger.error('Erreur lors du déclenchement des notifications d\'achat:', error);
@@ -626,7 +621,7 @@ export class AchatService {
     // Si déjà reçu, il faut reverser le stock
     if (achat.statut === 'RECU_COMPLET' || achat.statut === 'RECU_PARTIELLEMENT') {
       await this.prisma.$transaction(async (tx: any) => {
-        const stockServiceTx = new StockService(tx);
+        const stockServiceTx = new StockService(tx, this.tenantId);
 
         for (const detail of achat.details) {
           // Créer un mouvement de sortie (retour fournisseur)

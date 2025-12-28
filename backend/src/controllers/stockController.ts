@@ -36,7 +36,7 @@ export const getStocks = async (req: Request, res: Response) => {
  */
 export const createMouvement = async (req: Request, res: Response) => {
   try {
-    const stockService = new StockService(req.tenantPrisma);
+    const stockService = new StockService(req.tenantPrisma, (req as any).schemaName);
     const userId = (req as any).user?.userId;
     
     const { magasin_id, produit_id, type, quantite, raison, vente_id, achat_id, numero_lot, date_peremption, magasin_dest_id, isAjoutStock } = req.body;
@@ -102,7 +102,7 @@ export const getMouvements = async (req: Request, res: Response) => {
  */
 export const setMinimumStock = async (req: Request, res: Response) => {
   try {
-    const stockService = new StockService(req.tenantPrisma);
+    const stockService = new StockService(req.tenantPrisma, (req as any).schemaName);
     const { magasin_id, produit_id, quantite_minimum } = req.body;
 
     const result = await stockService.setMinimumStock(

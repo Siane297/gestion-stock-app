@@ -381,7 +381,7 @@ export class InventaireService {
         
         // Si l'ajustement est nécessaire (différence entre réel et compté)
         if (ajustement !== 0) {
-          const stockServiceTx = new StockService(tx as any);
+          const stockServiceTx = new StockService(tx as any, this.tenantId);
           const isPositive = ajustement > 0;
           const quantiteAbs = Math.abs(ajustement);
           
@@ -464,13 +464,8 @@ export class InventaireService {
       });
 
       if (notifications.length > 0 && this.tenantId) {
-        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', {
-          type,
-          titre,
-          message,
-          reference_type: 'inventaire',
-          reference_id: inventaire.id
-        });
+        // Envoyer la première notification complète (avec id, date_creation, etc.)
+        socketService.emitToTenantExceptUser(this.tenantId, authorId, 'notification:new', notifications[0]);
       }
     } catch (error) {
       logger.error('Erreur lors du déclenchement des notifications d\'inventaire:', error);

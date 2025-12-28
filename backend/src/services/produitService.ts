@@ -88,10 +88,12 @@ export interface ProduitFilters {
 export class ProduitService {
   private prisma: PrismaClient;
   private stockService: StockService;
+  private tenantId?: string;
 
-  constructor(prisma: PrismaClient, stockService?: StockService) {
+  constructor(prisma: PrismaClient, tenantId?: string, stockService?: StockService) {
     this.prisma = prisma;
-    this.stockService = stockService || new StockService(prisma);
+    this.tenantId = tenantId;
+    this.stockService = stockService || new StockService(prisma, tenantId);
   }
 
   /**
