@@ -136,8 +136,8 @@ const userRole = computed(() => user.value?.role ? formatRole(user.value.role) :
 const showTrialBadge = computed(() => {
   const company = user.value?.company;
   if (!company) return false;
-  // Afficher seulement pour TRIAL (pas pour SUPER_ADMIN)
-  return user.value?.role !== 'SUPER_ADMIN' && company.subscriptionStatus === 'TRIAL';
+  // Afficher si TRIAL (Période d'essai) ou ACTIVE (Abonnement payant)
+  return company.subscriptionStatus === 'TRIAL' || company.subscriptionStatus === 'ACTIVE';
 });
 
 const trialBadgeText = computed(() => {

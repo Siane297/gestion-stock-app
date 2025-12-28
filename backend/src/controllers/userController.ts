@@ -40,6 +40,14 @@ export const getCurrentUser = async (req: Request, res: Response) => {
       if (user) {
         // Formatter pour la cohérence
         (user as any).name = (user as any).employee.fullName;
+        
+        // RÉCUPÉRER LES INFOS DE L'ORGANISATION (Company) depuis le schéma public
+        const company = await prismaPublic.company.findFirst({
+          where: { schemaName: tenantId }
+        });
+        if (company) {
+          (user as any).company = company;
+        }
       }
     } else {
       // Utilisateur Public (Admin / Super Admin)
