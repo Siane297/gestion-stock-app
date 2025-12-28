@@ -48,7 +48,7 @@
                             <span class="text-xs font-bold text-white">{{ formatDate(vente.date_creation) }} à {{ formatTime(vente.date_creation) }}</span>
                         </div>
                         <div class="flex justify-between border-b border-white/10 pb-1">
-                            <span class="text-xs text-white/70">Magasin</span>
+                            <span class="text-xs text-white/70">Boutique</span>
                             <span class="text-xs font-bold text-white">{{ vente.magasin?.nom }}</span>
                         </div>
                         <div class="flex justify-between">

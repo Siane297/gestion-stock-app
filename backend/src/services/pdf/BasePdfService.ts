@@ -30,6 +30,8 @@ export interface PdfGenerationOptions {
  */
 export abstract class BasePdfService {
   private static browser: Browser | null = null;
+  private static templateCache: Map<string, handlebars.TemplateDelegate> = new Map();
+  private static cssCache: string | null = null;
 
   // Configurations prédéfinies par type de document
   protected static readonly PDF_CONFIGS: Record<string, PdfConfiguration> = {
@@ -250,10 +252,18 @@ export abstract class BasePdfService {
       // Obtenir la configuration pour ce type de document
       const config = this.getConfiguration(configType);
 
-      // Charger et compiler le template
-      const templatePath = path.join(process.cwd(), 'templates', `${templateName}.html`);
-      const templateContent = await fs.readFile(templatePath, 'utf8');
-      const template = handlebars.compile(templateContent);
+      // Gestion du Cache des Templates
+      let template = this.templateCache.get(templateName);
+      
+      if (!template) {
+        console.log(`📁 [PDF] Cache miss pour ${templateName}, lecture sur disque...`);
+        const templatePath = path.join(process.cwd(), 'templates', `${templateName}.html`);
+        const templateContent = await fs.readFile(templatePath, 'utf8');
+        template = handlebars.compile(templateContent);
+        this.templateCache.set(templateName, template);
+      } else {
+        console.log(`🚀 [PDF] Utilisation du cache pour ${templateName}`);
+      }
 
       // Enregistrer les helpers Handlebars
       this.registerHandlebarsHelpers();
@@ -264,16 +274,21 @@ export abstract class BasePdfService {
       // Injection CSS inline pour éviter les problèmes de chargement
       console.log('🎨 [PDF] Injection CSS inline pour garantir le chargement');
       
-      const cssPath = path.join(process.cwd(), 'templates', 'styles.css');
-      try {
-        const cssContent = await fs.readFile(cssPath, 'utf8');
+      if (!this.cssCache) {
+        const cssPath = path.join(process.cwd(), 'templates', 'styles.css');
+        try {
+          this.cssCache = await fs.readFile(cssPath, 'utf8');
+          console.log('✅ [PDF] Styles CSS mis en cache');
+        } catch (error) {
+          console.log('⚠️  [PDF] Erreur lecture CSS:', error instanceof Error ? error.message : 'Erreur inconnue');
+        }
+      }
+
+      if (this.cssCache) {
         html = html.replace(
           /<link rel="stylesheet" href="styles\.css">/,
-          `<style>${cssContent}</style>`
+          `<style>${this.cssCache}</style>`
         );
-        console.log('✅ [PDF] CSS inline injecté avec succès');
-      } catch (error) {
-        console.log('⚠️  [PDF] Erreur lecture CSS:', error instanceof Error ? error.message : 'Erreur inconnue');
       }
 
       // Obtenir le navigateur et créer une page
