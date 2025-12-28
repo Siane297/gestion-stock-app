@@ -19,7 +19,7 @@ export interface DashboardStats {
 }
 
 export interface DashboardCharts {
-  sales: Array<{ date: string; amount: number }>;
+  sales: Array<{ date: string; amount: number; count: number; profit: number }>;
 }
 
 export interface ProductStat {

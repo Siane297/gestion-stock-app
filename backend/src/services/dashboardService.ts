@@ -202,12 +202,18 @@ export class DashboardService {
       where,
       select: {
         date_creation: true,
-        montant_total: true
+        montant_total: true,
+        details: {
+          include: {
+            produit: { select: { prix_achat: true } },
+            conditionnement: { select: { quantite_base: true, prix_achat: true } }
+          }
+        }
       },
       orderBy: { date_creation: 'asc' }
     });
 
-    const chartData: Record<string, number> = {};
+    const chartData: Record<string, { amount: number; count: number; profit: number }> = {};
 
     if (groupBy === 'day') {
       // Initialize daily slots
@@ -222,14 +228,29 @@ export class DashboardService {
       };
 
       while(curr <= end) {
-        chartData[formatDate(curr)] = 0;
+        chartData[formatDate(curr)] = { amount: 0, count: 0, profit: 0 };
         curr.setDate(curr.getDate() + 1);
       }
       
       sales.forEach(s => {
         const key = formatDate(s.date_creation);
         if (chartData[key] !== undefined) {
-             chartData[key] += s.montant_total;
+             chartData[key].amount += s.montant_total;
+             chartData[key].count += 1;
+             
+             // Calculate profit for this sale
+             const saleProfit = s.details.reduce((acc, detail) => {
+               let cost = 0;
+               if (detail.conditionnement?.prix_achat && detail.conditionnement.prix_achat > 0) {
+                 cost = detail.quantite * detail.conditionnement.prix_achat;
+               } else {
+                 const qtyBase = detail.quantite * (detail.conditionnement?.quantite_base || 1);
+                 cost = qtyBase * (detail.produit.prix_achat || 0);
+               }
+               return acc + (detail.prix_total - cost);
+             }, 0);
+             
+             chartData[key].profit += saleProfit;
         }
       });
     } else {
@@ -239,13 +260,33 @@ export class DashboardService {
         const day = d.getDay();
         const diff = d.getDate() - day + (day === 0 ? -6 : 1);
         const monday = new Date(d.setDate(diff)).toISOString().split('T')[0] as string;
-        chartData[monday] = (chartData[monday] || 0) + s.montant_total;
+        
+        if (!chartData[monday]) {
+          chartData[monday] = { amount: 0, count: 0, profit: 0 };
+        }
+        
+        chartData[monday].amount += s.montant_total;
+        chartData[monday].count += 1;
+
+        // Calculate profit for this sale
+        const saleProfit = s.details.reduce((acc, detail) => {
+          let cost = 0;
+          if (detail.conditionnement?.prix_achat && detail.conditionnement.prix_achat > 0) {
+            cost = detail.quantite * detail.conditionnement.prix_achat;
+          } else {
+            const qtyBase = detail.quantite * (detail.conditionnement?.quantite_base || 1);
+            cost = qtyBase * (detail.produit.prix_achat || 0);
+          }
+          return acc + (detail.prix_total - cost);
+        }, 0);
+
+        chartData[monday].profit += saleProfit;
       });
     }
 
     return Object.entries(chartData)
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, amount]) => ({ date, amount }));
+      .map(([date, data]) => ({ date, ...data }));
   }
 
   async getTopProducts(magasinId?: string, period: DashboardPeriod = 'DAY', limit: number = 5) {

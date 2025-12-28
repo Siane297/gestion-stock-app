@@ -18,7 +18,7 @@
                 <div>
                     <!-- Value -->
                     <div class="mb-1 flex items-baseline gap-2">
-                        <h3 class="text-xl font-extrabold text-noir">
+                        <h3 class="text-[17px] font-extrabold text-noir">
                             {{ displayNumber }}
                             <span v-if="displayCurrency" :class="currencyColorClass" class="ml-1">{{ displayCurrency }}</span>
                         </h3>

@@ -7,9 +7,11 @@
       <span class="text-xs font-medium bg-blue-50 text-blue-600 px-2 py-1 rounded">Top 5</span>
     </div>
 
-    <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-4">
-      <div v-if="loading" class="space-y-4">
-        <div v-for="i in 5" :key="i" class="flex items-center gap-3 animate-pulse">
+    <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+      <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div v-for="i in 5" :key="i" 
+          class="flex items-center gap-3 animate-pulse p-3"
+          :class="{ 'md:col-span-2': i === 5 }">
           <div class="w-12 h-12 bg-gray-100 rounded-xl"></div>
           <div class="flex-1 space-y-2">
             <div class="h-4 bg-gray-100 rounded w-3/4"></div>
@@ -23,9 +25,10 @@
         <p class="text-sm font-medium">Aucune vente enregistrée</p>
       </div>
 
-      <div v-else class="">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
         <div v-for="(prod, index) in products" :key="index" 
-          class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-all duration-300 border border-transparent hover:border-gray-100">
+          class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-all duration-300 border border-transparent hover:border-gray-100"
+          :class="{ 'md:col-span-2': index === 4 }">
           
           <!-- Rang & Image Wrapper -->
           <div class="relative shrink-0">
@@ -33,11 +36,6 @@
                 <img v-if="prod.image_url" :src="prod.image_url" :alt="prod.name" class="w-full h-full object-cover">
                 <span v-else class="text-xl">📦</span>
             </div>
-            <!-- Badge de Rang -->
-            <!-- <div class="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shadow-md z-10"
-                 :class="getRankClass(index)">
-                {{ index + 1 }}
-            </div> -->
           </div>
 
           <!-- Infos Produit -->
@@ -55,11 +53,6 @@
               </span>
             </div>
           </div>
-
-          <!-- Action Rapide (Optionnel) -->
-          <!-- <button class="p-2 opacity-0 group-hover:opacity-100 bg-white shadow-sm border border-gray-100 rounded-xl transition-all duration-300">
-            <Icon icon="tabler:chevron-right" class="text-gray-400" />
-          </button> -->
         </div>
       </div>
     </div>

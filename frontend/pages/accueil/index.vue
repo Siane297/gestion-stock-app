@@ -59,15 +59,15 @@
     </div>
     
     <!-- Charts & Tables Section -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <!-- Main Chart: Sales Evolution -->
-      <SalesEvolutionChart :loading="loading" :sales-data="salesData" :period="selectedPeriod" class="md:col-span-2 lg:col-span-2" />
+      <SalesEvolutionChart :loading="loading" :sales-data="salesData" :period="selectedPeriod" class="lg:col-span-4" />
 
       <!-- Top Products -->
-      <TopProductsList :loading="loading" :products="topProducts" />
+      <TopProductsList :loading="loading" :products="topProducts" class="lg:col-span-2" />
 
       <!-- Top Categories Chart -->
-      <TopCategoriesChart :loading="loading" :categories="topCategories" />
+      <TopCategoriesChart :loading="loading" :categories="topCategories" class="lg:col-span-2" />
     </div>
 
     <!-- Recent Sales Table (Full Width) -->
@@ -128,7 +128,7 @@ const trendComparisonLabel = computed(() => {
 const topProducts = ref<any[]>([]);
 const topCategories = ref<any[]>([]);
 const recentSales = ref<any[]>([]);
-const salesData = ref<{ date: string, amount: number }[]>([]);
+const salesData = ref<{ date: string, amount: number, count: number, profit: number }[]>([]);
 const loading = ref(true);
 
 const store = useMagasinStore();

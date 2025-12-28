@@ -59,10 +59,10 @@ const chartOptions = computed(() => ({
   stroke: { show: false },
   dataLabels: { enabled: false },
   legend: {
-    position: 'bottom',
+    position: 'right',
     fontSize: '12px',
     labels: { colors: '#6b7280' },
-    itemMargin: { horizontal: 10, vertical: 5 }
+    itemMargin: { horizontal: 5, vertical: 5 } // Réduit la marge pour gagner de la place
   },
   plotOptions: {
     pie: {
@@ -77,8 +77,7 @@ const chartOptions = computed(() => ({
             color: '#6b7280',
             formatter: (w: any) => {
               const total = w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
-              // Formatage compact pour le centre du donut si trop grand
-              return total >= 1000000 ? `${(total/1000000).toFixed(1)}M` : `${(total/1000).toFixed(0)}k`;
+              return total >= 1000000 ? `${Math.trunc(total/1000000)}M` : `${Math.trunc(total/1000)}k`;
             }
           }
         }
@@ -90,11 +89,16 @@ const chartOptions = computed(() => ({
       formatter: (val: number) => formatPrice(val)
     }
   },
-  responsive: [{
-    breakpoint: 480,
-    options: {
-      legend: { position: 'bottom' }
+  responsive: [
+    {
+      breakpoint: 1024, // Pour tablettes et écrans moyens
+      options: {
+        legend: {
+          position: 'bottom',
+          itemMargin: { horizontal: 10, vertical: 5 }
+        }
+      }
     }
-  }]
+  ]
 }));
 </script>
