@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-visible flex flex-col items-center  p-4 relative overflow-hidden">
+  <div class="min-h-screen flex flex-col items-center  p-4 relative overflow-hidden">
     <!-- Décoration Arrière-plan -->
     <!-- <div class="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full -mr-48 -mt-48 blur-3xl"></div>
     <div class="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full -ml-48 -mb-48 blur-3xl"></div> -->
@@ -88,7 +88,7 @@
             </p>
             <AppButton 
               label="Configurer mes caisses"
-              icon="tabler:settings"
+              icon="pi pi-cog"
               variant="primary"
               size="sm"
               class="w-full sm:w-auto"
@@ -201,7 +201,7 @@ const caisses = ref<any[]>([]);
 const selectedCaisse = ref<any>(null);
 const fondInitial = ref(0);
 const fondInitialSaisi = ref(false);
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const pinPadRef = ref<any>(null);
 
