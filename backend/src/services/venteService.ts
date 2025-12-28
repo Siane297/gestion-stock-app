@@ -461,6 +461,29 @@ export class VenteService {
       })
     ]);
 
+    // Calcul du bénéfice estimé
+    const details = await this.prisma.vente_detail.findMany({
+        where: { vente: where },
+        include: {
+            produit: { select: { prix_achat: true } },
+            conditionnement: { select: { quantite_base: true, prix_achat: true } }
+        }
+    });
+
+    const beneficeTotal = details.reduce((acc, detail) => {
+        let cost = 0;
+
+        // Priorité : prix_achat du conditionnement s'il est renseigné (> 0)
+        if (detail.conditionnement?.prix_achat && detail.conditionnement.prix_achat > 0) {
+            cost = detail.quantite * detail.conditionnement.prix_achat;
+        } else {
+            // Sinon : conversion en unité de base et application du prix_achat produit
+            const qtyBase = detail.quantite * (detail.conditionnement?.quantite_base || 1);
+            cost = qtyBase * (detail.produit.prix_achat || 0);
+        }
+        return acc + (detail.prix_total - cost);
+    }, 0);
+
     const montantTotal = aggregation._sum.montant_total || 0;
     const venteMoyenne = totalVentes > 0 ? Math.round(montantTotal / totalVentes) : 0;
 
@@ -468,7 +491,8 @@ export class VenteService {
       totalVentes,
       montantTotal,
       venteMoyenne,
-      parMethode: {} // À implémenter si nécessaire, mais évite le crash frontend
+      parMethode: {}, // À implémenter si nécessaire, mais évite le crash frontend
+      beneficeTotal
     };
   }
 }

@@ -79,7 +79,8 @@ export class DashboardService {
         where: stockWhere,
         select: { quantite: true, quantite_minimum: true }
     });
-    const minimalStockCount = lowStocks.filter(s => s.quantite <= s.quantite_minimum).length;
+    const minimalStockCount = lowStocks.filter(s => s.quantite > 0 && s.quantite <= s.quantite_minimum).length;
+    const outOfStockCount = lowStocks.filter(s => s.quantite <= 0).length;
 
     const achatWhere: any = {
         statut: { in: ['COMMANDE', 'RECU_PARTIELLEMENT'] }
@@ -90,11 +91,64 @@ export class DashboardService {
       where: achatWhere
     });
 
+    const totalProductsCount = await this.prisma.produit.count({
+      where: { est_actif: true }
+    });
+
+    // Count distinct products with expired lots AND positive stock
+    const expiredStocks = await this.prisma.stock_lot.findMany({
+      where: {
+        ...(magasinId ? { magasin_id: magasinId } : {}),
+        quantite: { gt: 0 },
+        lot: {
+          date_peremption: { lt: new Date() }
+        }
+      },
+      select: {
+        lot: {
+          select: { produit_id: true }
+        }
+      }
+    });
+
+    const expiredProductsCount = new Set(expiredStocks.map(s => s.lot.produit_id)).size;
+
     // Calculate trends
     const calculateTrend = (current: number, previous: number) => {
       if (previous === 0) return current > 0 ? 100 : 0;
       return Math.round(((current - previous) / previous) * 100);
     };
+
+    // 4. Calculate Profit (Margin) - Estimated based on current purchase price
+    const calculateProfit = async (w: any) => {
+        const details = await this.prisma.vente_detail.findMany({
+            where: {
+                vente: w
+            },
+            include: {
+                produit: { select: { prix_achat: true } },
+                conditionnement: { select: { quantite_base: true, prix_achat: true } }
+            }
+        });
+
+        return details.reduce((acc, detail) => {
+            let cost = 0;
+            
+            // Priorité : prix_achat du conditionnement s'il est renseigné (> 0)
+            if (detail.conditionnement?.prix_achat && detail.conditionnement.prix_achat > 0) {
+              cost = detail.quantite * detail.conditionnement.prix_achat;
+            } else {
+              // Sinon : conversion en unité de base et application du prix_achat produit
+              const qtyBase = detail.quantite * (detail.conditionnement?.quantite_base || 1);
+              cost = qtyBase * (detail.produit.prix_achat || 0);
+            }
+            const revenue = detail.prix_total; // Déjà net de remise
+            return acc + (revenue - cost);
+        }, 0);
+    };
+
+    const currentProfit = await calculateProfit(where);
+    const previousProfit = await calculateProfit(previousWhere);
 
     return {
       revenue: {
@@ -107,8 +161,16 @@ export class DashboardService {
         previous: previousMetrics._count || 0,
         trend: calculateTrend(currentMetrics._count || 0, previousMetrics._count || 0)
       },
+      profit: {
+        value: currentProfit,
+        previous: previousProfit,
+        trend: calculateTrend(currentProfit, previousProfit)
+      },
       low_stock_count: minimalStockCount,
-      pending_purchases: pendingPurchases
+      out_of_stock_count: outOfStockCount,
+      pending_purchases: pendingPurchases,
+      total_products_count: totalProductsCount,
+      expired_products_count: expiredProductsCount
     };
   }
 

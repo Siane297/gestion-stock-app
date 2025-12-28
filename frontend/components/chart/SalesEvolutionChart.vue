@@ -34,7 +34,8 @@ const periodLabel = computed(() => {
 });
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'KMF', maximumFractionDigits: 0 }).format(value);
+  const truncatedAmount = Math.trunc(value);
+  return `${truncatedAmount.toLocaleString('fr-FR')} KMF`;
 };
 
 const chartOptions = computed(() => ({
@@ -42,7 +43,8 @@ const chartOptions = computed(() => ({
     type: 'area',
     fontFamily: 'inherit',
     toolbar: { show: false },
-    animations: { enabled: true }
+    animations: { enabled: true },
+    zoom: { enabled: false }
   },
   colors: ['#3b82f6'],
   fill: {
@@ -72,7 +74,7 @@ const chartOptions = computed(() => ({
   yaxis: {
     labels: { 
       style: { colors: '#9ca3af', fontSize: '11px' },
-      formatter: (value: number) => value >= 1000 ? `${(value/1000).toFixed(1)}k` : value
+      formatter: (value: number) => value >= 1000 ? `${Math.trunc(value/1000)}K` : Math.trunc(value)
     }
   },
   grid: {

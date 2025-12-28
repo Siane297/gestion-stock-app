@@ -10,8 +10,12 @@ export interface MetricWithTrend {
 export interface DashboardStats {
   revenue: MetricWithTrend;
   sales_count: MetricWithTrend;
+  profit: MetricWithTrend;
   low_stock_count: number;
+  out_of_stock_count: number;
   pending_purchases: number;
+  total_products_count: number;
+  expired_products_count: number;
 }
 
 export interface DashboardCharts {

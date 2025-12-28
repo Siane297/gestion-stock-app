@@ -93,28 +93,21 @@ const formatCompactNumber = (num: number): string => {
     
     // Milliards (Billions)
     if (absNum >= 1_000_000_000) {
-        const value = absNum / 1_000_000_000;
-        const decimal = value % 1;
-        // Show 1 decimal if significant (>= 0.1), otherwise round
-        return sign + (decimal >= 0.1 ? value.toFixed(1) : Math.round(value)) + ' Md';
+        return sign + Math.trunc(absNum / 1_000_000_000) + ' Md';
     }
     
     // Millions
     if (absNum >= 1_000_000) {
-        const value = absNum / 1_000_000;
-        const decimal = value % 1;
-        return sign + (decimal >= 0.1 ? value.toFixed(1) : Math.round(value)) + ' M';
+        return sign + Math.trunc(absNum / 1_000_000) + ' M';
     }
     
     // Milliers (Thousands)
-    if (absNum >= 10_000) {
-        const value = absNum / 1_000;
-        const decimal = value % 1;
-        return sign + (decimal >= 0.1 ? value.toFixed(1) : Math.round(value)) + ' K';
+    if (absNum >= 1_000) {
+        return sign + Math.trunc(absNum / 1_000) + ' K';
     }
     
-    // Less than 10K, show as-is with formatting
-    return sign + new Intl.NumberFormat('fr-FR').format(absNum);
+    // Less than 1000, show as-is tronqué
+    return sign + Math.trunc(absNum).toString();
 };
 
 const iconBgClass = computed(() => {

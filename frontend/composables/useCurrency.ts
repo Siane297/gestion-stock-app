@@ -49,9 +49,10 @@ export const useCurrency = () => {
       decimalSeparator: ','
     };
 
-    // Arrondir selon le nombre de décimales
-    const roundedAmount = numAmount.toFixed(currency.decimalPlaces);
-    const [integerPart, decimalPart] = roundedAmount.split('.');
+    // Tronquer au lieu d'arrondir selon le nombre de décimales
+    const multiplier = Math.pow(10, currency.decimalPlaces);
+    const truncatedAmount = Math.trunc(numAmount * multiplier) / multiplier;
+    const [integerPart, decimalPart] = truncatedAmount.toFixed(currency.decimalPlaces).split('.');
 
     // Formater la partie entière avec les séparateurs de milliers
     const formattedInteger = (integerPart || '0').replace(
@@ -88,23 +89,20 @@ export const useCurrency = () => {
 
     if (Math.abs(numAmount) >= 1_000_000_000) {
       // Milliards
-      formattedValue = (numAmount / 1_000_000_000).toFixed(1);
+      formattedValue = Math.trunc(numAmount / 1_000_000_000).toString();
       suffix = 'Md';
     } else if (Math.abs(numAmount) >= 1_000_000) {
       // Millions
-      formattedValue = (numAmount / 1_000_000).toFixed(1);
+      formattedValue = Math.trunc(numAmount / 1_000_000).toString();
       suffix = 'M';
-    } else if (Math.abs(numAmount) >= 100_000) {
-      // Centaines de milliers → K
-      formattedValue = (numAmount / 1_000).toFixed(1);
+    } else if (Math.abs(numAmount) >= 1_000) {
+      // Milliers → K (Dès 1000 comme demandé : 16900 -> 16K)
+      formattedValue = Math.trunc(numAmount / 1_000).toString();
       suffix = 'K';
     } else {
-      // Moins de 100K, on affiche normalement
-      formattedValue = numAmount.toLocaleString('fr-FR', { maximumFractionDigits: 0 });
+      // Moins de 1000, on affiche l'entier tronqué
+      formattedValue = Math.trunc(numAmount).toString();
     }
-
-    // Supprimer les décimales inutiles (.0)
-    formattedValue = formattedValue.replace(/\.0$/, '');
 
     return `${formattedValue}${suffix} ${currency.symbol}`;
   };

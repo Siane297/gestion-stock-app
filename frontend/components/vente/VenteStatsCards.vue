@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
     <!-- Chiffre d'Affaires -->
     <CardStat 
       label="Chiffre d'Affaires"
@@ -24,6 +24,15 @@
       :value="formatPrice(stats?.venteMoyenne || 0)"
       icon="tabler:chart-bar"
       variant="warning"
+      :loading="loading"
+    />
+
+    <!-- Bénéfice (Marge) -->
+    <CardStat 
+      label="Bénéfice Net (Est.)"
+      :value="formatPrice(stats?.beneficeTotal || 0)"
+      icon="tabler:trending-up"
+      variant="success"
       :loading="loading"
     />
   </div>

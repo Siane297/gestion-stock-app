@@ -63,6 +63,7 @@ export interface VenteStats {
   totalVentes: number;
   montantTotal: number;
   venteMoyenne: number;
+  beneficeTotal: number;
   parMethode: Record<string, { count: number; montant: number }>;
 }
 
