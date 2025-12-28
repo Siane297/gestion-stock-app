@@ -40,7 +40,7 @@ export class SocketService {
         socket.userId = decoded.userId;
         socket.tenantId = decoded.tenantId;
 
-        logger.info(`[Socket.io] Utilisateur authentifié: ${socket.userId} (tenant: ${socket.tenantId})`);
+        logger.debug(`[Socket.io] Utilisateur authentifié: ${socket.userId} (tenant: ${socket.tenantId})`);
         next();
       } catch (error) {
         logger.error('[Socket.io] Erreur d\'authentification:', error);
@@ -52,22 +52,22 @@ export class SocketService {
     this.io.on('connection', (socket: AuthenticatedSocket) => {
       const { userId, tenantId } = socket;
 
-      logger.info(`[Socket.io] Client connecté: ${socket.id} (user: ${userId}, tenant: ${tenantId})`);
+      logger.debug(`[Socket.io] Client connecté: ${socket.id} (user: ${userId}, tenant: ${tenantId})`);
 
       // Rejoindre les rooms spécifiques
       if (tenantId) {
         socket.join(`tenant:${tenantId}`);
-        logger.info(`[Socket.io] ${socket.id} rejoint la room tenant:${tenantId}`);
+        logger.debug(`[Socket.io] ${socket.id} rejoint la room tenant:${tenantId}`);
       }
 
       if (userId) {
         socket.join(`user:${userId}`);
-        logger.info(`[Socket.io] ${socket.id} rejoint la room user:${userId}`);
+        logger.debug(`[Socket.io] ${socket.id} rejoint la room user:${userId}`);
       }
 
       // Gestion de la déconnexion
       socket.on('disconnect', () => {
-        logger.info(`[Socket.io] Client déconnecté: ${socket.id}`);
+        logger.debug(`[Socket.io] Client déconnecté: ${socket.id}`);
       });
 
       // Event de test
@@ -110,7 +110,7 @@ export class SocketService {
       }
     });
 
-    logger.info(`[Socket.io] Événement ${event} émis à ${emittedCount} clients (tenant: ${tenantId}, exclu: ${excludeUserId})`);
+    logger.debug(`[Socket.io] Événement ${event} émis à ${emittedCount} clients (tenant: ${tenantId}, exclu: ${excludeUserId})`);
   }
 
   /**
@@ -123,7 +123,7 @@ export class SocketService {
     }
 
     this.io.to(`user:${userId}`).emit(event, data);
-    logger.info(`[Socket.io] Événement ${event} émis à user:${userId}`);
+    logger.debug(`[Socket.io] Événement ${event} émis à user:${userId}`);
   }
 
   /**
@@ -136,7 +136,7 @@ export class SocketService {
     }
 
     this.io.to(`tenant:${tenantId}`).emit(event, data);
-    logger.info(`[Socket.io] Événement ${event} émis à tenant:${tenantId}`);
+    logger.debug(`[Socket.io] Événement ${event} émis à tenant:${tenantId}`);
   }
 
   /**
