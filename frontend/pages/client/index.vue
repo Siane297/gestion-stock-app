@@ -52,12 +52,14 @@ import { useClientApi, type Client } from '~/composables/api/useClientApi';
 import { usePermissions } from '~/composables/usePermissions';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 const { getClients, deleteClient } = useClientApi();
 const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const clients = ref<Client[]>([]);
 const loading = ref(false);
@@ -72,6 +74,7 @@ const columns: TableColumn[] = [
 
 const loadData = async () => {
     loading.value = true;
+    startLoading();
     try {
         clients.value = await getClients();
     } catch (e: any) {
@@ -79,6 +82,7 @@ const loadData = async () => {
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les clients', life: 3000 });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 

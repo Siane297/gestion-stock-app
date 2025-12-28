@@ -64,18 +64,21 @@ import Toast from 'primevue/toast';
 import { useCaisseApi, type Caisse, type StatutCaisse } from '~/composables/api/useCaisseApi';
 import { useErrorHandler } from '~/composables/useErrorHandler';
 import { usePermissions } from '~/composables/usePermissions';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 const { getCaisses, deleteCaisse } = useCaisseApi();
 const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const caisses = ref<Caisse[]>([]);
 const loading = ref(false);
 
 const loadData = async () => {
     loading.value = true;
+    startLoading();
     try {
         caisses.value = await getCaisses();
     } catch (e: any) {
@@ -84,6 +87,7 @@ const loadData = async () => {
         toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg, life: 3000 });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 

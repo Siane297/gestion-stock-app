@@ -65,6 +65,7 @@ import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useStockApi, type StockMagasin } from '~/composables/api/useStockApi';
 import { usePermissions } from '~/composables/usePermissions';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 
@@ -72,6 +73,7 @@ const { getStocks } = useStockApi();
 const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const stocks = ref<StockMagasin[]>([]);
 const loading = ref(false);
@@ -87,6 +89,7 @@ const columns: TableColumn[] = [
 
 const loadStocks = async () => {
     loading.value = true;
+    startLoading();
     try {
         stocks.value = await getStocks({ alerte: showOnlyAlerts.value ? true : undefined });
     } catch (e: any) {
@@ -94,6 +97,7 @@ const loadStocks = async () => {
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les stocks', life: 3000 });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 

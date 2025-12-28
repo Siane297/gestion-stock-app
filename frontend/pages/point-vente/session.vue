@@ -176,6 +176,7 @@ import Select from 'primevue/select';
 import { useMagasinApi } from '~/composables/api/useMagasinApi';
 import { useMagasinStore } from '~/stores/magasin';
 import AppButton from '~/components/button/AppButton.vue';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 const { currentCurrency } = useCurrency();
 const { user } = useSecureAuth();
 const magasinStore = useMagasinStore();
@@ -194,6 +195,7 @@ definePageMeta({
 const { getCaisses, ouvrirSessionParPin } = useCaisseApi();
 const caisseStore = useCaisseStore();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 // État
 const step = ref<'select-caisse' | 'pin-entry'>('select-caisse');
@@ -214,6 +216,7 @@ const selectedMagasinId = ref<string | null>(magasinStore.currentMagasinId || us
 // Charger les caisses
 async function loadCaisses() {
   loading.value = true;
+  startLoading();
   try {
     // Si c'est un admin ou manager, on utilise selectedMagasinId (qui peut être null pour "Tout")
     // Sinon on utilise obligatoirement le magasin_id de l'utilisateur
@@ -245,6 +248,7 @@ async function loadCaisses() {
     console.error('Erreur chargement caisses:', err);
   } finally {
     loading.value = false;
+    stopLoading();
   }
 }
 
@@ -332,6 +336,7 @@ onMounted(async () => {
   }
 
   // 4. Sinon charger la liste
+  // Note: loadCaisses appelle déjà start/stopLoading
   loadCaisses();
 });
 </script>

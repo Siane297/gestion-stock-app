@@ -80,11 +80,13 @@ import { usePermissions } from '~/composables/usePermissions';
 import Tag from 'primevue/tag';
 import Select from 'primevue/select';
 import Toast from 'primevue/toast';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 const { getInventaires, deleteInventaire } = useInventaireApi();
 const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const inventaires = ref<Inventaire[]>([]);
 const loading = ref(false);
@@ -113,6 +115,7 @@ const filteredInventaires = computed(() => {
 
 const loadInventaires = async () => {
   loading.value = true;
+  startLoading();
   try {
     inventaires.value = await getInventaires();
   } catch (e: any) {
@@ -120,6 +123,7 @@ const loadInventaires = async () => {
     toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les inventaires', life: 3000 });
   } finally {
     loading.value = false;
+    stopLoading();
   }
 };
 

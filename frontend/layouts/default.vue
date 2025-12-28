@@ -1,18 +1,17 @@
 <template>
 
   <div class="h-screen overflow-hidden bg-slot">
-    <GlobalLoader :loading="pageLoading" />
-    
     <!-- Sidebar -->
     <AppSidebar :is-open="isSidebarOpen" @close="closeSidebar" />
-
+    
     <!-- Main Content Area -->
     <div class="ml-0 lg:ml-72 h-screen flex flex-col transition-all duration-300">
       <!-- Header -->
       <AppHeader @toggle-sidebar="toggleSidebar" />
 
       <!-- Page Content (scrollable) -->
-      <main class="flex-1 overflow-y-auto mt-[90px]  p-4 lg:px-8 lg:py-6">
+      <main class="flex-1 overflow-y-auto mt-[90px] p-4 lg:px-8 lg:py-6 relative">
+        <GlobalLoader :loading="isLoading" />
         <AppBreadcrumb v-if="showBreadcrumb" />
         <slot />
       </main>
@@ -26,19 +25,20 @@ import AppSidebar from '~/components/sidebar/AppSidebar.vue';
 import AppHeader from '~/components/header/AppHeader.vue';
 import AppBreadcrumb from '~/components/common/AppBreadcrumb.vue'; // Import Breadcrumb
 import GlobalLoader from '~/components/common/GlobalLoader.vue';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
-const pageLoading = ref(false);
+const { isLoading, startLoading, stopLoading } = useGlobalLoading();
 const nuxtApp = useNuxtApp();
 
 // Gestion du chargement page
 nuxtApp.hook('page:start', () => {
-  pageLoading.value = true;
+  startLoading();
 });
 
 nuxtApp.hook('page:finish', () => {
   // Petit délai pour éviter le flash trop rapide et assurer une transition fluide
   setTimeout(() => {
-    pageLoading.value = false;
+    stopLoading();
   }, 500);
 });
 

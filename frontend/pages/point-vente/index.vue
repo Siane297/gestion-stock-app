@@ -129,6 +129,7 @@ import ProgressSpinner from 'primevue/progressspinner';
 import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
 import type { FormField } from '~/components/form/FormulaireDynamique.vue';
 import { useToast } from 'primevue/usetoast';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 definePageMeta({
     layout: 'default',
@@ -143,6 +144,7 @@ const caisseStore = useCaisseStore();
 const { fermerSession } = useCaisseApi();
 const router = useRouter();
 const toast = useToast();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 // État de clôture de session
 const showClosureDialog = ref(false);
@@ -232,8 +234,13 @@ const handleClosureSubmit = async (data: any) => {
     }
 };
 
-onMounted(() => {
-    store.loadCatalog();
+onMounted(async () => {
+    startLoading();
+    try {
+        await store.loadCatalog();
+    } finally {
+        stopLoading();
+    }
 });
 
 const uniqueCategories = computed(() => {

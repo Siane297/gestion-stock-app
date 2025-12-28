@@ -68,12 +68,14 @@ import { usePermissions } from '~/composables/usePermissions';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import Avatar from 'primevue/avatar';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 const { getEmployees, deleteEmployee } = useEmployeeApi();
 const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const employees = ref<any[]>([]);
 const loading = ref(false);
@@ -88,6 +90,7 @@ const columns: TableColumn[] = [
 
 const loadData = async () => {
     loading.value = true;
+    startLoading();
     try {
         employees.value = await getEmployees();
     } catch (e: any) {
@@ -95,6 +98,7 @@ const loadData = async () => {
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les employés', life: 3000 });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 

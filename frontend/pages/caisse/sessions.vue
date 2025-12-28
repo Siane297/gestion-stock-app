@@ -145,11 +145,13 @@ import { useCurrency } from "~/composables/useCurrency";
 import Badge from "primevue/badge";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 const { getSessionsGlobal, getSessionDetail } = useCaisseApi();
 const { getMagasins } = useMagasinApi();
 const { formatPrice } = useCurrency();
 const toast = useToast();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 // État
 const sessions = ref<SessionCaisse[]>([]);
@@ -213,6 +215,7 @@ const currentRapport = ref<RapportSession | null>(null);
 // Méthodes
 const loadData = async () => {
     loading.value = true;
+    startLoading();
     try {
         const [sessionsData, magasinsData] = await Promise.all([
             getSessionsGlobal({
@@ -232,6 +235,7 @@ const loadData = async () => {
         });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 

@@ -91,6 +91,7 @@ import { useTenantUserApi } from '~/composables/api/useTenantUserApi';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import Avatar from 'primevue/avatar';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 // Protection de la page
 definePageMeta({
@@ -103,6 +104,7 @@ const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const users = ref<any[]>([]);
 const loading = ref(false);
@@ -125,6 +127,7 @@ const columns: TableColumn[] = [
 
 const loadData = async () => {
   loading.value = true;
+  startLoading();
   try {
     users.value = await getAllTenantUsers();
   } catch (e: any) {
@@ -132,6 +135,7 @@ const loadData = async () => {
     toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les utilisateurs', life: 3000 });
   } finally {
     loading.value = false;
+    stopLoading();
   }
 };
 

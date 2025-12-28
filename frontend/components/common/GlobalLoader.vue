@@ -1,5 +1,5 @@
 <template>
-  <div v-if="loading" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white transition-opacity duration-300">
+  <div v-if="loading" class="absolute inset-0 top-0 z-[9999] flex flex-col items-center justify-center bg-slot transition-opacity duration-300">
     <div class="relative flex flex-col items-center">
       <!-- Logo avec animation de pulsation -->
       <img src="~/assets/images/logo-2.png" alt="Chargement..." class="w-32 h-auto mb-4 animate-pulse" />

@@ -96,6 +96,7 @@ import VenteFilters from '~/components/vente/VenteFilters.vue';
 import VenteStatsCards from '~/components/vente/VenteStatsCards.vue';
 import { useVenteApi, type Vente, type VenteStats } from '~/composables/api/useVenteApi';
 import { useMagasinApi } from '~/composables/api/useMagasinApi';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import Badge from 'primevue/badge';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
@@ -106,6 +107,7 @@ const { getMagasins } = useMagasinApi();
 const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 // État
 const ventes = ref<Vente[]>([]);
@@ -130,6 +132,7 @@ const columns: TableColumn[] = [
 
 const loadData = async () => {
     loading.value = true;
+    startLoading();
     try {
         const [ventesData, statsData, magasinsData] = await Promise.all([
             getVentes({ 
@@ -157,6 +160,7 @@ const loadData = async () => {
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les données', life: 3000 });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 

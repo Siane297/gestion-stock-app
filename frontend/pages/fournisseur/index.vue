@@ -38,12 +38,14 @@ import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useFournisseurApi, type Fournisseur } from '~/composables/api/useFournisseurApi';
 import { usePermissions } from '~/composables/usePermissions';
 import Toast from 'primevue/toast';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 const { getFournisseurs, deleteFournisseur } = useFournisseurApi();
 const { hasPermission } = usePermissions();
 const { extractErrorMessage } = useErrorHandler();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const fournisseurs = ref<Fournisseur[]>([]);
 const loading = ref(false);
@@ -58,6 +60,7 @@ const columns: TableColumn[] = [
 
 const loadFournisseurs = async () => {
     loading.value = true;
+    startLoading();
     try {
         fournisseurs.value = await getFournisseurs();
     } catch (e: any) {
@@ -65,6 +68,7 @@ const loadFournisseurs = async () => {
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les fournisseurs', life: 3000 });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 

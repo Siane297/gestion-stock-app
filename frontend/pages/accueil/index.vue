@@ -91,6 +91,7 @@ import { useMagasinStore } from '~/stores/magasin';
 import { useDashboardApi } from '~/composables/api/useDashboardApi';
 import { useVenteApi, type Vente } from '~/composables/api/useVenteApi';
 import { useCurrency } from '~/composables/useCurrency';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 
 // Initialiser les valeurs par défaut avec la nouvelle structure
 const stats = ref({
@@ -135,10 +136,12 @@ const { currentMagasinId } = storeToRefs(store);
 const { getDashboardStats } = useDashboardApi();
 const { getVenteById } = useVenteApi();
 const { formatPrice, formatPriceCompact } = useCurrency();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 // Methods
 const fetchDashboardStats = async () => {
   loading.value = true;
+  startLoading();
   try {
     const data = await getDashboardStats(currentMagasinId.value || undefined, selectedPeriod.value);
     if (data) {
@@ -152,6 +155,7 @@ const fetchDashboardStats = async () => {
     console.error("Erreur chargement dashboard:", error);
   } finally {
     loading.value = false;
+    stopLoading();
   }
 };
 

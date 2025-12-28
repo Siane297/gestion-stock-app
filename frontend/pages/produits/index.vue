@@ -52,6 +52,7 @@ import ProductGrid from '~/components/produit/ProductGrid.vue';
 import AppButton from '~/components/button/AppButton.vue';
 import { useProduitApi, type Produit } from '~/composables/api/useProduitApi';
 import { usePermissions } from '~/composables/usePermissions';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 
@@ -60,6 +61,7 @@ const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
 const config = useRuntimeConfig();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const produits = ref<Produit[]>([]);
 const loading = ref(false);
@@ -87,6 +89,7 @@ const getFullImageUrl = (path?: string) => {
 
 const loadProduits = async () => {
     loading.value = true;
+    startLoading();
     try {
         produits.value = await getProduits();
     } catch (e: any) {
@@ -94,6 +97,7 @@ const loadProduits = async () => {
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les produits', life: 3000 });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 

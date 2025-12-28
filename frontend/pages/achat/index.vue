@@ -49,6 +49,7 @@ import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useAchatApi, type Achat, type StatutAchat } from '~/composables/api/useAchatApi';
 import { usePermissions } from '~/composables/usePermissions';
 import { useMagasinStore } from '~/stores/magasin';
+import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 
@@ -56,6 +57,7 @@ const { getAchats, deleteAchat } = useAchatApi();
 const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
+const { startLoading, stopLoading } = useGlobalLoading();
 
 const magasinStore = useMagasinStore();
 const { currentMagasinId } = storeToRefs(magasinStore);
@@ -73,6 +75,7 @@ const columns: TableColumn[] = [
 
 const loadAchats = async () => {
     loading.value = true;
+    startLoading();
     try {
         // Filtrage par le magasin actif
         achats.value = await getAchats(currentMagasinId.value || undefined);
@@ -81,6 +84,7 @@ const loadAchats = async () => {
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les achats', life: 3000 });
     } finally {
         loading.value = false;
+        stopLoading();
     }
 };
 
