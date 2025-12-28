@@ -17,7 +17,7 @@ if (process.env.NODE_ENV === 'production' && JWT_SECRET.includes('secret')) {
 }
 
 const JWT_EXPIRES_IN = '7d'; // 7 jours pour refresh token
-const ACCESS_TOKEN_EXPIRES_IN = '10m'; // 10 minutes pour access token
+const ACCESS_TOKEN_EXPIRES_IN = '8h'; // 8 heures pour tenir la journée de travail (évite l'erreur socket jwt expired)
 
 export interface JWTPayload {
   userId: string;
