@@ -211,13 +211,18 @@ export const ouvrirSession = async (req: Request, res: Response) => {
 
 /**
  * Ouvrir une session de caisse via PIN (authentification caissier)
- * Cette route ne nécessite pas d'authentification JWT classique
+ * L'utilisateur doit être connecté (JWT) et le PIN doit correspondre à son propre code
  */
 export const ouvrirSessionParPin = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     if (!id) {
       return res.status(400).json({ success: false, message: 'ID caisse requis' });
+    }
+
+    const utilisateurId = req.user?.userId;
+    if (!utilisateurId) {
+      return res.status(401).json({ success: false, message: 'Utilisateur non authentifié' });
     }
 
     const { pin, fond_initial, notes } = req.body;
@@ -238,10 +243,28 @@ export const ouvrirSessionParPin = async (req: Request, res: Response) => {
       });
     }
 
+    // Vérifier que le PIN correspond à l'utilisateur connecté
+    const utilisateur = await req.tenantPrisma.tenantUser.findUnique({
+      where: { id: utilisateurId },
+      select: { id: true, pin: true, email: true }
+    });
+
+    if (!utilisateur) {
+      return res.status(401).json({ success: false, message: 'Utilisateur non trouvé' });
+    }
+
+    if (utilisateur.pin !== pin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'PIN incorrect.' 
+      });
+    }
+
+    // Le PIN est correct, ouvrir la session avec l'ID de l'utilisateur connecté
     const caisseService = new CaisseService(req.tenantPrisma);
-    const session = await caisseService.ouvrirSessionParPin({
+    const session = await caisseService.ouvrirSession({
       caisse_id: id,
-      pin,
+      utilisateur_id: utilisateurId,
       fond_initial,
       notes,
     });

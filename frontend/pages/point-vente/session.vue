@@ -14,33 +14,14 @@
         <p class="text-noir/60 mb-6">Sélectionnez une caisse et saisissez votre PIN pour commencer</p>
 
         <!-- Sélecteur de Boutique (Admin/Manager) -->
-        <div v-if="(user?.role === 'ADMIN' || user?.role === 'MANAGER') && step === 'select-caisse'" class="flex justify-center mb-4">
-          <div class="inline-flex flex-col items-center gap-2 p-1.5 bg-white/50 backdrop-blur-sm border-2 border-gris/40 rounded-2xl shadow-sm">
-            <Select 
-              v-model="selectedMagasinId"
-              :options="magasins"
-              optionLabel="nom"
-              optionValue="id"
-              placeholder="Toutes les boutiques"
-              class="w-64 !border-0 !bg-transparent !shadow-none font-semibold text-primary"
-              @change="loadCaisses"
-              showClear
-            >
-              <template #value="slotProps">
-                <div v-if="slotProps.value" class="flex items-center gap-2">
-                  <Icon icon="tabler:building-store" class="text-primary" />
-                  <span class="text-primary">{{ magasins.find(m => m.id === slotProps.value)?.nom }}</span>
-                </div>
-                <span v-else class="text-gray-400">Toutes les boutiques</span>
-              </template>
-              <template #option="slotProps">
-                <div class="flex items-center gap-2">
-                  <Icon icon="tabler:building-store" class="text-primary" />
-                  <span>{{ slotProps.option.nom }}</span>
-                </div>
-              </template>
-            </Select>
-          </div>
+        <div v-if="(user?.role === 'ADMIN' || user?.role === 'MANAGER') && step === 'select-caisse'"
+          class="flex justify-center mb-4">
+          <MagasinSelector 
+            v-model="selectedMagasinId" 
+            :options="magasins" 
+            placeholder="Toutes les boutiques"
+            @change="loadCaisses"
+          />
         </div>
       </div>
 
@@ -48,60 +29,30 @@
       <div v-if="step === 'select-caisse'" class="animate-fade-in">
         <!-- Grille des caisses -->
         <div v-if="caisses.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div 
-            v-for="caisse in caisses" 
-            :key="caisse.id"
-            class="caisse-card border-2 border-gris/40"
-            :class="{ 'opacity-60 cursor-not-allowed': caisse.displayStatut === 'OCCUPEE' && !caisse.isMySession }"
-            @click="(caisse.displayStatut !== 'OCCUPEE' || caisse.isMySession) ? selectCaisse(caisse) : null"
-          >
-            <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Icon icon="tabler:cash-register" class="text-2xl text-primary" />
-              </div>
-              <div class="flex-1">
-                <h3 class="font-bold text-gray-800">{{ caisse.nom }}</h3>
-                <div class="flex flex-col gap-0.5">
-                  <p class="text-xs text-gray-500">{{ caisse.code }}</p>
-                  <p v-if="caisse.occupant" class="text-[10px] font-medium text-amber-600 flex items-center gap-1">
-                    <Icon icon="tabler:user" />
-                    Occupée par {{ caisse.occupant }}
-                  </p>
-                </div>
-              </div>
-              <div class="text-right">
-                <Badge 
-                  :value="caisse.displayStatut === 'OUVERTE' ? 'Disponible' : (caisse.displayStatut === 'OCCUPEE' ? 'Occupée' : 'Fermée')" 
-                  :severity="caisse.displayStatut === 'OUVERTE' ? 'success' : (caisse.displayStatut === 'OCCUPEE' ? 'warn' : 'danger')"
-                />
-              </div>
-            </div>
-          </div>
+          <CaisseCard v-for="caisse in caisses" :key="caisse.id" :caisse="caisse" @select="selectCaisse" />
         </div>
-          
+
         <!-- État Vide -->
-        <div v-else-if="!loading" class="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border-2 border-gris/40  animate-fade-in max-w-2xl mx-auto w-full">
-            <img src="~/assets/images/caisse.png" alt="Aucune caisse" class="w-64 h-auto mb-2 drop-shadow-xl" />
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Prêt à encaisser ?</h2>
-            <p class="text-gray-500 text-center max-w-sm mb-8 leading-relaxed">
-              Aucune caisse n'est configurée pour votre organisation. Créez votre premier terminal de vente pour commencer à servir vos clients.
-            </p>
-            <AppButton 
-              label="Configurer mes caisses"
-              icon="pi pi-cog"
-              variant="primary"
-              size="sm"
-              class="w-full sm:w-auto"
-              @click="router.push('/caisse')"
-            />
+        <div v-else-if="!loading"
+          class="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border-2 border-gris/40  animate-fade-in max-w-2xl mx-auto w-full">
+          <img src="~/assets/images/caisse.png" alt="Aucune caisse" class="w-64 h-auto mb-2 drop-shadow-xl" />
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Prêt à encaisser ?</h2>
+          <p class="text-gray-500 text-center max-w-sm mb-8 leading-relaxed">
+            Aucune caisse n'est configurée pour votre organisation. Créez votre premier terminal de vente pour commencer
+            à
+            servir vos clients.
+          </p>
+          <AppButton label="Configurer mes caisses" icon="pi pi-cog" variant="primary" size="sm"
+            class="w-full sm:w-auto" @click="router.push('/caisse')" />
         </div>
       </div>
 
       <!-- Étape 2 : Saisie du PIN & Fond Initial -->
       <div v-else-if="step === 'pin-entry'" class="bg-white rounded-2xl border-2 border-gris/40 p-8 animate-slide-up">
-         <button @click="step = 'select-caisse'" class="p-2 border-gris/40 border hover:bg-gray-100 rounded-lg transition-colors">
-            <Icon icon="tabler:arrow-left" class="text-xl text-gray-600" />
-          </button>
+        <button @click="step = 'select-caisse'"
+          class="p-2 border-gris/40 border hover:bg-gray-100 rounded-lg transition-colors">
+          <Icon icon="tabler:arrow-left" class="text-xl text-gray-600" />
+        </button>
         <div class="flex items-center justify-center gap-9 mb-6">
           <div class="text-center">
             <h2 class="font-bold text-xl text-gray-800">{{ selectedCaisse?.nom }}</h2>
@@ -115,58 +66,35 @@
             <label class="block text-sm font-semibold text-primary mb-2">Fond de caisse initial</label>
             <div class="flex items-center gap-2">
               <InputGroup>
-                <InputGroupAddon v-if="currentCurrency?.symbolPosition === 'before'" 
+                <InputGroupAddon v-if="currentCurrency?.symbolPosition === 'before'"
                   class="font-bold text-gray-600 bg-gray-50 border-r-0">
                   {{ currentCurrency?.symbol }}
                 </InputGroupAddon>
 
-                <InputNumber 
-                  v-model="fondInitial" 
-                  class="w-full text-2xl font-bold"
-                  :min="0"
-                  :maxFractionDigits="currencyDecimals"
-                  :minFractionDigits="0"
-                  autoFocus
-                  @keyup.enter="fondInitialSaisi = true"
-                />
+                <InputNumber v-model="fondInitial" class="w-full text-2xl font-bold" :min="0"
+                  :maxFractionDigits="currencyDecimals" :minFractionDigits="0" autoFocus
+                  @keyup.enter="fondInitialSaisi = true" />
 
-                <InputGroupAddon v-if="currentCurrency?.symbolPosition !== 'before'" 
+                <InputGroupAddon v-if="currentCurrency?.symbolPosition !== 'before'"
                   class="font-bold !text-gray-600 !bg-gray-50 !border-l-0">
                   {{ currentCurrency?.symbol || 'KMF' }}
                 </InputGroupAddon>
               </InputGroup>
             </div>
           </div>
-          
-          <button 
-            class="w-full py-4 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all"
-            @click="fondInitialSaisi = true"
-          >
-            Continuer
-          </button>
+
+          <AppButton label="Continuer" variant="primary" iconRight="pi pi-arrow-right" size="md" full-width :loading="loading"
+            @click="fondInitialSaisi = true" class="" />
         </div>
 
         <!-- Saisie du PIN -->
         <div v-else class="space-y-6">
-          <PinPad 
-            ref="pinPadRef"
-            :loading="loading"
-            :error="error"
-            @submit="handlePinSubmit"
-          />
+          <PinPad ref="pinPadRef" :loading="loading" :error="error" @submit="handlePinSubmit" />
 
           <!-- Bouton Accès Admin (pour ADMIN/SUPER_ADMIN uniquement) -->
           <div v-if="isAdminUser" class="pt-4 border-t">
-            <AppButton
-              label="Accès Admin"
-              variant="outline"
-              icon="pi pi-shield"
-              full-width
-              size="md"
-              :loading="loading"
-              @click="handleAdminBypass"
-              class=" !bg-orange-500 border-none text-white"
-            />
+            <AppButton label="Accès Admin" variant="outline" icon="pi pi-shield" full-width size="md" :loading="loading"
+              @click="handleAdminBypass" class=" !bg-orange-500 border-none text-white" />
             <p class="text-xs text-center text-gray-400 mt-2">
               Votre identité sera vérifiée via votre session connectée
             </p>
@@ -185,6 +113,8 @@ import { useCaisseStore } from '~/stores/caisse';
 import { useCurrency } from '~/composables/useCurrency';
 import { useSecureAuth } from '~/composables/useSecureAuth';
 import PinPad from '~/components/pos/PinPad.vue';
+import CaisseCard from '~/components/caisse/CaisseCard.vue';
+import MagasinSelector from '~/components/magasin/MagasinSelector.vue';
 import InputNumber from 'primevue/inputnumber';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
@@ -246,11 +176,11 @@ async function handleAdminBypass() {
   try {
     // Vérifier si la caisse a déjà une session active (mode reprise ou nouvelle)
     const activeSession = (selectedCaisse.value as any).sessions?.find((s: any) => s.statut === 'OUVERTE');
-    
+
     // Utiliser ouvrirSession qui utilise le JWT (pas le PIN)
     const session = await ouvrirSession(selectedCaisse.value.id, {
       fond_initial: activeSession ? activeSession.fond_initial : fondInitial.value,
-      notes: activeSession 
+      notes: activeSession
         ? `Reprise Admin (sans PIN) via terminal tactile le ${new Date().toLocaleString()}`
         : `Ouverture Admin (sans PIN) via terminal tactile le ${new Date().toLocaleString()}`
     });
@@ -279,7 +209,7 @@ async function loadCaisses() {
   try {
     // Si c'est un admin ou manager, on utilise selectedMagasinId (qui peut être null pour "Tout")
     // Sinon on utilise obligatoirement le magasin_id de l'utilisateur
-    const filterId = (user.value?.role === 'ADMIN' || user.value?.role === 'MANAGER') 
+    const filterId = (user.value?.role === 'ADMIN' || user.value?.role === 'MANAGER')
       ? (selectedMagasinId.value || undefined)
       : (user.value?.magasin_id || undefined);
 
@@ -288,7 +218,7 @@ async function loadCaisses() {
       // Une caisse est OCCUPEE s'il y a une session OUVERTE
       const activeSession = c.sessions?.find((s: any) => s.statut === 'OUVERTE');
       const isMySession = activeSession?.utilisateur_id === user.value?.id;
-      
+
       let displayStatut: 'OUVERTE' | 'OCCUPEE' | 'FERMEE' = 'FERMEE';
       if (activeSession) {
         displayStatut = 'OCCUPEE';
@@ -313,7 +243,7 @@ async function loadCaisses() {
 
 function selectCaisse(caisse: any) {
   selectedCaisse.value = caisse;
-  
+
   // Si la caisse a déjà une session active, on va reprendre cette session
   const activeSession = caisse.sessions?.find((s: any) => s.statut === 'OUVERTE');
   if (activeSession) {
@@ -324,7 +254,7 @@ function selectCaisse(caisse: any) {
     fondInitialSaisi.value = false;
     fondInitial.value = 0;
   }
-  
+
   step.value = 'pin-entry';
   error.value = null;
 }
@@ -338,14 +268,14 @@ async function handlePinSubmit(pin: string) {
   try {
     // Vérifier si la caisse a déjà une session active (mode reprise ou nouvelle)
     const activeSession = (selectedCaisse.value as any).sessions?.find((s: any) => s.statut === 'OUVERTE');
-    
+
     // Le backend gère les deux cas :
     // - Nouvelle session : crée et retourne la session
     // - Reprise : si même utilisateur (PIN), retourne la session existante
     const session = await ouvrirSessionParPin(selectedCaisse.value.id, {
       pin,
       fond_initial: activeSession ? activeSession.fond_initial : fondInitial.value,
-      notes: activeSession 
+      notes: activeSession
         ? `Reprise via terminal tactile le ${new Date().toLocaleString()}`
         : `Ouverture via terminal tactile le ${new Date().toLocaleString()}`
     });
@@ -357,13 +287,16 @@ async function handlePinSubmit(pin: string) {
       error.value = "Impossible d'ouvrir la session";
     }
   } catch (err: any) {
+    // Extraire le message d'erreur de la réponse API
+    const apiMessage = err.data?.message || err.response?._data?.message || err.message;
+
     // Message d'erreur plus spécifique
-    if (err.message?.includes('occupée') || err.message?.includes('déjà ouverte')) {
+    if (apiMessage?.includes('occupée') || apiMessage?.includes('déjà ouverte')) {
       error.value = "Cette caisse est occupée par un autre utilisateur";
-    } else if (err.message?.includes('PIN')) {
+    } else if (apiMessage?.includes('PIN incorrect')) {
       error.value = "Code PIN incorrect";
     } else {
-      error.value = err.message || "Code PIN incorrect";
+      error.value = apiMessage || "Erreur lors de l'ouverture de session";
     }
     pinPadRef.value?.reset();
   } finally {
@@ -424,12 +357,24 @@ onMounted(async () => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

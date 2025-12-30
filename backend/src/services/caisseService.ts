@@ -113,6 +113,7 @@ export class CaisseService {
         magasin: { select: { nom: true } },
         sessions: {
           where: { statut: 'OUVERTE' },
+          orderBy: { date_ouverture: 'desc' },
           take: 1,
           include: {
             utilisateur: { select: { email: true, employee: { select: { fullName: true } } } }
@@ -133,6 +134,7 @@ export class CaisseService {
         magasin: { select: { nom: true } },
         sessions: {
           where: { statut: 'OUVERTE' },
+          orderBy: { date_ouverture: 'desc' },
           take: 1,
           include: {
             utilisateur: { select: { email: true, employee: { select: { fullName: true } } } }

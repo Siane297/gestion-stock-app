@@ -16,16 +16,8 @@
 
             <!-- Bouton Accès Admin (pour ADMIN/SUPER_ADMIN uniquement) -->
             <div v-if="isAdminUser" class="pt-4  w-[385px] flex justify-center border-t">
-              <AppButton
-                label="Déverrouiller (Admin)"
-                variant="outline"
-                icon="pi pi-shield"
-                size="md"
-                full-width
-                :loading="unlocking"
-                @click="handleAdminUnlock"
-                class="!bg-orange-500  text-white"
-              />
+                <AppButton label="Déverrouiller (Admin)" variant="outline" icon="pi pi-shield" size="md" full-width
+                    :loading="unlocking" @click="handleAdminUnlock" class="!bg-orange-500  text-white" />
             </div>
         </div>
 
@@ -182,7 +174,7 @@ const closureFields: FormField[] = [
     {
         name: 'fond_final',
         label: 'Montant final compté',
-        type: 'number',
+        type: 'currency',
         required: true,
         placeholder: 'Entrez le montant en caisse...',
         min: 0,

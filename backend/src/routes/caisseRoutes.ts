@@ -39,8 +39,8 @@ router.delete('/:id', authenticate, requirePermission(Module.CAISSES, Action.SUP
 // ============================================
 // SESSIONS DE CAISSE (Actions sur caisse spécifique)
 // ============================================
-// Ouverture par PIN (ne nécessite PAS le JWT, juste le contexte tenant)
-router.post('/:id/ouvrir-pin', ouvrirSessionParPin);
+// Ouverture par PIN (nécessite JWT pour vérifier que le PIN appartient à l'utilisateur connecté)
+router.post('/:id/ouvrir-pin', authenticate, ouvrirSessionParPin);
 
 // Ouverture classique (via JWT)
 router.post('/:id/ouvrir', authenticate, requirePermission(Module.CAISSES, Action.VOIR), ouvrirSession);
