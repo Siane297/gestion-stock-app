@@ -109,38 +109,6 @@ const isActiveParent = computed(() => {
 
 <style scoped>
 /* Effet 3D pour les liens de navigation */
-.shadow-3d-sidebar {
-  box-shadow: 
-    0 2px 4px -1px rgba(0, 0, 0, 0.1),
-    0 1px 2px -1px rgba(0, 0, 0, 0.06),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.05),
-    inset 0 1px 2px rgba(255, 255, 255, 0.05);
-}
-
-.shadow-3d-sidebar:hover {
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.15),
-    0 2px 4px -1px rgba(0, 0, 0, 0.08),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.08),
-    inset 0 2px 3px rgba(255, 255, 255, 0.1);
-}
-
-/* Effet 3D pour le lien actif */
-.shadow-3d-sidebar-active {
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.2),
-    0 2px 4px -1px rgba(0, 0, 0, 0.1),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 2px 4px rgba(255, 255, 255, 0.2);
-}
-
-.shadow-3d-sidebar-active:hover {
-  box-shadow: 
-    0 6px 8px -1px rgba(0, 0, 0, 0.25),
-    0 3px 5px -1px rgba(0, 0, 0, 0.12),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.25),
-    inset 0 2px 4px rgba(255, 255, 255, 0.25);
-}
 
 /* Animation pour les sous-menus */
 .submenu-enter-active,

@@ -154,6 +154,23 @@
             :error="error"
             @submit="handlePinSubmit"
           />
+
+          <!-- Bouton Accès Admin (pour ADMIN/SUPER_ADMIN uniquement) -->
+          <div v-if="isAdminUser" class="pt-4 border-t">
+            <AppButton
+              label="Accès Admin"
+              variant="outline"
+              icon="pi pi-shield"
+              full-width
+              size="md"
+              :loading="loading"
+              @click="handleAdminBypass"
+              class=" !bg-orange-500 text-white"
+            />
+            <p class="text-xs text-center text-gray-400 mt-2">
+              Votre identité sera vérifiée via votre session connectée
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -192,7 +209,7 @@ definePageMeta({
   hideBreadcrumb: true
 });
 
-const { getCaisses, ouvrirSessionParPin } = useCaisseApi();
+const { getCaisses, ouvrirSessionParPin, ouvrirSession } = useCaisseApi();
 const caisseStore = useCaisseStore();
 const router = useRouter();
 const { startLoading, stopLoading } = useGlobalLoading();
@@ -212,6 +229,48 @@ const { getMagasins } = useMagasinApi();
 const magasins = ref<any[]>([]);
 // Initialiser avec le magasin courant du store (choisi dans la sidebar) ou celui de l'utilisateur
 const selectedMagasinId = ref<string | null>(magasinStore.currentMagasinId || user.value?.magasin_id || null);
+
+// Vérifier si l'utilisateur est Admin (peut bypasser le PIN)
+const isAdminUser = computed(() => {
+  const role = user.value?.role;
+  return role === 'ADMIN' || role === 'SUPER_ADMIN';
+});
+
+// Accès Admin sans PIN (utilise le JWT pour l'identification)
+async function handleAdminBypass() {
+  if (!selectedCaisse.value) return;
+
+  loading.value = true;
+  error.value = null;
+
+  try {
+    // Vérifier si la caisse a déjà une session active (mode reprise ou nouvelle)
+    const activeSession = (selectedCaisse.value as any).sessions?.find((s: any) => s.statut === 'OUVERTE');
+    
+    // Utiliser ouvrirSession qui utilise le JWT (pas le PIN)
+    const session = await ouvrirSession(selectedCaisse.value.id, {
+      fond_initial: activeSession ? activeSession.fond_initial : fondInitial.value,
+      notes: activeSession 
+        ? `Reprise Admin (sans PIN) via terminal tactile le ${new Date().toLocaleString()}`
+        : `Ouverture Admin (sans PIN) via terminal tactile le ${new Date().toLocaleString()}`
+    });
+
+    if (session) {
+      caisseStore.setSession(session);
+      router.push('/point-vente');
+    } else {
+      error.value = "Impossible d'ouvrir la session";
+    }
+  } catch (err: any) {
+    if (err.message?.includes('occupée') || err.message?.includes('déjà ouverte')) {
+      error.value = "Cette caisse est occupée par un autre utilisateur";
+    } else {
+      error.value = err.message || "Erreur lors de l'ouverture de session";
+    }
+  } finally {
+    loading.value = false;
+  }
+}
 
 // Charger les caisses
 async function loadCaisses() {

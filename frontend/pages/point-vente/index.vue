@@ -3,9 +3,9 @@
         class="flex flex-col lg:flex-row bg-white p-4 rounded-lg border-2 border-gris/40 gap-4 relative min-h-screen pb-24 lg:pb-4">
         <!-- Overlay Verrouillage -->
         <div v-if="caisseStore.isLocked"
-            class="absolute inset-0 z-[100] backdrop-blur-md flex flex-col items-center justify-center p-4">
+            class="absolute inset-0  z-[30] bg-white flex flex-col items-center justify-center p-4">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
                     <Icon icon="tabler:lock" class="text-3xl text-white" />
                 </div>
                 <h2 class="text-2xl font-bold text-noir mb-2">Interface Verrouillée</h2>
@@ -13,6 +13,20 @@
             </div>
 
             <PinPad :loading="unlocking" :error="pinError" @submit="handleUnlock" />
+
+            <!-- Bouton Accès Admin (pour ADMIN/SUPER_ADMIN uniquement) -->
+            <div v-if="isAdminUser" class="pt-4  w-[385px] flex justify-center border-t">
+              <AppButton
+                label="Déverrouiller (Admin)"
+                variant="outline"
+                icon="pi pi-shield"
+                size="md"
+                full-width
+                :loading="unlocking"
+                @click="handleAdminUnlock"
+                class="!bg-orange-500  text-white"
+              />
+            </div>
         </div>
 
         <!-- Zone Marge Gauche (Catalogue) -->
@@ -130,6 +144,7 @@ import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
 import type { FormField } from '~/components/form/FormulaireDynamique.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGlobalLoading } from '~/composables/useGlobalLoading';
+import { useSecureAuth } from '~/composables/useSecureAuth';
 
 definePageMeta({
     layout: 'default',
@@ -145,6 +160,18 @@ const { fermerSession } = useCaisseApi();
 const router = useRouter();
 const toast = useToast();
 const { startLoading, stopLoading } = useGlobalLoading();
+const { user } = useSecureAuth();
+
+// Vérifier si l'utilisateur est Admin (peut bypasser le PIN)
+const isAdminUser = computed(() => {
+    const role = user.value?.role;
+    return role === 'ADMIN' || role === 'SUPER_ADMIN';
+});
+
+// Déverrouillage Admin sans PIN
+const handleAdminUnlock = () => {
+    caisseStore.unlock();
+};
 
 // État de clôture de session
 const showClosureDialog = ref(false);

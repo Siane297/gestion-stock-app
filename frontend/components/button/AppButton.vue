@@ -107,8 +107,8 @@ const buttonClasses = computed(() => {
     'transition-all',
     'duration-200',
     'focus:outline-none',
-    'focus:ring-2',
-    'focus:ring-offset-2',
+    // 'focus:ring-2',
+    // 'focus:ring-offset-2',
   ];
 
   // Largeur
@@ -141,7 +141,7 @@ const buttonClasses = computed(() => {
       'border-2',
       'border-gris/50',
       // 'hover:bg-gris/10',
-      'focus:ring-gris',
+      // 'focus:ring-gris',
       'shadow-3d-secondary',
     ],
     outline: [
@@ -160,7 +160,7 @@ const buttonClasses = computed(() => {
       'border-2',
       'border-red-700/20',
       'hover:bg-red-700',
-      'focus:ring-red-500',
+      // 'focus:ring-red-500',
       'shadow-3d-danger',
     ],
     success: [
@@ -169,7 +169,7 @@ const buttonClasses = computed(() => {
       'border-2',
       'border-vert/20',
       'hover:bg-vert/90',
-      'focus:ring-vert',
+      // 'focus:ring-vert',
       'shadow-3d-success',
     ],
   };
@@ -206,117 +206,5 @@ button {
 }
 
 /* Effet 3D pour les boutons primaires */
-.shadow-3d-primary {
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.15),
-    inset 0 2px 4px rgba(255, 255, 255, 0.25);
-}
 
-.shadow-3d-primary:hover {
-  box-shadow: 
-    0 6px 8px -1px rgba(0, 0, 0, 0.15),
-    0 3px 5px -1px rgba(0, 0, 0, 0.08),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 2px 4px rgba(255, 255, 255, 0.3);
-}
-
-.shadow-3d-primary:active {
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.1);
-}
-
-/* Effet 3D pour les boutons secondary */
-.shadow-3d-secondary {
-  box-shadow: 
-    0 4px 6px -1px rgba(152, 149, 149, 0.08),
-    0 2px 4px -1px rgba(190, 190, 190, 0.04),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.1),
-    inset 0 2px 4px rgba(255, 255, 255, 0.3);
-}
-
-.shadow-3d-secondary:hover {
-  box-shadow: 
-    0 6px 8px -1px rgba(0, 0, 0, 0.12),
-    0 3px 5px -1px rgba(0, 0, 0, 0.06),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.15),
-    inset 0 2px 4px rgba(226, 225, 225, 0.056);
-}
-
-.shadow-3d-secondary:active {
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.15),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.1);
-}
-
-/* Effet 3D pour les boutons danger */
-.shadow-3d-danger {
-  box-shadow: 
-    0 4px 6px -1px rgba(220, 38, 38, 0.2),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.15),
-    inset 0 2px 4px rgba(255, 255, 255, 0.25);
-}
-
-.shadow-3d-danger:hover {
-  box-shadow: 
-    0 6px 8px -1px rgba(220, 38, 38, 0.3),
-    0 3px 5px -1px rgba(0, 0, 0, 0.08),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 2px 4px rgba(255, 255, 255, 0.3);
-}
-
-.shadow-3d-danger:active {
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.1);
-}
-
-/* Effet 3D pour les boutons success */
-.shadow-3d-success {
-  box-shadow: 
-    0 4px 6px -1px rgba(34, 197, 94, 0.2),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.15),
-    inset 0 2px 4px rgba(255, 255, 255, 0.25);
-}
-
-.shadow-3d-success:hover {
-  box-shadow: 
-    0 6px 8px -1px rgba(34, 197, 94, 0.3),
-    0 3px 5px -1px rgba(0, 0, 0, 0.08),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 2px 4px rgba(255, 255, 255, 0.3);
-}
-
-.shadow-3d-success:active {
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.1);
-}
-
-/* Effet 3D pour les boutons outline */
-.shadow-3d-outline {
-  box-shadow: 
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 1px 2px -1px rgba(0, 0, 0, 0.04),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.05),
-    inset 0 1px 2px rgba(255, 255, 255, 0.5);
-}
-
-.shadow-3d-outline:hover {
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.08),
-    inset 0 2px 3px rgba(255, 255, 255, 0.6);
-}
-
-.shadow-3d-outline:active {
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.1),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.2);
-}
 </style>
