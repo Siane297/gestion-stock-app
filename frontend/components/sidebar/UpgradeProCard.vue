@@ -1,6 +1,6 @@
 <template>
   <div class="px-4 py-3 mt-auto border-t border-white/10">
-    <div class="relative overflow-visible rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary p-4 shadow-[0_15px_35px_-5px_rgba(0,147,160,0.5)] group border border-white/20">
+    <div class="relative overflow-visible rounded-xl bg-gradient-to-br from-primary via-primary/90 to-primary p-4 shadow-[0_15px_35px_-5px_rgba(0,147,160,0.5)] group border border-white/20">
       <!-- Lignes courbes décoratives SVG -->
       <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl">
         <svg class="absolute top-0 right-0 w-full h-full opacity-20" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -165,7 +165,7 @@
               size="md"
               :loading="loading"
               @click="handleAdminBypass"
-              class=" !bg-orange-500 text-white"
+              class=" !bg-orange-500 border-none text-white"
             />
             <p class="text-xs text-center text-gray-400 mt-2">
               Votre identité sera vérifiée via votre session connectée

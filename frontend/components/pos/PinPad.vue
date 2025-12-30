@@ -17,7 +17,6 @@
         @input="handleInput"
         @keyup.enter="submit"
         :disabled="loading"
-        autofocus
       />
 
       <!-- Visualisation des Cases -->
@@ -27,7 +26,7 @@
           :key="index"
           class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl border-2 flex items-center justify-center text-2xl font-bold transition-all duration-200 bg-white"
           :class="[
-            isFocused && pin.length === index - 1 ? 'border-primary ring-4 ring-primary/10 scale-105 z-20 shadow-lg' : 'border-gray-200',
+            isFocused && pin.length === index - 1 ? 'border-primary ring-4 ring-primary/10 scale-105 z-20 shadow-lg' : 'border-gris',
             pin.length >= index ? 'border-primary/50 bg-primary/5 text-primary' : 'text-transparent',
             error ? '!border-red-500 !bg-red-50 !text-red-500 animate-shake' : ''
           ]"
@@ -45,7 +44,7 @@
     </div>
 
     <!-- Bouton Valider -->
-    <div class="w-full mb-6">
+    <div class="w-full mb-2">
       <AppButton
         label="Valider le code"
         variant="primary"
@@ -112,23 +111,6 @@ const reset = () => {
 };
 
 defineExpose({ reset, focus: focusInput });
-
-// Auto-focus au montage
-onMounted(() => {
-  nextTick(() => {
-    focusInput();
-  });
-});
-
-// Refocus si l'erreur change (pour que l'utilisateur puisse recommencer direct)
-watch(() => props.error, (newVal) => {
-  if (newVal) {
-    pin.value = ''; 
-    nextTick(() => {
-      focusInput();
-    });
-  }
-});
 </script>
 
 <style scoped>
