@@ -20,6 +20,7 @@ export interface PosProductItem {
   image?: string;
   color?: string;
   categoryName?: string;
+  code_barre?: string;
 }
 
 export interface CartItem {
@@ -166,7 +167,8 @@ export const usePos = defineStore('pos', () => {
             quantityInBase: 1,
             stockAvailable: stockProduit,
             categoryName: p.categorie?.nom,
-            image: getFullImageUrl(p.image_url)
+            image: getFullImageUrl(p.image_url),
+            code_barre: p.code_barre
             });
         }
       }
@@ -186,7 +188,8 @@ export const usePos = defineStore('pos', () => {
                 quantityInBase: c.quantite_base,
                 stockAvailable: stockCond,
                 categoryName: p.categorie?.nom,
-                image: getFullImageUrl(c.image_url) || getFullImageUrl(p.image_url)
+                image: getFullImageUrl(c.image_url) || getFullImageUrl(p.image_url),
+                code_barre: c.code_barre || p.code_barre
               });
           }
         });

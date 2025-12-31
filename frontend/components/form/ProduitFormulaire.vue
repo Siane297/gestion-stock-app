@@ -42,11 +42,27 @@
                </div>
              </div>
  
-            <!-- Input Text / Email -->
-            <InputText v-else-if="field.type === 'text' || field.type === 'email'" :id="field.name"
-              v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
-              :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
-              class="w-full h-11" @input="validateFieldRealTime(field)" />
+            <!-- Input Text / Email / Scanner -->
+            <div v-else-if="field.type === 'text' || field.type === 'email'" class="w-full">
+              <div v-if="field.withScanner" class="flex gap-2">
+                 <InputText :id="field.name"
+                   v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
+                   :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
+                   class="flex-1 h-11" @input="validateFieldRealTime(field)" />
+                 
+                 <AppButton 
+                    type="button"
+                    variant="dashed"
+                    icon="pi pi-barcode"
+                    class="h-11 px-4"
+                    @click="openScanner(field)"
+                 />
+              </div>
+              <InputText v-else :id="field.name"
+               v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
+               :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
+               class="w-full h-11" @input="validateFieldRealTime(field)" />
+            </div>
 
             <!-- Password -->
             <Password v-else-if="field.type === 'password'" :id="field.name"
@@ -94,10 +110,14 @@
               <Select :id="field.name" v-model="formData[field.name]" :options="field.options"
                 :optionLabel="field.optionLabel || 'label'" :optionValue="field.optionValue || 'value'"
                 :placeholder="field.placeholder" :invalid="submitted && field.required && !formData[field.name]" filter class="flex-1 h-11 flex items-center" />
-              <button type="button" @click="handleAddClick(field)"
-                class="px-4 h-11 border-2 border-dashed border-primary/40 rounded-lg hover:border-primary hover:bg-primary/5 transition-all duration-200 flex items-center gap-2 text-primary font-semibold">
-                <i class="pi pi-plus text-sm"></i>
-              </button>
+              
+              <AppButton 
+                type="button"
+                variant="dashed"
+                icon="pi pi-plus"
+                class="h-11 px-4"
+                @click="handleAddClick(field)"
+              />
             </div>
 
             <!-- InputNumber -->
@@ -212,6 +232,12 @@
     <ConfirmationDialog v-model:visible="showConfirmDialog"
       message="Voulez-vous vraiment annuler ? Les données saisies seront perdues." header="Confirmation"
       accept-label="Oui, annuler" reject-label="Non, continuer" @accept="onConfirmCancel" />
+
+    <!-- Scanner de code-barres -->
+    <BarcodeScanner 
+      v-model="scannerVisible" 
+      @scan="handleScanResult" 
+    />
   </div>
 </template>
 
@@ -230,9 +256,11 @@ import DatePicker from 'primevue/datepicker';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
 import ImageUploadField from "~/components/form/ImageUploadField.vue";
+import BarcodeScanner from "~/components/form/BarcodeScanner.vue";
 import ConditionnementField from "~/components/form/ConditionnementField.vue";
 import { useCountryFlags } from "~/composables/useCountryFlags";
 import { useCurrency } from "~/composables/useCurrency";
+import { useSound } from "~/composables/useSound"; // Imports useSound
 import type { FormField } from "./FormulaireDynamique.vue";
 
 export interface FormSection {
@@ -270,6 +298,7 @@ const emit = defineEmits<{
 
 const { getFlagClass } = useCountryFlags();
 const { currentCurrency } = useCurrency();
+const { playSuccessBeep } = useSound(); // Initialize useSound
 
 const currencyDecimals = computed(() => {
   return currentCurrency.value !== null ? currentCurrency.value.decimalPlaces : 2;
@@ -281,6 +310,23 @@ const pendingFiles = ref<Record<string, File>>({});
 const pendingDeletions = ref<Set<string>>(new Set());
 const submitted = ref(false);
 const isSubmitting = ref(false);
+
+// Scanner
+const scannerVisible = ref(false);
+const currentScannerField = ref<string | null>(null);
+
+const openScanner = (field: FormField) => {
+  currentScannerField.value = field.name;
+  scannerVisible.value = true;
+};
+
+const handleScanResult = (decodedText: string) => {
+  if (currentScannerField.value) {
+    formData.value[currentScannerField.value] = decodedText;
+    currentScannerField.value = null;
+    playSuccessBeep(); // Play sound
+  }
+};
 
 const allFields = computed(() => props.groups.flatMap(g => g.fields));
 

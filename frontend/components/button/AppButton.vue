@@ -57,7 +57,7 @@ import ProgressBar from 'primevue/progressbar';
 interface Props {
   label?: string;
   type?: 'button' | 'submit' | 'reset';
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success' | 'dashed';
   size?: 'sm' | 'md' | 'lg';
   icon?: string; // Alias pour iconLeft
   iconLeft?: string;
@@ -171,6 +171,16 @@ const buttonClasses = computed(() => {
       'hover:bg-vert/90',
       // 'focus:ring-vert',
       'shadow-3d-success',
+    ],
+    dashed: [
+      'bg-transparent',
+      'text-primary',
+      'border-2',
+      'border-dashed',
+      'border-primary',
+      'hover:border-primary',
+      'hover:bg-primary/5',
+      'shadow-none',
     ],
   };
   baseClasses.push(...variantClasses[props.variant]);

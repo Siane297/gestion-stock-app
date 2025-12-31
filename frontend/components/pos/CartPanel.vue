@@ -132,7 +132,7 @@
             variant="primary" 
             icon="pi pi-check-circle" 
             size="sm"
-            class="shadow-lg shadow-primary/30"
+            class=""
             @click="handleCheckoutClick"
             :disabled="store.cart.length === 0"
         />

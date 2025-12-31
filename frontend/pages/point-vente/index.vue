@@ -23,34 +23,34 @@
 
         <!-- Zone Marge Gauche (Catalogue) -->
         <div class="flex-1 flex flex-col min-w-0" :class="activeMobileTab === 'catalog' ? 'block' : 'hidden lg:flex'">
+            
+            <!-- Banner User -->
+            <PosUserBanner 
+                @lock="caisseStore.lock()" 
+                @logout="handleLogout" 
+            />
 
             <!-- Grid Content -->
             <div class="flex-1 overflow-y-auto ">
 
-                <!-- Top Bar (Moved) -->
+                <!-- Top Bar (With Search, Scanner) -->
                 <div
                     class="bg-white border-2 border-gris/40 p-4  z-10 flex items-center gap-4 justify-between rounded-xl mb-6 sticky top-0">
                     <!-- Search -->
-                    <div class="relative flex-1">
-                        <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input v-model="store.searchQuery" type="text"
-                            placeholder="Rechercher un produit (Nom, code barre)..."
-                            class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                            autofocus />
-                    </div>
-
-                    <!-- Actions Rapides -->
-                    <div class="flex gap-2">
-                        <button @click="caisseStore.lock()"
-                            class="p-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors"
-                            title="Verrouiller">
-                            <Icon icon="tabler:lock" class="text-xl" />
-                        </button>
-                        <button @click="handleLogout"
-                            class="p-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
-                            title="Fermer la session">
-                            <Icon icon="tabler:power" class="text-xl" />
-                        </button>
+                    <div class="relative flex-1 flex gap-2">
+                        <div class="relative flex-1">
+                            <i class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input v-model="store.searchQuery" type="text"
+                                placeholder="Rechercher un produit (Nom, code barre)..."
+                                class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                autofocus />
+                        </div>
+                        <AppButton 
+                            icon="pi pi-barcode" 
+                            variant="primary" 
+                            class="!h-auto !py-3 !px-4"
+                            @click="showScanner = true"
+                        />
                     </div>
                 </div>
 
@@ -116,8 +116,12 @@
             description="Veuillez compter votre caisse et enregistrer le montant final avant de quitter."
             headerTitle="Fermer la Session" submitLabel="Clôturer et Quitter" cancelLabel="Annuler"
             :fields="closureFields" :loading="closureLoading" @submit="handleClosureSubmit" />
-
-        <!-- Toast supprimé car global dans App.vue -->
+            
+        <!-- Scanner -->
+        <BarcodeScanner 
+            v-model="showScanner" 
+            @scan="handleScanResult" 
+        />
     </div>
 </template>
 
@@ -133,10 +137,13 @@ import CartPanel from '~/components/pos/CartPanel.vue';
 import PinPad from '~/components/pos/PinPad.vue';
 import ProgressSpinner from 'primevue/progressspinner';
 import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
+import BarcodeScanner from '~/components/form/BarcodeScanner.vue';
+import PosUserBanner from '~/components/caisse/PosUserBanner.vue';
 import type { FormField } from '~/components/form/FormulaireDynamique.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import { useSecureAuth } from '~/composables/useSecureAuth';
+import { useSound } from '~/composables/useSound';
 
 definePageMeta({
     layout: 'default',
@@ -148,11 +155,12 @@ definePageMeta({
 
 const store = usePos();
 const caisseStore = useCaisseStore();
-const { fermerSession } = useCaisseApi();
+const { fermerSession, ouvrirSessionParPin } = useCaisseApi(); // Ajout de ouvrirSessionParPin
 const router = useRouter();
 const toast = useToast();
 const { startLoading, stopLoading } = useGlobalLoading();
 const { user } = useSecureAuth();
+const { playSuccessBeep, playErrorBeep } = useSound();
 
 // Vérifier si l'utilisateur est Admin (peut bypasser le PIN)
 const isAdminUser = computed(() => {
@@ -196,14 +204,37 @@ const unlocking = ref(false);
 const handleUnlock = async (pin: string) => {
     unlocking.value = true;
     pinError.value = null;
+    
+    // Si pas de session active, erreur technique
+    if (!caisseStore.activeSession?.caisse_id) {
+        pinError.value = "Impossible de vérifier : aucune session active";
+        unlocking.value = false;
+        return;
+    }
+
     try {
-        // Pour le déverrouillage, on peut réutiliser ouvrirSessionParPin 
-        // ou une route dédiée. Ici on simule ou on ré-ouvre si besoin.
-        // Mais plus simple : on vérifie juste le PIN de l'utilisateur.
-        // Pour l'instant, on utilise le store pour l'état local.
-        caisseStore.unlock();
-    } catch (err) {
-        pinError.value = "PIN incorrect";
+        const session = await ouvrirSessionParPin(caisseStore.activeSession.caisse_id, {
+            pin,
+            fond_initial: caisseStore.activeSession.fond_initial || 0, 
+            notes: `Déverrouillage session le ${new Date().toLocaleString()}`
+        });
+
+        if (session) {
+            // PIN Correct -> On déverrouille l'interface locale
+            caisseStore.unlock();
+            toast.add({ severity: 'success', summary: 'Déverrouillé', detail: 'Reprise de la vente', life: 1500 });
+        } else {
+             pinError.value = "PIN incorrect";
+        }
+    } catch (err: any) {
+        // Extraire le message d'erreur
+        const msg = err.data?.message || err.response?._data?.message || err.message || '';
+        if (msg.includes('PIN incorrect')) {
+            pinError.value = "Code PIN incorrect";
+        } else {
+            pinError.value = "Erreur vérification PIN";
+            console.error("Unlock Error:", err);
+        }
     } finally {
         unlocking.value = false;
     }
@@ -269,6 +300,25 @@ const uniqueCategories = computed(() => {
     });
     return Array.from(cats);
 });
+
+// Scanner
+const showScanner = ref(false);
+
+const handleScanResult = (code: string) => {
+    // Chercher le produit correspondant
+    const item = store.posItems.find(i => i.code_barre === code);
+    
+    if (item) {
+        handleAddToCart(item);
+        playSuccessBeep();
+        toast.add({ severity: 'success', summary: 'Produit trouvé', detail: `${item.name} ajouté au panier`, life: 2000 });
+        // Optionnel : fermer le scanner après un succès ? 
+        // showScanner.value = false; 
+    } else {
+        playErrorBeep();
+        toast.add({ severity: 'warn', summary: 'Introuvable', detail: `Aucun produit trouvé pour le code ${code}`, life: 3000 });
+    }
+};
 
 const handleAddToCart = (item: any) => {
     // Add sound effect?

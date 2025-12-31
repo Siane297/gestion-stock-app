@@ -33,11 +33,24 @@
                  </div>
                </div>
  
-               <!-- Input Text / Email -->
-               <InputText v-else-if="field.type === 'text' || field.type === 'email'" :id="field.name"
-                v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
-                :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
-                class="w-full" @input="validateFieldRealTime(field)" />
+               <!-- Input Text / Email / Scanner -->
+               <div v-else-if="field.type === 'text' || field.type === 'email'" class="w-full">
+                 <InputGroup v-if="field.withScanner">
+                    <InputText :id="field.name"
+                      v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
+                      :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
+                      class="flex-1" @input="validateFieldRealTime(field)" />
+                    <InputGroupAddon>
+                      <button type="button" @click="openScanner(field)" class="p-button p-button-icon-only p-button-text p-button-secondary -m-3">
+                        <i class="pi pi-camera"></i>
+                      </button>
+                    </InputGroupAddon>
+                 </InputGroup>
+                 <InputText v-else :id="field.name"
+                  v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
+                  :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
+                  class="w-full" @input="validateFieldRealTime(field)" />
+               </div>
 
               <!-- Password -->
               <Password v-else-if="field.type === 'password'" :id="field.name"
@@ -226,6 +239,12 @@
     <ConfirmationDialog v-model:visible="showConfirmDialog"
       message="Voulez-vous vraiment annuler ? Les données saisies seront perdues." header="Confirmation"
       accept-label="Oui, annuler" reject-label="Non, continuer" @accept="onConfirmCancel" />
+
+    <!-- Scanner de code-barres -->
+    <BarcodeScanner 
+      v-model="scannerVisible" 
+      @scan="handleScanResult" 
+    />
   </div>
 </template>
 
@@ -242,6 +261,7 @@ import ConfirmationDialog from "~/components/dialog/ConfirmationDialog.vue";
 import InputNumber from "primevue/inputnumber";
 import DatePicker from "primevue/datepicker";
 import ImageUploadField from "~/components/form/ImageUploadField.vue";
+import BarcodeScanner from "~/components/form/BarcodeScanner.vue";
 
 import ColorPickerField from "~/components/form/ColorPickerField.vue";
 import ConditionnementField from "~/components/form/ConditionnementField.vue";
@@ -251,6 +271,7 @@ import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
 import { useCountryFlags } from "~/composables/useCountryFlags";
 import { useCurrency } from "~/composables/useCurrency";
+import { useSound } from "~/composables/useSound"; // Import useSound
 
 export interface FormField {
   name: string;
@@ -296,6 +317,7 @@ export interface FormField {
   fullWidth?: boolean; // Force la largeur à 100%
   helpText?: string;
   name2?: string; // Deuxième nom de champ (pour lot-fields)
+  withScanner?: boolean; // Activer le scanner sur ce champ
 }
 
 interface Props {
@@ -330,6 +352,7 @@ const emit = defineEmits<{
 // Utiliser le composable pour les drapeaux
 const { getFlagClass } = useCountryFlags();
 const { currentCurrency } = useCurrency();
+const { playSuccessBeep } = useSound(); // Initialiser useSound
 
 const currencyCode = computed(() => currentCurrency.value?.code || 'KMF');
 const currencySuffix = computed(() => ` ${currentCurrency.value?.symbol || 'KMF'}`);
@@ -343,6 +366,23 @@ const pendingFiles = ref<Record<string, File>>({}); // Stocker les fichiers en a
 const pendingDeletions = ref<Set<string>>(new Set()); // Stocker les champs marqués pour suppression
 const submitted = ref(false);
 const isSubmitting = ref(false); // État de loading interne
+
+// Scanner
+const scannerVisible = ref(false);
+const currentScannerField = ref<string | null>(null);
+
+const openScanner = (field: FormField) => {
+  currentScannerField.value = field.name;
+  scannerVisible.value = true;
+};
+
+const handleScanResult = (decodedText: string) => {
+  if (currentScannerField.value) {
+    formData.value[currentScannerField.value] = decodedText;
+    currentScannerField.value = null;
+    playSuccessBeep(); // Jouer le son de succès
+  }
+};
 
 // Différentes valeurs par défaut selon le type
 const getDefaultValue = (field: FormField) => {

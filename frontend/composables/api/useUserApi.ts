@@ -96,6 +96,10 @@ export const formatRole = (role: string): string => {
     'SUPER_ADMIN': 'Super Administrateur',
     'ADMIN': 'Administrateur',
     'MANAGER': 'Manager',
+    'STORE_MANAGER': 'Gérant',
+    'STOCK_MANAGER': 'Responsable Stock',
+    'SELLER': 'Vendeur',
+    'ACCOUNTANT': 'Comptable',
     'USER': 'Utilisateur',
     'RH': 'Ressources Humaines',
   };

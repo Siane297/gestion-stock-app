@@ -208,7 +208,8 @@ const productGroups = computed(() => {
           type: "text" as const,
           placeholder: "Scanner ou saisir le code",
           required: false,
-          value: codeBarre
+          value: codeBarre,
+          withScanner: true,
         },
         {
           name: "unite_id",
