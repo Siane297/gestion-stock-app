@@ -78,10 +78,10 @@ export default defineNuxtConfig({
     },
     workbox: {
       navigateFallback: "/",
-      globPatterns:
-        process.env.NODE_ENV === "production"
-          ? ["**/*.{js,css,html,png,svg,ico}"]
-          : [],
+      globPatterns: ["**/*.{js,css,html,png,svg,ico,woff2,json}"],
+      cleanupOutdatedCaches: true,
+      clientsClaim: true,
+      skipWaiting: true,
     },
     client: {
       installPrompt: true,
