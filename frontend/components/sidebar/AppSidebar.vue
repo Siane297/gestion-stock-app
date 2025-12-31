@@ -231,7 +231,7 @@ const menuCategories: MenuCategory[] = [
             permission: 'ventes:voir',
           },
           {
-            name: 'Historique session',
+            name: 'Historique des caisses',
             icon: 'tabler:history-toggle',
             link: '/vente/sessions',
             permission: 'caisses:voir',
