@@ -2,13 +2,17 @@
     <div class="bg-white p-5 rounded-xl border-2 border-gris/40">
         <!-- Barre d'actions (Recherche + Bouton) -->
         <div class="flex flex-col lg:flex-row items-center justify-between gap-4 mb-6">
-            <div class="relative w-full lg:w-96">
-                <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
-                <InputText 
-                    v-model="searchQuery" 
-                    placeholder="Rechercher (nom, code barre, catégorie)..." 
-                    class="w-full pl-10 !rounded-lg" 
-                />
+            <div class="w-full lg:w-96">
+                <IconField iconPosition="left">
+                    <InputIcon>
+                        <i class="pi pi-search"></i>
+                    </InputIcon>
+                    <InputText 
+                        v-model="searchQuery" 
+                        placeholder="Rechercher (nom, code barre, catégorie)..." 
+                        class="w-full !rounded-lg" 
+                    />
+                </IconField>
             </div>
 
             <slot name="actions"></slot>
@@ -58,6 +62,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import InputText from 'primevue/inputtext';
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
 import Paginator from 'primevue/paginator';
 import ProductGridItem from '~/components/produit/ProductGridItem.vue';
 import type { Produit } from '~/composables/api/useProduitApi';

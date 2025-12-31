@@ -78,6 +78,63 @@
                     <span>{{ (data as any).methode_paiement }}</span>
                 </div>
             </template>
+
+            <!-- VUE MOBILE (Slot) -->
+            <template #mobile-item="{ data }">
+                <MobileCard>
+                    <template #header>
+                         <div class="flex flex-col">
+                            <span class="font-bold text-gray-800 text-sm">Vente #{{ data.id.substring(0, 8) }}</span>
+                            <span class="text-xs text-gray-500">{{ formatDate(data.date_creation) }} à {{ formatTime(data.date_creation) }}</span>
+                        </div>
+                        <Badge :value="data.statut" :severity="getSeverity(data.statut)" class="!rounded-lg !text-[10px]" />
+                    </template>
+
+                    <!-- Body -->
+                    <div class="flex flex-col gap-3 mt-1">
+                        <!-- Produits summary -->
+                        <div class="text-xs text-gray-600">
+                             <div v-if="data.details?.length > 0">
+                                {{ data.details[0].produit?.nom }} 
+                                <span v-if="data.details.length > 1" class="font-semibold text-primary">+ {{ data.details.length - 1 }} autres</span>
+                             </div>
+                             <div v-else class="italic text-gray-400">Aucun article</div>
+                        </div>
+
+                         <!-- Price + Vendeur -->
+                         <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
+                             <div class="flex flex-col gap-1">
+                                 <!-- Seller -->
+                                 <div class="flex items-center gap-1 text-[10px] text-noir">
+                                     <Icon icon="mdi:account" /> {{ data.utilisateur?.employee?.fullName || 'Vendeur inconnu' }}
+                                 </div>
+                                 <!-- Source -->
+                                 <span v-if="data.session_caisse" class="text-[10px] text-noir flex items-center gap-1">
+                                     <Icon icon="mdi:store" /> {{ data.session_caisse.caisse?.nom }}
+                                 </span>
+                             </div>
+                             <div class="text-right">
+                                 <div class="text-lg font-bold text-primary">{{ formatPrice(data.montant_total) }}</div>
+                                 <div class="text-[10px] text-gray-500 flex items-center justify-end gap-1">
+                                     <Icon :icon="getPaiementIcon(data.methode_paiement)" /> {{ data.methode_paiement }}
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+
+                    <template #footer>
+                        <AppButton 
+                            label="Voir le détail" 
+                            icon="pi pi-file-invoice" 
+                            variant="secondary" 
+                            size="sm" 
+                            full-width 
+                            @click="router.push(`/vente/detail-vente/${data.id}`)" 
+                        />
+                    </template>
+                </MobileCard>
+            </template>
+
         </TableGeneric>
     </div>
 
@@ -90,6 +147,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
+import AppButton from '~/components/button/AppButton.vue';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import VenteFilters from '~/components/vente/VenteFilters.vue';
@@ -97,10 +155,12 @@ import VenteStatsCards from '~/components/vente/VenteStatsCards.vue';
 import { useVenteApi, type Vente, type VenteStats } from '~/composables/api/useVenteApi';
 import { useMagasinApi } from '~/composables/api/useMagasinApi';
 import { useGlobalLoading } from '~/composables/useGlobalLoading';
+import { useCurrency } from '~/composables/useCurrency'; // Import currency formatter
 import Badge from 'primevue/badge';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
+import MobileCard from '~/components/mobile/MobileCard.vue';
 
 const { getVentes, getVenteStats, updateVenteStatut, getVenteById } = useVenteApi();
 const { getMagasins } = useMagasinApi();
@@ -108,6 +168,7 @@ const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
 const { startLoading, stopLoading } = useGlobalLoading();
+const { formatPrice } = useCurrency(); // Use currency formatter
 
 // État
 const ventes = ref<Vente[]>([]);

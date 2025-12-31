@@ -50,6 +50,56 @@
                  <span class="text-gray-500">{{ data.quantite_minimum }}</span>
              </template>
 
+            <!-- VUE MOBILE (Slot) -->
+            <template #mobile-item="{ data }">
+                <MobileCard>
+                    <template #header>
+                        <div>
+                            <h3 class="font-bold text-noir text-lg leading-tight">{{ data.produit.nom }}</h3>
+                            <div class="text-xs text-noir mt-1 flex items-center gap-1">
+                                <Icon icon="mdi:barcode" /> {{ data.produit.code_barre || 'Sans code' }}
+                            </div>
+                        </div>
+                         <div class="flex-shrink-0">
+                             <Badge v-if="data.quantite === 0" severity="danger" value="Rupture" />
+                             <Badge v-else-if="data.quantite <= data.quantite_minimum" severity="warn" value="Faible" />
+                             <Badge v-else severity="success" value="En stock" />
+                        </div>
+                    </template>
+
+                    <!-- Body -->
+                    <div class="flex justify-between items-center mt-2">
+                        <div class="flex flex-col">
+                             <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Boutique</span>
+                             <span class="font-medium text-noir flex items-center gap-1">
+                                 <Icon icon="tabler:building-store" class="text-noir" /> {{ data.magasin.nom }}
+                             </span>
+                        </div>
+
+                        <div class="text-right">
+                             <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Stock</span>
+                             <div class="flex items-center justify-end gap-1">
+                                 <span class="text-2xl font-bold" :class="getStockColorClass(data.quantite, data.quantite_minimum)">
+                                     {{ data.quantite }}
+                                 </span>
+                                 <span class="text-sm text-gray-500">{{ data.produit.unite?.nom }}</span>
+                             </div>
+                        </div>
+                    </div>
+                    
+                    <template #footer>
+                        <AppButton 
+                            label="Détails & Mouvements" 
+                            icon="pi pi-chart-line" 
+                            variant="secondary" 
+                            size="sm" 
+                            full-width 
+                            @click="handleView(data)" 
+                        />
+                    </template>
+                </MobileCard>
+            </template>
+
         </TableGeneric>
     </div>
  
@@ -62,12 +112,16 @@
 import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
+import MobileCard from '~/components/mobile/MobileCard.vue';
 import SimplePageHeader from '~/components/banner/SimplePageHeader.vue';
 import { useStockApi, type StockMagasin } from '~/composables/api/useStockApi';
 import { usePermissions } from '~/composables/usePermissions';
 import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import Tag from 'primevue/tag';
-import Toast from 'primevue/toast';
+import Toast from 'primevue/toast'; // Duplicate import, removing one
+import Badge from 'primevue/badge'; // Ensure Badge is imported if used
+import { Icon } from '@iconify/vue';
+import AppButton from '~/components/button/AppButton.vue';
 
 const { getStocks } = useStockApi();
 const { hasPermission } = usePermissions();

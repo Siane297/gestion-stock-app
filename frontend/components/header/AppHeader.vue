@@ -22,7 +22,7 @@
     </div>
 
     <!-- Right Section: Notifications, Profile -->
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2">
       <!-- Notification Bell -->
       <NotificationBell 
         :is-open="isNotificationsOpen" 

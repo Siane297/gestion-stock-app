@@ -8,8 +8,13 @@
                 <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
                 Sessions en cours
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <SessionActiveCard v-for="session in activeSessions" :key="session.id" :session="session" />
+            <div class="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
+                <SessionActiveCard 
+                    v-for="session in activeSessions" 
+                    :key="session.id" 
+                    :session="session"
+                    class="min-w-[85vw] md:min-w-[400px] flex-shrink-0 snap-start" 
+                />
             </div>
         </div>
         <!-- Filtres rapides -->
@@ -110,6 +115,86 @@
                     <Badge :value="(data as any).statut === 'OUVERTE' ? 'En cours' : 'Clôturée'"
                         :severity="(data as any).statut === 'OUVERTE' ? 'success' : 'secondary'" />
                 </template>
+
+                <!-- VUE MOBILE (Slot) -->
+                <template #mobile-item="{ data }">
+                    <MobileCard>
+                        <template #header>
+                             <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center text-xs font-bold border border-gray-200">
+                                    {{ getInitiales(data.utilisateur) }}
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-gray-800 text-sm">
+                                        {{ data.utilisateur?.employee?.fullName || data.utilisateur?.email }}
+                                    </span>
+                                    <span class="text-[10px] text-gray-500 flex items-center gap-1">
+                                         <Icon icon="mdi:store" /> {{ data.caisse?.nom }}
+                                    </span>
+                                </div>
+                            </div>
+                            <Badge :value="data.statut === 'OUVERTE' ? 'En cours' : 'Clôturée'" 
+                                   :severity="data.statut === 'OUVERTE' ? 'success' : 'secondary'" 
+                                   class="!rounded-lg !text-[10px]" />
+                        </template>
+
+                        <!-- Body -->
+                        <div class="flex flex-col gap-3">
+                             <!-- Dates -->
+                            <div class="flex justify-between text-xs text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100/50">
+                                <div class="flex flex-col">
+                                    <span class="uppercase text-[9px] text-gray-400 font-semibold tracking-wider">Ouverture</span>
+                                    <span class="font-medium text-gray-700">{{ formatDate(data.date_ouverture) }}</span>
+                                    <span class="text-[10px]">{{ formatTime(data.date_ouverture) }}</span>
+                                </div>
+                                <div class="flex flex-col items-end" v-if="data.date_fermeture">
+                                    <span class="uppercase text-[9px] text-gray-400 font-semibold tracking-wider">Fermeture</span>
+                                    <span class="font-medium text-gray-700">{{ formatDate(data.date_fermeture) }}</span>
+                                    <span class="text-[10px]">{{ formatTime(data.date_fermeture) }}</span>
+                                </div>
+                                <div v-else class="flex items-center text-green-600 italic font-medium">
+                                    En activité...
+                                </div>
+                            </div>
+
+                            <!-- Chiffres -->
+                            <div class="flex justify-between items-end border-t border-dashed border-gray-200 pt-2">
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] text-gray-400 uppercase">Fond Initial</span>
+                                        <span class="text-sm font-semibold text-gray-600">{{ formatPrice(data.fond_initial) }}</span>
+                                    </div>
+                                    <div v-if="data.statut === 'FERMEE'" class="flex flex-col">
+                                        <span class="text-[10px] text-gray-400 uppercase">Fond Final</span>
+                                        <span class="text-sm font-bold text-gray-800">{{ formatPrice(data.fond_final || 0) }}</span>
+                                    </div>
+                                </div>
+
+                                <div v-if="data.statut === 'FERMEE'" class="text-right">
+                                    <span class="text-[10px] text-gray-400 uppercase block mb-0.5">Écart</span>
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span :class="data.ecart > 0 ? 'text-green-600' : (data.ecart < 0 ? 'text-red-600' : 'text-gray-400')" class="font-bold text-lg">
+                                            {{ data.ecart > 0 ? "+" : "" }}{{ formatPrice(data.ecart) }}
+                                        </span>
+                                        <Icon v-if="data.ecart !== 0" :icon="data.ecart > 0 ? 'tabler:trending-up' : 'tabler:trending-down'" 
+                                            :class="data.ecart > 0 ? 'text-green-500' : 'text-red-500'" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <template #footer>
+                            <AppButton 
+                                label="Voir le rapport" 
+                                icon="pi pi-file-text" 
+                                variant="secondary" 
+                                size="sm" 
+                                full-width 
+                                @click="viewSessionDetail(data)" 
+                            />
+                        </template>
+                    </MobileCard>
+                </template>
             </TableGeneric>
         </div>
 
@@ -146,6 +231,8 @@ import Badge from "primevue/badge";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 import { useGlobalLoading } from '~/composables/useGlobalLoading';
+import MobileCard from '~/components/mobile/MobileCard.vue';
+import AppButton from '~/components/button/AppButton.vue';
 
 const { getSessionsGlobal, getSessionDetail } = useCaisseApi();
 const { getMagasins } = useMagasinApi();

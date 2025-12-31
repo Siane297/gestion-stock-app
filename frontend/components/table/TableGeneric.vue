@@ -29,8 +29,9 @@
       </div>
     </div>
 
-    <!-- Table -->
+    <!-- Table (Desktop) -->
     <DataTable
+      v-if="!isMobile || !$slots['mobile-item']"
       :value="filteredData"
       :paginator="true"
       :rows="rowsPerPage"
@@ -99,6 +100,25 @@
       </Column>
     </DataTable>
 
+    <!-- Mobile DataView -->
+    <div v-if="isMobile && $slots['mobile-item']" class="mobile-view">
+        <DataView :value="filteredData" :paginator="true" :rows="rowsPerPage" :loading="loading">
+            <template #list="slotProps">
+                <div class="flex flex-col gap-4">
+                    <div v-for="(item, index) in slotProps.items" :key="index" class="w-full">
+                         <slot name="mobile-item" :data="item" :index="index"></slot>
+                    </div>
+                </div>
+            </template>
+            <template #empty>
+                 <div class="flex flex-col items-center justify-center py-10 text-gray-500">
+                    <Icon icon="tabler:database-x" class="text-4xl mb-2" />
+                    <p>Aucun élément</p>
+                 </div>
+            </template>
+        </DataView>
+    </div>
+
     <!-- Dropdown Menu (Teleport) -->
     <Teleport to="body">
       <Transition name="dropdown">
@@ -156,9 +176,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Icon } from "@iconify/vue";
 import DataTable from 'primevue/datatable';
+import DataView from 'primevue/dataview'; // Import DataView
 import Column from 'primevue/column';
 import Tag from 'primevue/tag';
 import InputText from 'primevue/inputtext';
@@ -227,6 +248,12 @@ const confirmMessage = ref('');
 const activeMenuId = ref<string | number | null>(null);
 const activeMenuData = ref<any>(null);
 const dropdownStyle = ref({});
+
+// Mobile Detection
+const isMobile = ref(false);
+const checkMobile = () => {
+    isMobile.value = window.innerWidth < 768; // md breakpoint
+};
 
 // --- Helpers ---
 
@@ -305,6 +332,15 @@ if (typeof window !== 'undefined') {
       }
     };
     document.addEventListener("click", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    
+    // Resize Listener
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+  });
+  
+  onUnmounted(() => {
+     window.removeEventListener('resize', checkMobile);
   });
 }
 
