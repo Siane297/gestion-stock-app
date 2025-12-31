@@ -33,24 +33,27 @@
                  </div>
                </div>
  
-               <!-- Input Text / Email / Scanner -->
-               <div v-else-if="field.type === 'text' || field.type === 'email'" class="w-full">
-                 <InputGroup v-if="field.withScanner">
+                <!-- Input Text / Email / Scanner -->
+                <div v-else-if="field.type === 'text' || field.type === 'email'" class="w-full">
+                  <div v-if="field.withScanner" class="flex gap-2">
                     <InputText :id="field.name"
                       v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
                       :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
                       class="flex-1" @input="validateFieldRealTime(field)" />
-                    <InputGroupAddon>
-                      <button type="button" @click="openScanner(field)" class="p-button p-button-icon-only p-button-text p-button-secondary -m-3">
-                        <i class="pi pi-camera"></i>
-                      </button>
-                    </InputGroupAddon>
-                 </InputGroup>
-                 <InputText v-else :id="field.name"
-                  v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
-                  :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
-                  class="w-full" @input="validateFieldRealTime(field)" />
-               </div>
+                    
+                    <AppButton 
+                      type="button"
+                      variant="dashed"
+                      icon="pi pi-barcode"
+                      class="px-4"
+                      @click="openScanner(field)"
+                    />
+                  </div>
+                  <InputText v-else :id="field.name"
+                   v-model="formData[field.name]" :type="field.type" :placeholder="field.placeholder"
+                   :invalid="submitted && field.required && !formData[field.name]" :disabled="field.disabled"
+                   class="w-full" @input="validateFieldRealTime(field)" />
+                </div>
 
               <!-- Password -->
               <Password v-else-if="field.type === 'password'" :id="field.name"
@@ -225,11 +228,11 @@
         </div>
 
           <!-- Boutons -->
-          <div class="flex justify-end gap-4 pt-6 border-t border-gray-200">
+          <div class="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-gray-200 w-full">
             <AppButton v-if="showCancelButton" type="button" :label="cancelLabel" icon="pi pi-times" variant="outline"
-              size="sm" @click="handleCancel" />
+              size="sm" class="w-full sm:w-auto" @click="handleCancel" />
             <AppButton type="submit" :label="submitLabel" icon="pi pi-check" variant="primary" size="sm"
-              :loading="isSubmitting || loading" />
+              class="w-full sm:w-auto" :loading="isSubmitting || loading" />
           </div>
         </form>
       </div>

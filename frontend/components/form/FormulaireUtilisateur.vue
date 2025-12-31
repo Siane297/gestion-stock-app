@@ -387,13 +387,14 @@
             </div> <!-- Fin de la grid -->
 
             <!-- Boutons de navigation Étape 1 -->
-            <div class="flex justify-end gap-3 mt-8 pt-6 border-t">
+            <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-8 pt-6 border-t w-full">
               <AppButton
                 label="Annuler"
                 variant="outline"
                 @click="onConfirmCancel"
                 iconLeft="pi pi-times"
                 type="button"
+                class="w-full sm:w-auto"
               />
               <AppButton
                 label="Suivant"
@@ -401,6 +402,7 @@
                 iconRight="pi pi-arrow-right"
                 @click="handleNext"
                 type="button"
+                class="w-full sm:w-auto"
               />
             </div>
           </div> <!-- Fin de space-y-8 -->
@@ -477,13 +479,14 @@
               </div>
 
               <!-- Boutons d'action Étape 2 -->
-              <div class="flex justify-end gap-3 mt-8 pt-6 border-t">
+              <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-8 pt-6 border-t w-full">
                 <AppButton
                   label="Précédent"
                   variant="outline"
                   @click="activeStep = 1"
                   iconLeft="pi pi-arrow-left"
                   type="button"
+                  class="w-full sm:w-auto"
                 />
                 <AppButton
                   :label="isEditMode ? 'Enregistrer les modifications' : 'Créer l\'utilisateur'"
@@ -492,6 +495,7 @@
                   :loading="isSubmitting"
                   @click="handleSubmit"
                   type="button"
+                  class="w-full sm:w-auto"
                 />
               </div>
             </div>

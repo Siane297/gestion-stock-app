@@ -19,12 +19,12 @@
     </div>
 
     <template #footer>
-      <div class="flex justify-end gap-3">
+      <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 w-full">
         <AppButton
           :label="rejectLabel"
           :variant="rejectVariant"
           size="sm"
-          class="px-6"
+          class="w-full sm:w-auto sm:px-6"
           icon-left="pi pi-times"
           @click="handleReject"
         />
@@ -32,7 +32,7 @@
           :label="acceptLabel"
           :variant="acceptVariant"
           size="sm"
-          class="px-6"
+          class="w-full sm:w-auto sm:px-6"
           icon-left="pi pi-check"
           @click="handleAccept"
         />

@@ -220,11 +220,11 @@
     </div>
 
       <!-- Boutons d'action -->
-      <div class="flex justify-end gap-4 p-6 bg-white border border-gris rounded-xl shadow-sm">
+      <div class="flex flex-col-reverse sm:flex-row justify-end gap-4 p-6 bg-white border border-gris rounded-xl shadow-sm w-full">
         <AppButton v-if="showCancelButton" type="button" :label="cancelLabel" icon="pi pi-times" variant="outline"
-          size="sm" @click="handleCancel" class="px-8" />
+          size="sm" @click="handleCancel" class="w-full sm:w-auto sm:px-8" />
         <AppButton type="submit" :label="submitLabel" icon="pi pi-check" variant="primary" size="sm"
-          :loading="isSubmitting || loading" class="px-8" />
+          :loading="isSubmitting || loading" class="w-full sm:w-auto sm:px-8" />
       </div>
     </form>
 

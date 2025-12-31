@@ -170,7 +170,8 @@ const baseFields = [
     type: 'text' as const,
     placeholder: 'Scanner ou saisir...',
     required: false,
-    value: ''
+    value: '',
+    withScanner: true
   },
   {
     name: 'image_url',

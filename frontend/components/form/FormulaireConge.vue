@@ -152,7 +152,7 @@
           </div>
 
           <!-- Boutons -->
-          <div class="flex justify-end gap-4 pt-6 border-t border-gray-200">
+          <div class="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-gray-200 w-full">
             <AppButton
               v-if="showCancelButton"
               type="button"
@@ -161,6 +161,7 @@
               variant="outline"
               size="sm"
               @click="handleCancel"
+              class="w-full sm:w-auto"
             />
             <AppButton
               type="submit"
@@ -169,6 +170,7 @@
               variant="primary"
               size="sm"
               :loading="isSubmitting || loading"
+              class="w-full sm:w-auto"
             />
           </div>
         </form>

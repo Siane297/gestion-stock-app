@@ -9,8 +9,9 @@
         <!-- <span class="font-bold text-base text-noir hidden sm:inline">Pointage App</span> -->
       </div>
 
-      <!-- Page Title (toutes tailles) -->
-      <h1 class="text-lg lg:text-xl font-semibold text-noir">{{ pageTitle }}</h1>
+      <!-- Page Title -->
+      <h1 class="text-lg lg:text-xl font-semibold text-noir hidden sm:block">{{ pageTitle }}</h1>
+      <h1 class="text-lg font-semibold text-noir sm:hidden">ZawadiCom</h1>
 
       <!-- Tag jours d'essai/abonnement (visible si en période d'essai ou abonnement actif) -->
       <div v-if="showTrialBadge"
