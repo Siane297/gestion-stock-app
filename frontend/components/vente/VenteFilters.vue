@@ -1,9 +1,9 @@
 <template>
-  <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+  <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-lg border-2 border-gris/40">
     <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-4 w-full sm:w-auto">
       <!-- Filtre Boutique -->
       <div class="flex flex-col gap-1 w-full sm:w-auto">
-        <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Boutique</span>
+        <span class="text-xs font-semibold text-noir uppercase tracking-widest px-1">Boutique</span>
         <Select 
           :model-value="magasinId" 
           :options="magasins" 
@@ -16,9 +16,24 @@
         />
       </div>
       
+      <div class="flex flex-col gap-1 w-full sm:w-auto">
+        <span class="text-xs font-semibold text-noir uppercase tracking-widest px-1">Période</span>
+        <DatePicker 
+            :model-value="dateRange"
+            selectionMode="range" 
+            placeholder="Sélectionner une période"
+            class="w-full sm:w-56 !bg-gray-50/50 !border-gray-200"
+            dateFormat="dd/mm/yy"
+            showIcon
+            fluid
+            :manualInput="false"
+            @update:model-value="(val) => { $emit('update:dateRange', val); $emit('refresh'); }"
+        />
+      </div>
+
       <!-- Filtre Statut -->
       <div class="flex flex-col gap-1 w-full sm:w-auto">
-        <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Statut</span>
+        <span class="text-xs font-semibold text-noir uppercase tracking-widest px-1">Statut</span>
         <Select 
           :model-value="statut" 
           :options="statutOptions" 
@@ -33,7 +48,7 @@
 
       <!-- Filtre Paiement -->
       <div class="flex flex-col gap-1 w-full sm:w-auto">
-        <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Paiement</span>
+        <span class="text-xs font-semibold text-noir uppercase tracking-widest px-1">Paiement</span>
         <Select 
           :model-value="paiement" 
           :options="paiementOptions" 
@@ -70,6 +85,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
 import Select from 'primevue/select';
+import DatePicker from 'primevue/datepicker';
 import AppButton from '~/components/button/AppButton.vue';
 import { useRouter } from 'vue-router';
 
@@ -78,6 +94,7 @@ interface Props {
   magasinId: string | null;
   statut: string | null;
   paiement: string | null;
+  dateRange: Date[] | null;
   loading?: boolean;
 }
 
@@ -100,5 +117,5 @@ const paiementOptions = [
   { label: 'Crédit', value: 'CREDIT' }
 ];
 
-defineEmits(['update:magasinId', 'update:statut', 'update:paiement', 'refresh']);
+defineEmits(['update:magasinId', 'update:statut', 'update:paiement', 'update:dateRange', 'refresh']);
 </script>

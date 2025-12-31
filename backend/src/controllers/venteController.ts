@@ -12,7 +12,9 @@ export const getAllVentes = async (req: Request, res: Response) => {
     const ventes = await venteService.getAll({
       magasin_id: req.query.magasin_id as string,
       client_id: req.query.client_id as string,
-      utilisateur_id: req.query.utilisateur_id as string
+      utilisateur_id: req.query.utilisateur_id as string,
+      dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
+      dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined
     });
 
     res.json({

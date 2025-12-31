@@ -93,6 +93,8 @@ export interface VenteQueryParams {
   magasin_id?: string;
   client_id?: string;
   utilisateur_id?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export interface VenteStatsParams {

@@ -4,19 +4,21 @@
       title="Historique des Ventes"
       description="Consultez, filtrez et analysez l'historique de vos transactions commerciales."
     />
-
-    <!-- Cartes de Statistiques -->
-    <VenteStatsCards :stats="stats" :loading="loading" />
-
-    <!-- Filtres -->
+      <!-- Filtres -->
     <VenteFilters 
       v-model:magasinId="selectedMagasinId"
       v-model:statut="selectedStatut"
       v-model:paiement="selectedPaiement"
+      v-model:dateRange="selectedDateRange"
       :magasins="magasins"
       :loading="loading"
       @refresh="loadData"
     />
+
+    <!-- Cartes de Statistiques -->
+    <VenteStatsCards :stats="stats" :loading="loading" />
+
+  
 
     <!-- Table des Ventes -->
     <div class="space-y-4">
@@ -180,6 +182,7 @@ const loading = ref(false);
 const selectedMagasinId = ref<string | null>(null);
 const selectedStatut = ref<string | null>(null);
 const selectedPaiement = ref<string | null>(null);
+const selectedDateRange = ref<Date[] | null>(null);
 
 const columns: TableColumn[] = [
   { field: 'date_creation', header: 'Date / Heure', sortable: true, customRender: true },
@@ -195,12 +198,44 @@ const loadData = async () => {
     loading.value = true;
     startLoading();
     try {
+        // Préparer les dates
+        let dateFromStr: string | undefined;
+        let dateToStr: string | undefined;
+
+        if (selectedDateRange.value && selectedDateRange.value.length > 0) {
+             const startDate = selectedDateRange.value[0];
+             const endDate = selectedDateRange.value[1];
+
+             if (startDate) {
+                 // Début de journée
+                 const d = new Date(startDate);
+                 d.setHours(0, 0, 0, 0);
+                 dateFromStr = d.toISOString();
+             }
+             if (endDate) {
+                 // Fin de journée
+                 const d = new Date(endDate);
+                 d.setHours(23, 59, 59, 999);
+                 dateToStr = d.toISOString();
+             } else if (startDate && !endDate) {
+                 // Si une seule date sélectionnée, on prend toute la journée
+                 const d = new Date(startDate);
+                 d.setHours(23, 59, 59, 999);
+                 dateToStr = d.toISOString();
+             }
+        }
+
         const [ventesData, statsData, magasinsData] = await Promise.all([
             getVentes({ 
-                magasin_id: selectedMagasinId.value || undefined 
-                // Note: Le backend filtrera par défaut via useMagasinStore si undefined
+                magasin_id: selectedMagasinId.value || undefined,
+                dateFrom: dateFromStr,
+                dateTo: dateToStr
             }),
-            getVenteStats({ magasin_id: selectedMagasinId.value || undefined }),
+            getVenteStats({ 
+                magasin_id: selectedMagasinId.value || undefined,
+                dateFrom: dateFromStr,
+                dateTo: dateToStr 
+            }),
             getMagasins()
         ]);
         
@@ -257,7 +292,7 @@ onMounted(() => {
 });
 
 // Recharger quand les filtres changent
-watch([selectedMagasinId, selectedStatut, selectedPaiement], () => {
+watch([selectedMagasinId, selectedStatut, selectedPaiement, selectedDateRange], () => {
     loadData();
 });
 </script>
