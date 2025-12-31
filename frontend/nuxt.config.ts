@@ -5,8 +5,67 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   
-  modules: ['@nuxtjs/tailwindcss', '@primevue/nuxt-module', 'nuxt-security', '@pinia/nuxt', '@nuxt/icon'],
+  modules: ['@vite-pwa/nuxt', '@nuxtjs/tailwindcss', '@primevue/nuxt-module', 'nuxt-security', '@pinia/nuxt', '@nuxt/icon'],
   
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      id: '/',
+      name: 'ZawadiCom',
+      short_name: 'ZawadiCom',
+      description: 'Application de gestion de Stock et Vente',
+      theme_color: '#0f172a',
+      background_color: '#ffffff',
+      display: 'standalone',
+      orientation: 'portrait',
+      icons: [
+        {
+          src: 'pwa-192x192.png',
+          sizes: '1024x1024',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: 'pwa-512x512.png',
+          sizes: '1024x1024',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: 'maskable-icon.png',
+          sizes: '1024x1024',
+          type: 'image/png',
+          purpose: 'maskable'
+        }
+      ],
+      screenshots: [
+        {
+          src: 'screenshot-wide.png',
+          sizes: '1491x739',
+          type: 'image/png',
+          form_factor: 'wide'
+        },
+        {
+          src: 'screenshot-mobile.png',
+          sizes: '590x644',
+          type: 'image/png'
+        }
+      ]
+    },
+    workbox: {
+      navigateFallback: '/',
+      globPatterns: process.env.NODE_ENV === 'production' ? ['**/*.{js,css,html,png,svg,ico}'] : [],
+    },
+    client: {
+      installPrompt: true,
+    },
+    devOptions: {
+      enabled: true,
+      suppressWarnings: true,
+      type: 'module',
+    },
+  },
+
   // Configuration du serveur de développement
   // devServer: {
   //   port: 3000,
@@ -54,6 +113,8 @@ export default defineNuxtConfig({
         'script-src-attr': ["'none'"],
         'style-src': ["'self'", 'https:', "'unsafe-inline'"],
         'script-src': ["'self'", "'nonce-{{nonce}}'", "'unsafe-eval'", "https://vercel.live"],
+        'worker-src': ["'self'", 'blob:'],
+        'manifest-src': ["'self'"],
         'upgrade-insecure-requests': true,
       },
       // Protection contre le clickjacking

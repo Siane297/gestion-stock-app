@@ -1,5 +1,9 @@
 <template>
   <div>
+    <ClientOnly>
+      <VitePwaManifest />
+      <PwaUpdatePrompt />
+    </ClientOnly>
     <Toast />
     <NuxtLayout>
       <NuxtPage />
