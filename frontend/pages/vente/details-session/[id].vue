@@ -2,7 +2,7 @@
     <div class="space-y-8">
         <PageHeaderActions title="Détail de la session"
             description="Consultez les informations détaillées de la session de caisse, les totaux financiers et les encaissements."
-            :back-url="'/caisse/sessions'">
+            :back-url="'/vente/sessions'">
             <template #actions>
                 <AppButton 
                     variant="primary" 
@@ -33,7 +33,7 @@
                         <h3 class="text-2xl font-black text-gray-800">{{ rapport.caisse.nom }}</h3>
                         <p class="text-sm text-gray-500 font-mono mt-1">Code: {{ rapport.caisse.code }}</p>
                     </div>
-                    <div class="pt-4 border-t border-dashed border-gray-200">
+                    <div class="pt-4 border-t border-dashed flex flex-col gap-2 border-gray-200">
                         <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Responsable de session</p>
                         <div class="flex items-center gap-3">
                              <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-bold">
@@ -53,21 +53,21 @@
                         <span class="font-bold uppercase tracking-widest text-xs">Chronologie</span>
                     </div>
                     
-                    <div class="space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div class="space-y-4 bg-bleu/50 p-4 rounded-xl border border-gray-100">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500">Ouverture</span>
+                            <span class="text-noir">Ouverture</span>
                             <div class="flex flex-col items-end">
                                 <span class="font-bold text-gray-700">{{ formatDate(rapport.date_ouverture) }}</span>
                                 <span class="text-xs text-gray-400">{{ formatTime(rapport.date_ouverture) }}</span>
                             </div>
                         </div>
                         <div class="flex justify-between items-center text-sm border-t border-gray-200 pt-3">
-                            <span class="text-gray-500">Fermeture</span>
+                            <span class="text-noir">Fermeture</span>
                             <div v-if="rapport.date_fermeture" class="flex flex-col items-end">
                                 <span class="font-bold text-gray-700">{{ formatDate(rapport.date_fermeture) }}</span>
                                 <span class="text-xs text-gray-400">{{ formatTime(rapport.date_fermeture) }}</span>
                             </div>
-                            <span v-else class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold text-center">
+                            <span v-else class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold text-center">
                                 En cours
                             </span>
                         </div>
@@ -76,7 +76,7 @@
                      <div class="flex justify-between items-center text-sm px-1">
                         <span class="text-gray-500 font-medium">Statut</span>
                          <Badge :value="rapport.statut === 'OUVERTE' ? 'En cours' : 'Clôturée'" 
-                               :severity="rapport.statut === 'OUVERTE' ? 'success' : 'secondary'"
+                               :severity="rapport.statut === 'OUVERTE' ? 'warn' : 'success'"
                                size="large" />
                      </div>
                 </div>

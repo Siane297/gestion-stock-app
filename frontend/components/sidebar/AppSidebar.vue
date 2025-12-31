@@ -222,8 +222,21 @@ const menuCategories: MenuCategory[] = [
       {
         name: 'Vente',
         icon: 'tabler:coins',
-        link: '/vente',
         permission: 'ventes:voir',
+        children: [
+          {
+            name: 'Historique des ventes',
+            icon: 'tabler:history',
+            link: '/vente',
+            permission: 'ventes:voir',
+          },
+          {
+            name: 'Historique session',
+            icon: 'tabler:history-toggle',
+            link: '/vente/sessions',
+            permission: 'caisses:voir',
+          }
+        ]
       },
       {
         name: 'Achat',
@@ -234,21 +247,8 @@ const menuCategories: MenuCategory[] = [
        {
         name: 'Caisse',
         icon: 'tabler:cash-register',
-        permission: ['caisses:modifier', 'caisses:exporter'],
-        children: [
-          {
-            name: 'Liste des caisses',
-            icon: 'tabler:list',
-            link: '/caisse',
-            permission: 'caisses:voir',
-          },
-          {
-            name: 'Historique session',
-            icon: 'tabler:history',
-            link: '/caisse/sessions',
-            permission: 'caisses:voir',
-          }
-        ]
+        link: '/caisse',
+        permission: ['caisses:voir', 'caisses:modifier', 'caisses:exporter'],
       },
     ]
   },

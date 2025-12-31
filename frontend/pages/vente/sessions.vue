@@ -113,7 +113,7 @@
                 <!-- Statut -->
                 <template #column-statut="{ data }">
                     <Badge :value="(data as any).statut === 'OUVERTE' ? 'En cours' : 'Clôturée'"
-                        :severity="(data as any).statut === 'OUVERTE' ? 'success' : 'secondary'" />
+                        :severity="(data as any).statut === 'OUVERTE' ? 'warn' : 'success'" />
                 </template>
 
                 <!-- VUE MOBILE (Slot) -->
@@ -134,7 +134,7 @@
                                 </div>
                             </div>
                             <Badge :value="data.statut === 'OUVERTE' ? 'En cours' : 'Clôturée'" 
-                                   :severity="data.statut === 'OUVERTE' ? 'success' : 'secondary'" 
+                                   :severity="data.statut === 'OUVERTE' ? 'warn' : 'success'" 
                                    class="!rounded-lg !text-[10px]" />
                         </template>
 
@@ -152,7 +152,7 @@
                                     <span class="font-medium text-gray-700">{{ formatDate(data.date_fermeture) }}</span>
                                     <span class="text-[10px]">{{ formatTime(data.date_fermeture) }}</span>
                                 </div>
-                                <div v-else class="flex items-center text-green-600 italic font-medium">
+                                <div v-else class="flex items-center text-primary italic font-medium">
                                     En activité...
                                 </div>
                             </div>
@@ -323,7 +323,7 @@ const loadData = async () => {
 };
 
 const viewSessionDetail = (session: SessionCaisse) => {
-    navigateTo(`/caisse/details-session/${session.id}`);
+    navigateTo(`/vente/details-session/${session.id}`);
 };
 
 // Utils (gardés pour TableGeneric s'ils sont nécessaires au rendu des colonnes personnalisées)
