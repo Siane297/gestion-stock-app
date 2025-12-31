@@ -110,12 +110,31 @@ const startScanner = async () => {
           ]
         });
       }
-      
+      const cameraConfig = cameras.value[currentCameraIndex.value]?.id || { facingMode: "environment" };
+
       await html5QrCode.value.start(
-        cameras.value[currentCameraIndex.value]?.id || { facingMode: "environment" },
+        cameraConfig,
         {
-          fps: 15,
-          qrbox: { width: 350, height: 200 },
+          fps: 20,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            // Favorise les codes barres 1D (plus larges que hauts)
+            const width = Math.min(viewfinderWidth * 0.8, 400);
+            const height = Math.min(viewfinderHeight * 0.4, 200);
+            return { width, height };
+          },
+          videoConstraints: {
+            facingMode: "environment",
+            // @ts-ignore
+            advanced: [
+              { focusMode: "continuous" } as any,
+              { focusDistance: 0.15 } as any
+            ]
+          },
+          // Experimental: Utiliser l'API native du navigateur si disponible (plus rapide)
+          //@ts-ignore
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
         },
         (decodedText) => {
           emit('scan', decodedText);
