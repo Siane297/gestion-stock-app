@@ -94,29 +94,8 @@ const startScanner = async () => {
       hasMultipleCameras.value = devices.length > 1;
       
       if (!html5QrCode.value) {
-        html5QrCode.value = new Html5Qrcode("qr-reader");
-      }
-      
-      const videoConstraints = {
-        facingMode: "environment",
-        focusMode: "continuous", // Experimental, helps on some devices
-        width: { min: 640, ideal: 1280, max: 1920 },
-        height: { min: 480, ideal: 720, max: 1080 },
-      };
-
-      await html5QrCode.value.start(
-        cameras.value[currentCameraIndex.value]?.id || { facingMode: "environment" },
-        {
-          fps: 20,
-          qrbox: (viewfinderWidth, viewfinderHeight) => ({
-             width: Math.min(viewfinderWidth * 0.9, 500), // Increased max width
-             height: Math.min(viewfinderHeight * 0.6, 350) 
-          }),
-          videoConstraints: videoConstraints, // Ask for high res
-          // @ts-ignore - Experimental feature
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-          },
+        html5QrCode.value = new Html5Qrcode("qr-reader", {
+          verbose: false,
           formatsToSupport: [
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,
@@ -129,6 +108,14 @@ const startScanner = async () => {
             Html5QrcodeSupportedFormats.CODABAR,
             Html5QrcodeSupportedFormats.ITF,
           ]
+        });
+      }
+      
+      await html5QrCode.value.start(
+        cameras.value[currentCameraIndex.value]?.id || { facingMode: "environment" },
+        {
+          fps: 15,
+          qrbox: { width: 350, height: 200 },
         },
         (decodedText) => {
           emit('scan', decodedText);
