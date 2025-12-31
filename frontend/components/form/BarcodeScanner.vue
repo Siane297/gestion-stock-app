@@ -6,7 +6,7 @@
     :closable="true"
     :dismissableMask="true"
     class="w-full max-w-lg"
-    @hide="stopScanner"
+    @hide="visible = false"
   >
     <div class="flex flex-col items-center gap-4">
       <div 
@@ -63,22 +63,29 @@ const html5QrCode = ref<Html5Qrcode | null>(null);
 const hasMultipleCameras = ref(false);
 const currentCameraIndex = ref(0);
 const cameras = ref<any[]>([]);
+const isTransitioning = ref(false);
 
 const stopScanner = async () => {
+  if (isTransitioning.value) return;
   if (html5QrCode.value && html5QrCode.value.isScanning) {
+    isTransitioning.value = true;
     try {
       await html5QrCode.value.stop();
     } catch (err) {
       console.error("Failed to stop scanner", err);
+    } finally {
+      isTransitioning.value = false;
     }
   }
 };
 
 const startScanner = async () => {
+  if (isTransitioning.value) return;
   error.value = null;
   
   // Wait for next tick to ensure DOM is ready
   await nextTick();
+  isTransitioning.value = true;
   
   try {
     const devices = await Html5Qrcode.getCameras();
@@ -86,30 +93,49 @@ const startScanner = async () => {
       cameras.value = devices;
       hasMultipleCameras.value = devices.length > 1;
       
-      html5QrCode.value = new Html5Qrcode("qr-reader");
+      if (!html5QrCode.value) {
+        html5QrCode.value = new Html5Qrcode("qr-reader");
+      }
       
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 150 },
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-        ]
+      const videoConstraints = {
+        facingMode: "environment",
+        focusMode: "continuous", // Experimental, helps on some devices
+        width: { min: 640, ideal: 1280, max: 1920 },
+        height: { min: 480, ideal: 720, max: 1080 },
       };
 
       await html5QrCode.value.start(
-        cameras.value[currentCameraIndex.value]?.id,
-        config,
+        cameras.value[currentCameraIndex.value]?.id || { facingMode: "environment" },
+        {
+          fps: 20,
+          qrbox: (viewfinderWidth, viewfinderHeight) => ({
+             width: Math.min(viewfinderWidth * 0.9, 500), // Increased max width
+             height: Math.min(viewfinderHeight * 0.6, 350) 
+          }),
+          videoConstraints: videoConstraints, // Ask for high res
+          // @ts-ignore - Experimental feature
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          },
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.CODE_93,
+            Html5QrcodeSupportedFormats.CODABAR,
+            Html5QrcodeSupportedFormats.ITF,
+          ]
+        },
         (decodedText) => {
           emit('scan', decodedText);
           visible.value = false;
         },
         (errorMessage) => {
-          // Silent failure for each frame
+          // Silent failure
         }
       );
     } else {
@@ -118,6 +144,8 @@ const startScanner = async () => {
   } catch (err: any) {
     console.error("Error starting scanner", err);
     error.value = "Erreur d'accès à la caméra. Vérifiez les permissions.";
+  } finally {
+    isTransitioning.value = false;
   }
 };
 
