@@ -69,4 +69,18 @@ router.get('/inventaire/:id',
   PdfController.generateInventairePdf
 );
 
+/**
+ * @route   GET /api/pdf/session/:id
+ * @desc    Générer le rapport PDF d'une session de caisse
+ * @access  Private (tenant-aware)
+ */
+router.get('/session/:id',
+  pdfRateLimit,
+  authenticate,
+  identifyTenant,
+  requireTenant,
+  requirePermission(Module.CAISSES, Action.VOIR),
+  PdfController.generateSessionPdf
+);
+
 export default router;

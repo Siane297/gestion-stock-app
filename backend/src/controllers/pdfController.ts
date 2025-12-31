@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { ReceiptPdfService } from '../services/pdf/ReceiptPdfService.js';
 import { ProformaPdfService } from '../services/pdf/ProformaPdfService.js';
 import { InventairePdfService } from '../services/pdf/InventairePdfService.js';
+import { CaissePdfService } from '../services/pdf/CaissePdfService.js';
+import { CaisseService } from '../services/caisseService.js';
 import { prismaPublic } from '../services/tenantService.js';
 
 /**
@@ -331,6 +333,84 @@ export class PdfController {
       res.status(500).json({ 
         success: false, 
         message: 'Erreur lors de la génération du rapport inventaire.' 
+      });
+    }
+  }
+
+  /**
+   * Générer un rapport de session de caisse PDF
+   */
+  public static async generateSessionPdf(req: Request, res: Response): Promise<void> {
+    try {
+      console.log('📄 [PDF-Controller] Début génération rapport session');
+      
+      if (!req.tenantPrisma) {
+        res.status(400).json({ success: false, message: 'Contexte tenant manquant.' });
+        return;
+      }
+
+      const sessionId = req.params.id;
+      const userId = req.user?.userId;
+      const companyId = req.user?.companyId;
+
+      if (!sessionId) {
+        res.status(400).json({ success: false, message: 'ID de session manquant.' });
+        return;
+      }
+
+      if (!userId || !companyId) {
+        res.status(401).json({ success: false, message: 'Authentification requise.' });
+        return;
+      }
+
+      // 1. Récupérer le rapport de session via CaisseService
+      const caisseService = new CaisseService(req.tenantPrisma);
+      const rapport = await caisseService.getSessionDetail(sessionId as string);
+
+      // 2. Récupérer les informations de l'entreprise
+      const company = await prismaPublic.company.findUnique({
+        where: { id: companyId },
+        select: { 
+          name: true, 
+          address: true, 
+          telephoneOrganisation: true, 
+          emailOrganisation: true,
+          logo: true,
+          currency: true,
+          country: true
+        }
+      });
+
+      const companyInfo = {
+        name: company?.name || 'Entreprise',
+        address: company?.address || undefined,
+        phone: company?.telephoneOrganisation || undefined,
+        email: company?.emailOrganisation || undefined,
+        logo: company?.logo || undefined,
+        currencySymbol: company?.currency || 'FC', // On s'assure d'avoir un symbole par défaut
+        country: company?.country || 'Comoros'
+      };
+
+      // 3. Générer le PDF
+      const pdfBuffer = await CaissePdfService.generateSessionReport(
+        rapport, 
+        companyInfo
+      );
+
+      const filename = `Session-Caisse-${rapport.caisse.code}-${new Date(rapport.date_ouverture).toLocaleDateString('fr-FR').replace(/\//g, '-')}.pdf`;
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.send(pdfBuffer);
+
+      console.log(`✅ [PDF-Controller] Rapport session généré: ${filename}`);
+
+    } catch (error: any) {
+      console.error('❌ [PDF-Controller] Erreur génération rapport session:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erreur lors de la génération du rapport de session: ' + (error.message || '')
       });
     }
   }

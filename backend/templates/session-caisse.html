@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{title}}</title>
+    <style>
+      :root {
+        --primary-color: #064654;
+        --secondary-color: #000;
+        --border-color: #1e1d1d;
+      }
+
+      body {
+        font-family: 'Helvetica', 'Arial', sans-serif;
+        font-size: 11pt;
+        line-height: 1.4;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        margin-bottom: 50px;
+      }
+
+      .container {
+        padding: 20px;
+      }
+
+      /* Header */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 40px;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 20px;
+      }
+
+      .company-logo {
+        max-width: 180px;
+        max-height: 90px;
+        object-fit: contain;
+      }
+
+      .company-info {
+        text-align: right;
+      }
+
+      .company-name {
+        font-size: 18pt;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 5px;
+      }
+
+      .company-details {
+        font-size: 9pt;
+        color: var(--secondary-color);
+      }
+
+      /* Title */
+      .document-title {
+        text-align: left;
+        margin: 30px 0;
+        font-size: 20pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--primary-color);
+      }
+
+      /* Summary Cards */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+
+      .stat-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-label {
+        font-size: 8pt;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .stat-value {
+        font-size: 12pt;
+        font-weight: 800;
+        color: var(--primary-color);
+      }
+
+      .text-success {
+        color: #10b981;
+      }
+
+      .text-danger {
+        color: #ef4444;
+      }
+
+      .text-muted {
+        color: #64748b;
+      }
+
+      .text-primary {
+        color: #064654;
+      }
+
+      /* Info blocks */
+      .info-section {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 40px;
+      }
+
+      .info-box {
+        width: 45%;
+      }
+
+      .info-label {
+        font-weight: bold;
+        font-size: 10pt;
+        color: var(--primary-color);
+        text-transform: uppercase;
+        margin-bottom: 5px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .info-content {
+        font-size: 11pt;
+        color: var(--secondary-color);
+      }
+
+      .info-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        border-bottom: 1px dashed #e2e8f0;
+        padding-bottom: 5px;
+      }
+
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 40px;
+      }
+
+      th {
+        background-color: var(--primary-color);
+        color: white;
+        text-align: left;
+        padding: 12px;
+        font-size: 10pt;
+        text-transform: uppercase;
+        border-bottom: none;
+      }
+
+      td {
+        padding: 12px;
+        color: #000;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: rgba(6, 70, 84, 0.05);
+      }
+
+      tbody tr:nth-child(odd) {
+        background-color: #ffffff;
+      }
+
+      .text-right {
+        text-align: right;
+      }
+
+      .price-col {
+        width: 150px;
+        text-align: right;
+      }
+
+      .qty-col {
+        width: 80px;
+        text-align: center;
+      }
+
+      /* Footer */
+      .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 9pt;
+        color: var(--secondary-color);
+        border-top: 1px solid var(--border-color);
+        padding: 10px 20px;
+        background-color: white;
+        z-index: 1000;
+      }
+
+      @media print {
+        .footer {
+          position: fixed;
+          bottom: 5mm;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-box">
+          {{#if company.logo}}
+          <img src="{{company.logo}}" alt="Logo" class="company-logo">
+          {{/if}}
+        </div>
+        <div class="company-info">
+          <div class="company-name">{{company.name}}</div>
+          <div class="company-details">
+            {{#if company.address}}{{company.address}}<br>{{/if}}
+            {{#if company.phone}}Tél: {{company.phone}}<br>{{/if}}
+            {{#if company.email}}{{company.email}}{{/if}}
+          </div>
+        </div>
+      </div>
+
+      <div class="document-title">Rapport de Session</div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Fond Initial</div>
+          <div class="stat-value">{{rapport.fond_initial}} {{company.currencySymbol}}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Ventes (CA)</div>
+          <div class="stat-value">{{rapport.chiffre_affaires}} {{company.currencySymbol}}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Fond Final</div>
+          <div class="stat-value">{{#if rapport.fond_final}}{{rapport.fond_final}}
+            {{company.currencySymbol}}{{else}}-{{/if}} </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Écart</div>
+          <div
+            class="stat-value {{#gt rapport.ecart 0}}text-success{{else}}{{#lt rapport.ecart 0}}text-danger{{else}}text-primary{{/lt}}{{/gt}}">
+            {{rapport.ecart}} {{company.currencySymbol}}
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Section -->
+      <div class="info-section">
+        <div class="info-box">
+          <div class="info-label">Détails de la Session</div>
+          <div class="info-content">
+            <div class="info-item">
+              <span class="label">Caisse :</span>
+              <span class="value">{{rapport.caisse.nom}} ({{rapport.caisse.code}})</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Vendeur :</span>
+              <span class="value">{{rapport.utilisateur.fullName}}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Statut :</span>
+              <span
+                class="value {{#eq rapport.statut 'OUVERTE'}}text-success{{else}}text-muted{{/eq}}">{{rapport.statut_label}}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Ouverture :</span>
+              <span class="value">{{rapport.date_ouverture_fmt}}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Fermeture :</span>
+              <span class="value">{{rapport.date_fermeture_fmt}}</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Répartition des Paiements</div>
+          <div class="info-content">
+            {{#each rapport.paiements}}
+            <div class="info-item">
+              <span class="label">{{this.label}} :</span>
+              <span class="value">{{this.montant}} {{../company.currencySymbol}}</span>
+            </div>
+            {{/each}}
+            {{#unless rapport.paiements}}
+            <p style="text-align: center; color: #94a3b8; font-style: italic; margin-top: 10px;">Aucune vente enregistrée
+            </p>
+            {{/unless}}
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="info-label" style="margin-bottom: 15px;">Produits Vendus</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Désignation</th>
+            <th class="qty-col">Qté</th>
+            <th class="price-col">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each rapport.produits}}
+          <tr>
+            <td style="vertical-align: middle;">
+              <span style="font-weight: bold; color: #000000;">{{this.nom}}</span>
+              {{#if this.conditionnement}}
+              <span
+                style="font-size: 8.5pt; font-weight: bold; color: #064654; margin-left: 4px;">({{this.conditionnement}})</span>
+              {{/if}}
+            </td>
+            <td class="qty-col" style="vertical-align: middle; font-weight: bold;">{{this.quantite}}</td>
+            <td class="price-col" style="vertical-align: middle; font-weight: bold; color: var(--primary-color)">
+              {{this.prix_total_fmt}} {{../company.currencySymbol}}</td>
+          </tr>
+          {{/each}}
+          {{#unless rapport.produits}}
+          <tr>
+            <td colspan="3" style="text-align: center; color: #94a3b8; font-style: italic; padding: 20px;">Aucun produit vendu</td>
+          </tr>
+          {{/unless}}
+        </tbody>
+      </table>
+
+    </div>
+
+    <!-- Footer outside container for better repetition -->
+    <div class="footer">
+      Rapport généré le {{formatDate generationDate}} à {{formatTime generationDate}}<br>
+      {{company.name}} - Merci de votre confiance !
+    </div>
+  </body>
+</html>

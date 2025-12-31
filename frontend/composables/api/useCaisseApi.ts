@@ -61,6 +61,13 @@ export interface RapportSession {
   date_fermeture: string | null;
   notes_ouverture?: string;
   notes_fermeture?: string;
+  produits_vendus?: Array<{
+    produit_id: string;
+    nom: string;
+    code_barre: string | null;
+    quantite: number;
+    prix_total: number;
+  }>;
 }
 
 // ============================================

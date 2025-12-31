@@ -198,8 +198,7 @@
             </TableGeneric>
         </div>
 
-        <!-- Modal Détail Session -->
-        <SessionDetailModal v-model:visible="showDetailModal" :rapport="currentRapport" :loading="detailLoading" />
+
 
         <Toast />
     </div>
@@ -219,11 +218,10 @@ import TableGeneric, {
 } from "~/components/table/TableGeneric.vue";
 import SessionFilters from "~/components/caisse/SessionFilters.vue";
 import SessionActiveCard from "~/components/caisse/SessionActiveCard.vue";
-import SessionDetailModal from "~/components/caisse/SessionDetailModal.vue";
+
 import {
     useCaisseApi,
     type SessionCaisse,
-    type RapportSession,
 } from "~/composables/api/useCaisseApi";
 import { useMagasinApi } from "~/composables/api/useMagasinApi";
 import { useCurrency } from "~/composables/useCurrency";
@@ -234,7 +232,7 @@ import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import MobileCard from '~/components/mobile/MobileCard.vue';
 import AppButton from '~/components/button/AppButton.vue';
 
-const { getSessionsGlobal, getSessionDetail } = useCaisseApi();
+const { getSessionsGlobal } = useCaisseApi();
 const { getMagasins } = useMagasinApi();
 const { formatPrice } = useCurrency();
 const toast = useToast();
@@ -295,9 +293,7 @@ const columns = [
 ];
 
 // Détails modal
-const showDetailModal = ref(false);
-const detailLoading = ref(false);
-const currentRapport = ref<RapportSession | null>(null);
+
 
 // Méthodes
 const loadData = async () => {
@@ -326,22 +322,8 @@ const loadData = async () => {
     }
 };
 
-const viewSessionDetail = async (session: SessionCaisse) => {
-    showDetailModal.value = true;
-    detailLoading.value = true;
-    try {
-        currentRapport.value = await getSessionDetail(session.id);
-    } catch (e) {
-        toast.add({
-            severity: "error",
-            summary: "Erreur",
-            detail: "Impossible de charger les détails",
-            life: 3000,
-        });
-        showDetailModal.value = false;
-    } finally {
-        detailLoading.value = false;
-    }
+const viewSessionDetail = (session: SessionCaisse) => {
+    navigateTo(`/caisse/details-session/${session.id}`);
 };
 
 // Utils (gardés pour TableGeneric s'ils sont nécessaires au rendu des colonnes personnalisées)

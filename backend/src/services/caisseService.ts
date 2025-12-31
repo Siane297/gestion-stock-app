@@ -58,6 +58,14 @@ export interface RapportSessionDto {
   date_fermeture: Date | null;
   notes_ouverture?: string;
   notes_fermeture?: string;
+  produits_vendus?: Array<{
+    produit_id: string;
+    nom: string;
+    code_barre: string | null;
+    conditionnement?: string;
+    quantite: number;
+    prix_total: number;
+  }>;
 }
 
 /**
@@ -489,7 +497,17 @@ export class CaisseService {
       include: {
         caisse: { select: { id: true, nom: true, code: true } },
         utilisateur: { select: { id: true, email: true, employee: { select: { fullName: true } } } },
-        ventes: { where: { statut: 'PAYEE' } }
+        ventes: {
+          where: { statut: 'PAYEE' },
+          include: {
+            details: {
+              include: {
+                produit: { select: { id: true, nom: true, code_barre: true } },
+                conditionnement: { select: { nom: true, quantite_base: true } }
+              }
+            }
+          }
+        }
       }
     });
 
@@ -497,6 +515,34 @@ export class CaisseService {
 
     const ventesPayees = session.ventes;
     const chiffreAffaires = ventesPayees.reduce((sum, v) => sum + v.montant_total, 0);
+
+    // Groupement des produits vendus
+    const produitsMap = new Map<string, any>();
+
+    for (const vente of ventesPayees) {
+      for (const detail of vente.details) {
+        const prodId = detail.produit_id;
+        const current = produitsMap.get(prodId);
+        
+        const qtyToAdd = detail.quantite * (detail.conditionnement?.quantite_base || 1);
+        
+        if (current) {
+          current.quantite += qtyToAdd;
+          current.prix_total += Number(detail.prix_total);
+        } else {
+          produitsMap.set(prodId, {
+            produit_id: prodId,
+            nom: detail.produit.nom,
+            code_barre: detail.produit.code_barre,
+            conditionnement: detail.conditionnement?.nom,
+            quantite: qtyToAdd,
+            prix_total: Number(detail.prix_total)
+          });
+        }
+      }
+    }
+
+    const produitsVendus = Array.from(produitsMap.values()).sort((a, b) => b.quantite - a.quantite);
 
     return {
       id: session.id,
@@ -520,7 +566,8 @@ export class CaisseService {
       date_ouverture: session.date_ouverture,
       date_fermeture: session.date_fermeture,
       notes_ouverture: session.notes_ouverture || undefined,
-      notes_fermeture: session.notes_fermeture || undefined
+      notes_fermeture: session.notes_fermeture || undefined,
+      produits_vendus: produitsVendus
     };
   }
 }

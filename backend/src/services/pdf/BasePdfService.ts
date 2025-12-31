@@ -63,6 +63,11 @@ export abstract class BasePdfService {
       orientation: 'portrait',
       format: 'A4',
       margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' }
+    },
+    'session-caisse': {
+      orientation: 'portrait',
+      format: 'A4',
+      margins: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' }
     }
   };
 
