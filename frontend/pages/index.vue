@@ -1,6 +1,23 @@
 <template>
   <div class="min-h-screen w-full flex flex-col items-center justify-center bg-side2  relative overflow-hidden">
     
+    <!-- Background Patterns -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <!-- Corners - Bringing them slightly in -->
+      <Icon icon="tabler:shopping-cart-check" class="absolute top-16 left-16 text-white opacity-5 text-9xl transform -rotate-12" />
+      <Icon icon="tabler:box" class="absolute top-24 right-24 text-white opacity-5 text-8xl transform rotate-12" />
+      <Icon icon="tabler:chart-line" class="absolute bottom-16 left-16 text-white opacity-5 text-9xl transform -rotate-6" />
+      <Icon icon="tabler:building-store" class="absolute bottom-24 right-20 text-white opacity-5 text-8xl transform rotate-6" />
+      
+      <!-- Sides - More centered vertically/horizontally but kept away from logo -->
+      <Icon icon="tabler:tag" class="absolute top-1/2 left-10 text-white opacity-5 text-8xl transform -rotate-45" />
+      <Icon icon="tabler:truck-delivery" class="absolute top-1/3 right-10 text-white opacity-5 text-8xl transform rotate-45" />
+      
+      <!-- Off-center vertical - Bringing closer but keeping clearance -->
+      <Icon icon="tabler:barcode" class="absolute top-10 left-1/3 text-white opacity-5 text-8xl transform rotate-12" />
+      <Icon icon="tabler:cash" class="absolute bottom-10 right-1/3 text-white opacity-10 text-9xl transform -rotate-12" />
+    </div>
+    
     <!-- Logo en haut -->
     <div class="relative z-10">
        <img src="~/assets/images/logo-white.png" alt="Logo" class=" w-[150px] h-auto object-contain" />
