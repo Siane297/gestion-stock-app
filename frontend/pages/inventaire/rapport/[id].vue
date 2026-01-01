@@ -7,7 +7,7 @@
     <div v-if="inventaire" class="mt-6 bg-white border-2 border-gris/40 rounded-xl p-6">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="flex items-center gap-4">
-          <Badge :value="getStatutLabel(inventaire.statut)" :severity="getStatutSeverity(inventaire.statut)"
+          <Tag :value="getStatutLabel(inventaire.statut)" :severity="getStatutSeverity(inventaire.statut)"
             class="text-lg px-4 h-full py-4" />
 
           <div class="flex flex-col gap-2">
@@ -23,13 +23,14 @@
           </div>
         </div>
 
-        <div class="flex gap-3">
+        <div class="flex flex-col sm:flex-row gap-3">
           <AppButton v-if="inventaire.statut === 'TERMINE' && hasPermission('inventaire', 'valider')"
             label="Valider et Ajuster Stock" icon="pi pi-check-circle" variant="primary" @click="handleValidate"
-            :loading="loadingValidate" />
+            :loading="loadingValidate" :full-width="true" class="sm:!w-auto" />
           <AppButton v-if="['TERMINE', 'VALIDE'].includes(inventaire.statut)" label="Imprimer Rapport"
-            icon="pi pi-print" variant="outline" class=" !bg-orange-500 text-white" @click="handlePrint" :loading="loadingPrint" />
+            icon="pi pi-print" variant="outline" class=" !bg-orange-500 text-white sm:!w-auto" :full-width="true" @click="handlePrint" :loading="loadingPrint" />
           <AppButton label="Retour" icon="pi pi-arrow-left" variant="outline"
+            :full-width="true" class="sm:!w-auto"
             @click="router.push('/inventaire')" />
         </div>
       </div>
@@ -67,79 +68,169 @@
       </div>
 
       <!-- Table -->
-      <DataTable :value="filteredDetails" :paginator="true" :rows="20" :rowsPerPageOptions="[10, 20, 50]"
-        responsiveLayout="scroll" stripedRows class="custom-table" :loading="loading">
-        <template #empty>
-          <div class="text-center py-8 text-gray-500">
-            Aucun produit trouvé
-          </div>
-        </template>
-
-        <Column field="produit.nom" header="Produit" sortable
-          headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
-          <template #body="{ data }">
-            <div class="flex items-center gap-2">
-              <span class="font-medium">{{ data.produit?.nom }}</span>
-              <span v-if="data.lot" class="text-xs text-gray-500">(Lot: {{ data.lot.numero_lot }})</span>
+      <!-- Table Desktop -->
+      <div class="hidden md:block">
+        <DataTable :value="filteredDetails" :paginator="true" :rows="20" :rowsPerPageOptions="[10, 20, 50]"
+          responsiveLayout="scroll" stripedRows class="custom-table" :loading="loading">
+          <template #empty>
+            <div class="text-center py-8 text-gray-500">
+              Aucun produit trouvé
             </div>
           </template>
-        </Column>
 
-        <Column field="quantite_theorique" header="Théorique" sortable
-          headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
-          <template #body="{ data }">
-            <span class="font-medium">{{ data.quantite_theorique }}</span>
-          </template>
-        </Column>
+          <Column field="produit.nom" header="Produit" sortable
+            headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
+            <template #body="{ data }">
+              <div class="flex items-center gap-2">
+                <span class="font-medium">{{ data.produit?.nom }}</span>
+                <span v-if="data.lot" class="text-xs text-gray-500">(Lot: {{ data.lot.numero_lot }})</span>
+              </div>
+            </template>
+          </Column>
 
-        <Column field="quantite_comptee" header="Compté" sortable
-          headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
-          <template #body="{ data }">
-            <span class="font-medium">{{ data.quantite_comptee ?? '-' }}</span>
-          </template>
-        </Column>
+          <Column field="quantite_theorique" header="Théorique" sortable
+            headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
+            <template #body="{ data }">
+              <span class="font-medium">{{ data.quantite_theorique }}</span>
+            </template>
+          </Column>
 
-        <Column field="ecart" header="Écart" sortable
-          headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
-          <template #body="{ data }">
-            <span v-if="data.ecart !== null" class="font-bold" :class="{
-              'text-green-600': data.ecart > 0,
-              'text-red-600': data.ecart < 0,
-              'text-gray-500': data.ecart === 0
-            }">
-              {{ data.ecart > 0 ? '+' : '' }}{{ data.ecart }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-        </Column>
+          <Column field="quantite_comptee" header="Compté" sortable
+            headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
+            <template #body="{ data }">
+              <span class="font-medium">{{ data.quantite_comptee ?? '-' }}</span>
+            </template>
+          </Column>
 
-        <Column field="valeur_ecart" header="Valeur Écart" sortable
-          headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
-          <template #body="{ data }">
-            <span v-if="data.valeur_ecart !== null" class="font-medium" :class="{
-              'text-green-600': data.valeur_ecart > 0,
-              'text-red-600': data.valeur_ecart < 0,
-              'text-gray-500': data.valeur_ecart === 0
-            }">
-              {{ formatPrice(data.valeur_ecart) }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-        </Column>
+          <Column field="ecart" header="Écart" sortable
+            headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
+            <template #body="{ data }">
+              <span v-if="data.ecart !== null" class="font-bold" :class="{
+                'text-green-600': data.ecart > 0,
+                'text-red-600': data.ecart < 0,
+                'text-gray-500': data.ecart === 0
+              }">
+                {{ data.ecart > 0 ? '+' : '' }}{{ data.ecart }}
+              </span>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </Column>
 
-        <Column field="est_compte" header="État" sortable
-          headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
-          <template #body="{ data }">
-            <Tag :value="data.est_compte ? 'Compté' : 'Non compté'"
-              :severity="data.est_compte ? 'success' : 'danger'" />
-          </template>
-        </Column>
-      </DataTable>
+          <Column field="valeur_ecart" header="Valeur Écart" sortable
+            headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
+            <template #body="{ data }">
+              <span v-if="data.valeur_ecart !== null" class="font-medium" :class="{
+                'text-green-600': data.valeur_ecart > 0,
+                'text-red-600': data.valeur_ecart < 0,
+                'text-gray-500': data.valeur_ecart === 0
+              }">
+                {{ formatPrice(data.valeur_ecart) }}
+              </span>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </Column>
+
+          <Column field="est_compte" header="État" sortable
+            headerClass="!bg-bleu text-black text-[13px] font-semibold py-3 px-4">
+            <template #body="{ data }">
+              <Tag :value="data.est_compte ? 'Compté' : 'Non compté'"
+                :severity="data.est_compte ? 'success' : 'danger'" />
+            </template>
+          </Column>
+        </DataTable>
+      </div>
+
+      <!-- Vue Mobile -->
+      <div class="grid grid-cols-2 gap-3 md:hidden">
+        <div v-if="loading" class="col-span-2 text-center py-8">
+            <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+        </div>
+        
+        <template v-else-if="filteredDetails.length > 0">
+          <MobileCard v-for="(detail, index) in paginatedMobileDetails" :key="index" class="!gap-2">
+            <!-- Header: Produit -->
+            <template #header>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-gray-900 truncate text-[13px]">{{ detail.produit?.nom }}</div>
+                <div class="flex flex-wrap items-center gap-1 mt-1">
+                  <div class="flex items-center gap-1 text-[9px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                     <IconifyIcon icon="mdi:barcode" class="shrink-0" />
+                     <span class="truncate">{{ detail.produit?.code_barre || 'Sans code' }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Body: Grid Details -->
+            <div class="flex flex-col gap-2 text-sm">
+                <!-- Tag en haut du corps pour gagner de la place en header -->
+                <Badge :value="detail.est_compte ? 'Compté' : 'Non compté'" 
+                     :severity="detail.est_compte ? 'success' : 'danger'" 
+                     class="!text-[8px] self-start" />
+
+                <!-- Stocks -->
+                <div class="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                    <div class="flex justify-between items-center text-[9px] uppercase tracking-wider text-gray-400 font-bold mb-1">
+                        <span>Théorie</span>
+                        <span>Compté</span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="font-medium text-gray-600 text-xs">{{ detail.quantite_theorique }}</span>
+                        <span class="font-bold text-sm" :class="detail.est_compte ? 'text-blue-600' : 'text-gray-400'">
+                            {{ detail.quantite_comptee ?? '-' }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Ecart & Valeur -->
+                <div class="bg-gray-50 p-2 rounded-lg border border-gray-100 flex flex-col">
+                     <div class="text-[9px] uppercase tracking-wider text-gray-400 font-bold mb-1">Écart</div>
+                     
+                     <div class="flex items-center justify-between">
+                         <div v-if="detail.ecart != null" class="flex items-center gap-0.5 font-bold text-sm" :class="{
+                            'text-green-600': (detail.ecart ?? 0) > 0,
+                            'text-red-600': (detail.ecart ?? 0) < 0,
+                            'text-gray-500': (detail.ecart ?? 0) === 0
+                          }">
+                            <IconifyIcon v-if="(detail.ecart ?? 0) > 0" icon="tabler:trending-up" class="text-xs" />
+                            <IconifyIcon v-if="(detail.ecart ?? 0) < 0" icon="tabler:trending-down" class="text-xs" />
+                            <span>{{ (detail.ecart ?? 0) > 0 ? '+' : '' }}{{ detail.ecart }}</span>
+                         </div>
+                         <span v-else class="text-gray-400 text-xs">-</span>
+
+                         <div v-if="detail.valeur_ecart != null" class="text-[10px] font-bold" :class="{
+                            'text-green-600': (detail.valeur_ecart ?? 0) > 0,
+                            'text-red-600': (detail.valeur_ecart ?? 0) < 0,
+                            'text-gray-500': (detail.valeur_ecart ?? 0) === 0
+                          }">
+                            {{ formatPrice(detail.valeur_ecart) }}
+                         </div>
+                     </div>
+                </div>
+            </div>
+          </MobileCard>
+
+          <!-- Paginator Mobile -->
+          <div class="col-span-2 pt-2">
+              <Paginator 
+                  :rows="mobileRows" 
+                  :totalRecords="filteredDetails.length" 
+                  :rowsPerPageOptions="[10, 20, 50]"
+                  template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+                  @page="onMobilePage"
+                  class="custom-paginator-mobile"
+              />
+          </div>
+        </template>
+        
+        <div v-else class="col-span-2 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+             <IconifyIcon icon="tabler:database-off" class="text-4xl text-gray-300 mx-auto mb-2" />
+             <p class="text-gray-500 font-medium">Aucun produit trouvé</p>
+        </div>
+      </div>
     </div>
 
-    <Toast />
 
-    <!-- Dialog de confirmation validation -->
     <ConfirmationDialog v-model:visible="showConfirmValidate"
       message="Cette action va ajuster les stocks selon les écarts détectés. Les mouvements de stock seront créés automatiquement. Cette action est irréversible. Voulez-vous continuer ?"
       header="Validation de l'inventaire" accept-label="Oui, valider" reject-label="Non, annuler"
@@ -148,6 +239,8 @@
 </template>
 
 <script setup lang="ts">
+import MobileCard from '~/components/mobile/MobileCard.vue';
+import { Icon as IconifyIcon } from '@iconify/vue';
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
@@ -166,6 +259,7 @@ import Select from 'primevue/select';
 import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
+import Paginator from 'primevue/paginator';
 import Toast from 'primevue/toast';
 
 const { getInventaireById, validateInventaire } = useInventaireApi();
@@ -230,6 +324,19 @@ const filteredDetails = computed(() => {
 
   return result;
 });
+
+// Pagination Mobile
+const mobileFirst = ref(0);
+const mobileRows = ref(10);
+
+const paginatedMobileDetails = computed(() => {
+  return filteredDetails.value.slice(mobileFirst.value, mobileFirst.value + mobileRows.value);
+});
+
+const onMobilePage = (event: any) => {
+  mobileFirst.value = event.first;
+  mobileRows.value = event.rows;
+};
 
 const loadInventaire = async () => {
   loading.value = true;
@@ -331,5 +438,21 @@ onMounted(() => {
 
 :deep(.custom-table .p-datatable-tbody > tr > td) {
   @apply text-sm py-3 border-b border-gray-100;
+}
+
+:deep(.custom-paginator-mobile) {
+    @apply !bg-transparent !p-0 !border-none;
+}
+
+:deep(.custom-paginator-mobile .p-paginator-content) {
+    @apply !justify-center !gap-1;
+}
+
+:deep(.custom-paginator-mobile .p-paginator-page),
+:deep(.custom-paginator-mobile .p-paginator-first),
+:deep(.custom-paginator-mobile .p-paginator-prev),
+:deep(.custom-paginator-mobile .p-paginator-next),
+:deep(.custom-paginator-mobile .p-paginator-last) {
+    @apply !min-w-[32px] !h-8 !text-xs !rounded-lg;
 }
 </style>
