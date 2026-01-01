@@ -184,32 +184,7 @@ const menuCategories: MenuCategory[] = [
       },
     ]
   },
-  {
-    title: 'Ressources Humaines',
-    items: [
-      {
-        name: 'Personnel',
-        icon: 'tabler:users',
-        link: '/employees',
-        permission: 'personnel:voir',
-      },
-       {
-        name: 'Client',
-        icon: 'tabler:user-check',
-        link: '/client',
-        permission: 'clients:voir',
-      },
-      {
-        name: 'Fournisseur',
-        icon: 'tabler:user-star',
-        link: '/fournisseur',
-        permission: 'fournisseurs:voir',
-      },
-     
-    ]
-  },
-
-  {
+    {
     title: 'Gestion Commerciale',
     items: [
      
@@ -252,6 +227,32 @@ const menuCategories: MenuCategory[] = [
       },
     ]
   },
+  {
+    title: 'Ressources Humaines',
+    items: [
+      {
+        name: 'Personnel',
+        icon: 'tabler:users',
+        link: '/employees',
+        permission: 'personnel:voir',
+      },
+       {
+        name: 'Client',
+        icon: 'tabler:user-check',
+        link: '/client',
+        permission: 'clients:voir',
+      },
+      {
+        name: 'Fournisseur',
+        icon: 'tabler:user-star',
+        link: '/fournisseur',
+        permission: 'fournisseurs:voir',
+      },
+     
+    ]
+  },
+
+
   {
     title: 'Finance',
     items: [
