@@ -61,9 +61,13 @@ const routePermissions = [
 const getFirstAccessibleRoute = (authUser: any) => {
   if (!authUser) return '/auth/connexion';
 
-  // Admin et SUPER_ADMIN ont accès à tout
-  const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
-  if (adminRoles.includes(authUser.role)) {
+  // SUPER_ADMIN accède directement à l'organisation
+  if (authUser.role === 'SUPER_ADMIN') {
+    return '/organisation';
+  }
+
+  // Admin accède au tableau de bord
+  if (authUser.role === 'ADMIN') {
     return '/accueil';
   }
 

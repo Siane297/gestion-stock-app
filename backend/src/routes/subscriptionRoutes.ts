@@ -8,24 +8,26 @@ import {
   updateSubscriptionNotes,
 } from '../controllers/subscriptionController.js';
 
+import { requireSuperAdmin } from '../middleware/superAdminMiddleware.js';
+
 const router: Router = Router();
 
 // Toutes les routes nécessitent une authentification Super Admin
-// (La vérification du rôle SUPER_ADMIN est faite dans le middleware global)
+router.use(authenticate, requireSuperAdmin);
 
 // GET /api/subscriptions/:companyId - Détails de l'abonnement
-router.get('/:companyId', authenticate, getSubscriptionDetails);
+router.get('/:companyId', getSubscriptionDetails);
 
 // POST /api/subscriptions/:companyId/activate - Activer un abonnement (après période d'essai)
-router.post('/:companyId/activate', authenticate, activateSubscription);
+router.post('/:companyId/activate', activateSubscription);
 
 // POST /api/subscriptions/:companyId/renew - Renouveler un abonnement existant
-router.post('/:companyId/renew', authenticate, renewSubscription);
+router.post('/:companyId/renew', renewSubscription);
 
 // GET /api/subscriptions/:companyId/payments - Historique des paiements
-router.get('/:companyId/payments', authenticate, getPaymentHistory);
+router.get('/:companyId/payments', getPaymentHistory);
 
 // PATCH /api/subscriptions/:companyId/notes - Mettre à jour les notes
-router.patch('/:companyId/notes', authenticate, updateSubscriptionNotes);
+router.patch('/:companyId/notes', updateSubscriptionNotes);
 
 export default router;

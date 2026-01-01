@@ -4,6 +4,7 @@
         modal 
         :header="dialogTitle" 
         :style="{ width: '550px' }"
+        :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
         :closable="!loading"
         :closeOnEscape="!loading"
     >
@@ -12,17 +13,17 @@
             <div class="bg-gray-50 rounded-lg p-4">
                 <div class="flex items-center gap-3 mb-3">
                     <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                        <Icon icon="lucide:building-2" class="text-white text-xl" />
+                        <Icon icon="lucide:store" class="text-white text-xl" />
                     </div>
                     <div>
                         <h3 class="font-semibold text-noir">{{ organization?.name }}</h3>
-                        <p class="text-sm text-gray-500">{{ organization?.employeeCount }} employé(s)</p>
+                        <p class="text-sm text-gray-500">{{ organization?.storeCount }} boutique(s)</p>
                     </div>
                 </div>
                 <div class="text-sm text-gray-600">
                     <div class="flex items-center gap-2">
-                        <Icon icon="lucide:mail" class="text-gray-400" />
-                        <span>{{ organization?.emailOrganisation }}</span>
+                        <Icon icon="lucide:phone" class="text-gray-400" />
+                        <span>{{ organization?.telephoneOrganisation }}</span>
                     </div>
                 </div>
             </div>
@@ -38,23 +39,24 @@
                 submit-label=""
                 :loading="loading"
                 @submit="onFormSubmit"
+                @change="(data) => localFormData = data"
             />
 
             <!-- Résumé -->
-            <div v-if="formRef?.formData?.monthlyPrice && formRef?.formData?.durationMonths" class="bg-blue-50 rounded-lg p-4">
+            <div v-if="localFormData?.monthlyPrice && localFormData?.durationMonths" class="bg-blue-50 rounded-lg p-4">
                 <h4 class="font-medium text-noir mb-2">Résumé de l'activation</h4>
                 <ul class="text-sm text-gray-700 space-y-1">
                     <li class="flex justify-between">
                         <span>Prix mensuel:</span>
-                        <span class="font-medium">{{ formRef.formData.monthlyPrice }}</span>
+                        <span class="font-medium">{{ formatPrice(localFormData.monthlyPrice) }}</span>
                     </li>
                     <li class="flex justify-between">
                         <span>Durée:</span>
-                        <span class="font-medium">{{ getDurationLabel(formRef.formData.durationMonths) }}</span>
+                        <span class="font-medium">{{ getDurationLabel(localFormData.durationMonths) }}</span>
                     </li>
                     <li class="flex justify-between">
                         <span>Date de fin:</span>
-                        <span class="font-medium">{{ formatEndDate(formRef.formData.durationMonths) }}</span>
+                        <span class="font-medium">{{ formatEndDate(localFormData.durationMonths) }}</span>
                     </li>
                 </ul>
             </div>
@@ -107,6 +109,7 @@ const visible = defineModel<boolean>('visible', { default: false });
 const loading = defineModel<boolean>('loading', { default: false });
 
 const formRef = ref<InstanceType<typeof FormulaireDynamique> | null>(null);
+const localFormData = ref<any>(null);
 
 // Options de durée (en mois)
 const durationOptions = [
@@ -154,11 +157,10 @@ const dialogTitle = computed(() => {
 });
 
 const isFormValid = computed(() => {
-    const formData = formRef.value?.formData;
-    if (!formData) return false;
-    return formData.monthlyPrice !== null && 
-           formData.monthlyPrice > 0 && 
-           formData.durationMonths > 0;
+    if (!localFormData.value) return false;
+    return localFormData.value.monthlyPrice !== null && 
+           localFormData.value.monthlyPrice > 0 && 
+           localFormData.value.durationMonths > 0;
 });
 
 // Reset form when dialog closes
@@ -182,6 +184,14 @@ const formatEndDate = (months: number): string => {
         month: 'long',
         year: 'numeric',
     });
+};
+
+const formatPrice = (price: number): string => {
+    return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: props.organization?.currency || 'KMF',
+        maximumFractionDigits: 0,
+    }).format(price);
 };
 
 // Handlers

@@ -1,6 +1,7 @@
 <template>
   <header
-    class="fixed top-0 left-0 lg:left-72 right-0 py-2.5 bg-white/90 backdrop-blur-sm border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 z-40 transition-all duration-300">
+    class="fixed top-0 left-0 right-0 py-2.5 bg-white/90 backdrop-blur-sm border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 z-40 transition-all duration-300"
+    :class="{ 'lg:left-72': !fullWidth }">
     <!-- Left Section: Logo + Page Title -->
     <div class="flex items-center gap-3 flex-1">
       <!-- Logo (Mobile/Tablet uniquement) -->
@@ -48,7 +49,7 @@
             <button @click="toggleUserMenu" class="">
             <AvatarInitials :name="userName" size="sm" :show-name="false" />
             </button>
-            <button class="bg-white p-2 rounded-full transition-colors" @click="$emit('toggle-sidebar')">
+            <button v-if="!fullWidth" class="bg-white p-2 rounded-full transition-colors" @click="$emit('toggle-sidebar')">
             <Icon icon="tabler:menu-3" class="text-2xl text-noir" />
             </button>
         </div>
@@ -95,6 +96,14 @@ import AvatarInitials from '~/components/avatar/AvatarInitials.vue';
 import ConfirmationDialog from '~/components/dialog/ConfirmationDialog.vue';
 import NotificationBell from '~/components/notifications/NotificationBell.vue';
 import { useNotifications } from '~/composables/useNotifications';
+
+interface Props {
+  fullWidth?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  fullWidth: false,
+});
 
 defineEmits(['toggle-sidebar']);
 

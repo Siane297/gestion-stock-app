@@ -13,6 +13,22 @@ export default defineNuxtRouteMiddleware((to) => {
     return;
   }
 
+  // Si l'utilisateur est SUPER_ADMIN, il ne devrait avoir accès qu'aux pages d'organisation
+  // Le bloquer de toutes les autres pages "métier" qui utilisent le layout avec sidebar
+  // (On autorise /organisation, /auth/*, et peut-être /profile si nécessaire)
+  if (user.value.role === 'SUPER_ADMIN') {
+    const allowedPathPrefixes = ['/organisation', '/auth', '/profile', '/notifications'];
+    const isAllowed = allowedPathPrefixes.some(prefix => to.path === prefix || to.path.startsWith(prefix + '/'));
+    
+    if (!isAllowed) {
+       // Si on est sur la racine ou accueil, rediriger vers organisation
+       if (to.path === '/' || to.path === '/accueil') {
+          return navigateTo('/organisation');
+       }
+       // Sinon erreur 403 ou redirection
+       return navigateTo('/organisation');
+    }
+  }
   // Configuration des permissions requises par préfixe de route
   const routePermissions: Array<{ path: string; permission: string }> = [
     { path: '/accueil', permission: 'tableau_de_bord:voir' },

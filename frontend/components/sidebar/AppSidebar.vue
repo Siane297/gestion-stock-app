@@ -302,7 +302,14 @@ const filteredMenuCategories = computed(() => {
         return user.value?.role === 'SUPER_ADMIN';
       }
 
-      // Si pas de permission requise, visible par tous
+      // Si l'utilisateur est SUPER_ADMIN, il ne voit que les items spécifiques SUPER_ADMIN
+      // (bloquer l'accès aux menus opérationnels)
+      if (user.value?.role === 'SUPER_ADMIN') {
+        return false;
+      }
+
+      // Si pas de permission requise, visible par tous (sauf super admin qui a été filtré au-dessus si on veut être strict, 
+      // mais ici on garde la logique que les items publics sont publics, sauf que le SUPER_ADMIN n'a généralement pas besoin de voir le menu opérationnel public s'il y en a)
       if (!item.permission) return true;
 
       // Utiliser le composable usePermissions

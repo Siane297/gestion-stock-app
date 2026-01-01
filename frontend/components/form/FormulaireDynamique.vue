@@ -118,7 +118,7 @@
                 :placeholder="field.placeholder" :invalid="submitted && field.required && !formData[field.name]"
                 :min="field.min" :max="field.max" 
                 :useGrouping="false" :maxFractionDigits="3" :minFractionDigits="0"
-                class="w-full" />
+                class="w-full" @input="(e) => formData[field.name] = e.value" />
 
               <!-- Currency Field (Basique & Dynamique) -->
               <InputGroup v-else-if="field.type === 'currency'">

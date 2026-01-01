@@ -12,6 +12,7 @@ export interface Company {
   schemaName: string;
   logo?: string; // URL du logo de la compagnie
   badgeStyle?: string; // Style du badge employé (primary, emerald, purple)
+  currency?: string | null;
 }
 
 // Interface pour la mise à jour
@@ -25,7 +26,7 @@ export interface UpdateCompanyDto {
 }
 
 export const useCompanyApi = () => {
-  const { get, put } = useSecureApi();
+  const { get, put, post, delete: del } = useSecureApi();
 
   // Obtenir les informations de l'organisation courante
   const getCurrentCompany = async (): Promise<Company | null> => {
@@ -50,8 +51,42 @@ export const useCompanyApi = () => {
     }
   };
 
+  // Upload du logo de l'organisation
+  const uploadLogo = async (file: File): Promise<{ logo: string; company: Company } | null> => {
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const response = await post<ApiResponse<{ logo: string; company: Company }>>('/api/companies/me/logo', formData);
+    return response.data || null;
+  };
+
+  // Supprimer le logo de l'organisation
+  const deleteLogo = async (): Promise<Company | null> => {
+    const response = await del<ApiResponse<Company>>('/api/companies/me/logo');
+    return response.data || null;
+  };
+
+  // Upload de l'en-tête PDF
+  const uploadPdfHeader = async (file: File): Promise<{ pdfHeader: string; company: Company } | null> => {
+    const formData = new FormData();
+    formData.append('pdfHeader', file);
+
+    const response = await post<ApiResponse<{ pdfHeader: string; company: Company }>>('/api/companies/me/pdf-header', formData);
+    return response.data || null;
+  };
+
+  // Supprimer l'en-tête PDF
+  const deletePdfHeader = async (): Promise<Company | null> => {
+    const response = await del<ApiResponse<Company>>('/api/companies/me/pdf-header');
+    return response.data || null;
+  };
+
   return {
     getCurrentCompany,
     updateCompany,
+    uploadLogo,
+    deleteLogo,
+    uploadPdfHeader,
+    deletePdfHeader,
   };
 };

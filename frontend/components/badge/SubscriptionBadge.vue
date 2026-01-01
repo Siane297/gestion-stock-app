@@ -1,4 +1,4 @@
-<!-- <template>
+<template>
     <span :class="badgeClasses">
         <Icon v-if="showIcon" :icon="badgeIcon" class="text-sm" />
         {{ badgeLabel }}
@@ -22,22 +22,22 @@ const badgeConfig = {
     TRIAL: {
         label: 'Essai',
         icon: 'lucide:clock',
-        classes: 'bg-blue-100 text-blue-700',
+        classes: 'bg-[#3B82F6] text-white',
     },
     ACTIVE: {
         label: 'Actif',
         icon: 'lucide:check-circle',
-        classes: 'bg-green-100 text-green-700',
+        classes: 'bg-[#22C55E] text-white',
     },
     EXPIRED: {
         label: 'Expiré',
         icon: 'lucide:alert-circle',
-        classes: 'bg-orange-100 text-orange-700',
+        classes: 'bg-[#F59E0B] text-white',
     },
     BLOCKED: {
         label: 'Bloqué',
         icon: 'lucide:ban',
-        classes: 'bg-red-100 text-red-700',
+        classes: 'bg-[#EF4444] text-white',
     },
 };
 
@@ -56,4 +56,4 @@ const badgeLabel = computed(() => {
 const badgeIcon = computed(() => {
     return props.status ? badgeConfig[props.status]?.icon || 'lucide:help-circle' : 'lucide:help-circle';
 });
-</script> -->
+</script>
