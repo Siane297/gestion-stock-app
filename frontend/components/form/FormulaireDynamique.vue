@@ -444,7 +444,8 @@ const getFieldClass = (visibleFields: FormField[], index: number) => {
   const field = visibleFields[index];
   const isFullWidthField = (f?: FormField) => !!f && (f.fullWidth || f.type === 'conditionnement' || f.type === 'achat-lines' || f.type === 'image' || f.type === 'lot-fields');
 
-  if (visibleFields.length === 1 || isFullWidthField(field)) return "md:col-span-2";
+  // Si seulement 1 ou 2 champs, on prend toute la largeur (100%)
+  if (visibleFields.length <= 2 || isFullWidthField(field)) return "md:col-span-2";
 
   let align = 0;
   for (let i = 0; i < index; i++) {

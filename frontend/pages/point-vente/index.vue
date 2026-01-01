@@ -120,6 +120,7 @@
         <!-- Scanner -->
         <BarcodeScanner 
             v-model="showScanner" 
+            :auto-close="false"
             @scan="handleScanResult" 
         />
     </div>

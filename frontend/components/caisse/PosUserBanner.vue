@@ -15,7 +15,7 @@
     </div>
 
     <div class="flex gap-3">
-      <button @click="$emit('lock')"
+      <button v-if="!isAdmin" @click="$emit('lock')"
         class="p-2 px-4 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all flex items-center gap-2 border border-white/10"
         title="Verrouiller">
         <i class="pi pi-lock"></i>
@@ -42,6 +42,12 @@ defineEmits<{
   (e: 'lock'): void;
   (e: 'logout'): void;
 }>();
+
+// Vérifier si l'utilisateur est Admin
+const isAdmin = computed(() => {
+  const role = user.value?.role;
+  return role === 'ADMIN' || role === 'SUPER_ADMIN';
+});
 
 // Infos utilisateur
 const userName = computed(() => {

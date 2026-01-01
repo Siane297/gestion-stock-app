@@ -44,9 +44,12 @@ import Dialog from 'primevue/dialog';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import AppButton from '~/components/button/AppButton.vue';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: boolean;
-}>();
+  autoClose?: boolean;
+}>(), {
+  autoClose: true
+});
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
@@ -138,7 +141,9 @@ const startScanner = async () => {
         },
         (decodedText) => {
           emit('scan', decodedText);
-          visible.value = false;
+          if (props.autoClose) {
+            visible.value = false;
+          }
         },
         (errorMessage) => {
           // Silent failure

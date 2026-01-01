@@ -89,16 +89,28 @@
 
         <!-- Saisie du PIN -->
         <div v-else class="space-y-6">
-          <PinPad ref="pinPadRef" :loading="loading" :error="error" @submit="handlePinSubmit" />
+          <!-- État de transition pour Admin (Automatique) -->
+          <template v-if="isAdminUser && !error">
+            <div class="flex flex-col items-center py-8 gap-4 animate-fade-in">
+              <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                <Icon icon="tabler:shield-check" class="text-4xl text-primary animate-bounce" />
+              </div>
+              <div class="text-center">
+                <p class="font-bold text-gray-800">Accès Administrateur</p>
+                <p class="text-sm text-gray-500">Ouverture de session en cours...</p>
+              </div>
+            </div>
+          </template>
 
-          <!-- Bouton Accès Admin (pour ADMIN/SUPER_ADMIN uniquement) -->
-          <div v-if="isAdminUser" class="pt-4 border-t">
-            <AppButton label="Accès Admin" variant="outline" icon="pi pi-shield" full-width size="md" :loading="loading"
-              @click="handleAdminBypass" class=" !bg-orange-500 border-none text-white" />
-            <p class="text-xs text-center text-gray-400 mt-2">
-              Votre identité sera vérifiée via votre session connectée
-            </p>
-          </div>
+          <template v-else>
+            <PinPad ref="pinPadRef" :loading="loading" :error="error" @submit="handlePinSubmit" />
+            
+            <!-- Bouton Accès Admin (Fallback si erreur ou manuel) -->
+            <div v-if="isAdminUser" class="pt-4 border-t">
+              <AppButton label="Réessayer l'accès Admin" variant="outline" icon="pi pi-shield" full-width size="md" :loading="loading"
+                @click="handleAdminBypass" class=" !bg-orange-500 border-none text-white transition-all hover:scale-[1.02]" />
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -106,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useCaisseApi } from '~/composables/api/useCaisseApi';
 import { useCaisseStore } from '~/stores/caisse';
@@ -303,6 +315,13 @@ async function handlePinSubmit(pin: string) {
     loading.value = false;
   }
 }
+
+// Automatisation pour l'ADMIN : Déclencher le bypass dès que le fond initial est validé
+watch(fondInitialSaisi, (isSaisi) => {
+  if (isSaisi && isAdminUser.value && step.value === 'pin-entry' && !loading.value) {
+    handleAdminBypass();
+  }
+}, { immediate: true });
 
 onMounted(async () => {
   // 1. Si une session est déjà active dans le store, rediriger directement
