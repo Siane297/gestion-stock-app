@@ -3,17 +3,24 @@
   <div class="w-full bg-white border-2 border-gris/40 rounded-xl p-7">
     <!-- Barre de recherche et actions -->
     <div class="mb-6 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
-      <div class="w-full lg:w-96" v-if="searchFields.length > 0">
-        <IconField iconPosition="left">
-          <InputIcon>
-            <i class="pi pi-search"></i>
-          </InputIcon>
-          <InputText
-            v-model="searchQuery"
-            placeholder="Rechercher..."
-            class="w-full"
-          />
-        </IconField>
+      <div class="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+        <div class="w-full lg:w-96" v-if="searchFields.length > 0">
+          <IconField iconPosition="left">
+            <InputIcon>
+              <i class="pi pi-search"></i>
+            </InputIcon>
+            <InputText
+              v-model="searchQuery"
+              placeholder="Rechercher..."
+              class="w-full"
+            />
+          </IconField>
+        </div>
+        
+        <!-- Slot pour filtres personnalisés -->
+        <div v-if="$slots.filters" class="w-full md:w-auto">
+            <slot name="filters"></slot>
+        </div>
       </div>
 
       <!-- Actions Globales (ex: Nouveau) -->
@@ -104,8 +111,8 @@
     <div v-if="isMobile && $slots['mobile-item']" class="mobile-view">
         <DataView :value="filteredData" :paginator="true" :rows="rowsPerPage" :loading="loading">
             <template #list="slotProps">
-                <div class="flex flex-col gap-4">
-                    <div v-for="(item, index) in slotProps.items" :key="index" class="w-full">
+                <div :class="mobileGrid ? 'grid grid-cols-2 md:grid-cols-2 gap-2' : 'flex flex-col gap-4'">
+                    <div v-for="(item, index) in slotProps.items" :key="index" :class="mobileGrid ? '' : 'w-full'">
                          <slot name="mobile-item" :data="item" :index="index"></slot>
                     </div>
                 </div>
@@ -219,6 +226,7 @@ interface Props {
   showView?: boolean;
   showEdit?: boolean;
   showDelete?: boolean;
+  mobileGrid?: boolean; // Nouvelle prop pour afficher en grille sur mobile
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -228,7 +236,8 @@ const props = withDefaults(defineProps<Props>(), {
   deleteLabelField: 'nom',
   showView: true,
   showEdit: true,
-  showDelete: true
+  showDelete: true,
+  mobileGrid: false
 });
 
 const emit = defineEmits<{

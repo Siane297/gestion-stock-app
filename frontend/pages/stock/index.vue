@@ -10,10 +10,11 @@
 
         <TableGeneric
             :columns="columns"
-            :data="stocks"
+            :data="filteredStocks"
             :loading="loading"
             :search-fields="['magasin.nom', 'produit.nom', 'produit.code_barre']"
             delete-label-field="produit.nom"
+            :mobile-grid="true"
             :global-action="hasPermission('stock', 'creer') ? {
                 label: 'Nouveau Mouvement',
                 icon: 'pi pi-plus',
@@ -26,6 +27,25 @@
             @action:edit="handleEdit"
             @action:delete="handleDelete"
         >
+             <!-- Filtre par Statut -->
+             <template #filters>
+                <div class="flex items-center gap-3">
+                    <Select 
+                        v-model="selectedStatus" 
+                        :options="statusOptions" 
+                        optionLabel="label" 
+                        optionValue="value" 
+                        placeholder="Filtrer par statut"
+                        class="w-full md:w-56"
+                    >
+                        <template #option="slotProps">
+                            <div class="flex items-center gap-2">
+                                <span>{{ slotProps.option.label }}</span>
+                            </div>
+                        </template>
+                    </Select>
+                </div>
+             </template>
              <!-- Quantité -->
              <template #column-quantite="{ data }: { data: any }">
                  <div class="flex items-center gap-1">
@@ -52,48 +72,54 @@
 
             <!-- VUE MOBILE (Slot) -->
             <template #mobile-item="{ data }">
-                <MobileCard>
-                    <template #header>
-                        <div>
-                            <h3 class="font-bold text-noir text-lg leading-tight">{{ data.produit.nom }}</h3>
-                            <div class="text-xs text-noir mt-1 flex items-center gap-1">
-                                <Icon icon="mdi:barcode" /> {{ data.produit.code_barre || 'Sans code' }}
-                            </div>
+                <MobileCard class="!p-3.5 h-full flex flex-col">
+                    <!-- Produit Header Section -->
+                    <div class="mb-3">
+                        <h3 class="font-bold text-noir text-[15px] leading-snug line-clamp-2  mb-1" :title="data.produit.nom">
+                            {{ data.produit.nom }}
+                        </h3>
+                        <div class="flex items-center gap-1.5 text-[10px] text-gray-400 font-medium">
+                            <Icon icon="mdi:barcode" class="shrink-0" />
+                            <span class="truncate">{{ data.produit.code_barre || 'Sans code' }}</span>
                         </div>
-                         <div class="flex-shrink-0">
-                             <Badge v-if="data.quantite === 0" severity="danger" value="Rupture" />
-                             <Badge v-else-if="data.quantite <= data.quantite_minimum" severity="warn" value="Faible" />
-                             <Badge v-else severity="success" value="En stock" />
-                        </div>
-                    </template>
+                    </div>
 
-                    <!-- Body -->
-                    <div class="flex justify-between items-center mt-2">
-                        <div class="flex flex-col">
-                             <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Boutique</span>
-                             <span class="font-medium text-noir flex items-center gap-1">
-                                 <Icon icon="tabler:building-store" class="text-noir" /> {{ data.magasin.nom }}
-                             </span>
-                        </div>
-
-                        <div class="text-right">
-                             <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Stock</span>
-                             <div class="flex items-center justify-end gap-1">
-                                 <span class="text-2xl font-bold" :class="getStockColorClass(data.quantite, data.quantite_minimum)">
-                                     {{ data.quantite }}
-                                 </span>
-                                 <span class="text-sm text-gray-500">{{ data.produit.unite?.nom }}</span>
+                    <!-- Main Info Grid -->
+                    <div class="flex-grow flex flex-col gap-2.5">
+                         <!-- Magasin -->
+                         <div class="flex flex-col bg-bleu/50 p-2 rounded-lg border border-gris/40">
+                             <span class="text-[9px] text-gray-400 tracking-wider uppercase font-black mb-1">Boutique</span>
+                             <div class="flex items-center gap-2 text-[11px] text-noir font-semibold truncate">
+                                 <Icon icon="tabler:building-store" class="text-primary/70 shrink-0 text-xs" />
+                                 <span class="truncate">{{ data.magasin.nom }}</span>
                              </div>
-                        </div>
+                         </div>
+
+                         <!-- Stock & Status -->
+                         <div class="flex flex-col">
+                              <div class="flex items-center justify-between mb-1">
+                                  <span class="text-[9px] text-gray-400 uppercase font-black">Stock</span>
+                                  <Badge v-if="data.quantite === 0" severity="danger" value="Rupture" size="small" class="!text-[8px] !px-1.5 !font-bold" />
+                                  <Badge v-else-if="data.quantite <= data.quantite_minimum" severity="warn" value="Faible" size="small" class="!text-[8px] !px-1.5 !font-bold" />
+                                  <Badge v-else severity="success" value="En stock" size="small" class="!text-[8px] !px-1.5 !font-bold" />
+                              </div>
+                              <div class="flex items-baseline gap-1">
+                                  <span class="text-xl font-black tracking-tighter" :class="getStockColorClass(data.quantite, data.quantite_minimum)">
+                                      {{ data.quantite }}
+                                  </span>
+                                  <span class="text-[10px] text-gray-500 font-medium truncate max-w-[45px] lowercase">{{ data.produit.unite?.nom }}</span>
+                              </div>
+                         </div>
                     </div>
                     
                     <template #footer>
                         <AppButton 
-                            label="Détails & Mouvements" 
+                            label="Détails" 
                             icon="pi pi-chart-line" 
                             variant="secondary" 
                             size="sm" 
                             full-width 
+                            class="!text-[10px] !py-2 !h-auto !rounded-lg mt-1"
                             @click="handleView(data)" 
                         />
                     </template>
@@ -120,6 +146,7 @@ import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast'; // Duplicate import, removing one
 import Badge from 'primevue/badge'; // Ensure Badge is imported if used
+import Select from 'primevue/select';
 import { Icon } from '@iconify/vue';
 import AppButton from '~/components/button/AppButton.vue';
 
@@ -131,7 +158,7 @@ const { startLoading, stopLoading } = useGlobalLoading();
 
 const stocks = ref<StockMagasin[]>([]);
 const loading = ref(false);
-const showOnlyAlerts = ref(false);
+const selectedStatus = ref('all');
 
 const columns: TableColumn[] = [
     { field: 'magasin.nom', header: 'Boutique', sortable: true },
@@ -141,11 +168,33 @@ const columns: TableColumn[] = [
     { field: 'statut', header: 'Statut', sortable: false, customRender: true },
 ];
 
+const statusOptions = [
+    { label: 'Tous les stocks', value: 'all' },
+    { label: 'En rupture', value: 'rupture' },
+    { label: 'Stock faible', value: 'faible' },
+    { label: 'En stock', value: 'ok' },
+];
+
+const filteredStocks = computed(() => {
+    if (selectedStatus.value === 'all') return stocks.value;
+    
+    return stocks.value.filter(s => {
+        const isRupture = s.quantite === 0;
+        const isFaible = s.quantite <= s.quantite_minimum && s.quantite > 0;
+        const isOk = s.quantite > s.quantite_minimum;
+
+        if (selectedStatus.value === 'rupture') return isRupture;
+        if (selectedStatus.value === 'faible') return isFaible;
+        if (selectedStatus.value === 'ok') return isOk;
+        return true;
+    });
+});
+
 const loadStocks = async () => {
     loading.value = true;
     startLoading();
     try {
-        stocks.value = await getStocks({ alerte: showOnlyAlerts.value ? true : undefined });
+        stocks.value = await getStocks();
     } catch (e: any) {
         console.error("Erreur chargement stocks", e);
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger les stocks', life: 3000 });

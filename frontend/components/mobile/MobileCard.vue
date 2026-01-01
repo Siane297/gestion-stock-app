@@ -5,7 +5,7 @@
       <slot name="header"></slot>
     </div>
 
-    <hr v-if="$slots.header && $slots.default" class="border-gray-50" />
+    <hr v-if="$slots.header && $slots.default" class="border-gris/50" />
 
     <!-- Corps de la carte -->
     <div class="flex-grow">
@@ -13,7 +13,7 @@
     </div>
 
     <!-- Actions (Boutons) -->
-    <div v-if="$slots.footer" class="pt-2 mt-auto border-t border-gray-50">
+    <div v-if="$slots.footer" class="pt-2 mt-auto border-t border-gris/50">
       <slot name="footer"></slot>
     </div>
   </div>
