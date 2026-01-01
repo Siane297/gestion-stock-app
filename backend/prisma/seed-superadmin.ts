@@ -15,7 +15,7 @@ async function main() {
   console.log('🌱 Création du compte Super Administrateur...');
 
   // Informations du super admin depuis les variables d'environnement
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@pointage.com';
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@zawadicom.com';
   const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
 
   // Validation sécurisée du mot de passe

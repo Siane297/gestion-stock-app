@@ -6,6 +6,7 @@ import {
   renewSubscription,
   getPaymentHistory,
   updateSubscriptionNotes,
+  downloadReceipt,
 } from '../controllers/subscriptionController.js';
 
 import { requireSuperAdmin } from '../middleware/superAdminMiddleware.js';
@@ -29,5 +30,8 @@ router.get('/:companyId/payments', getPaymentHistory);
 
 // PATCH /api/subscriptions/:companyId/notes - Mettre à jour les notes
 router.patch('/:companyId/notes', updateSubscriptionNotes);
+
+// GET /api/subscriptions/payments/:paymentId/receipt - Télécharger le reçu
+router.get('/payments/:paymentId/receipt', downloadReceipt);
 
 export default router;

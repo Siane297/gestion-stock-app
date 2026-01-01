@@ -14,12 +14,15 @@
                     </div>
                 </div>
             </div>
-            <div class="text-right">
-                <div class="text-sm text-gray-500">
-                    {{ formatDate(payment.paymentDate) }}
-                </div>
+                <AppButton 
+                    variant="outline"
+                    icon="pi pi-download"
+                    @click="handleDownload"
+                    :loading="downloading"
+                    class="!p-2 text-gray-400 hover:text-white hover:bg-primary"
+                    tooltip="Télécharger le reçu"
+                />
             </div>
-        </div>
 
         <!-- Période couverte -->
         <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4 text-sm">
@@ -43,7 +46,9 @@
 
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
+import AppButton from '~/components/button/AppButton.vue';
 import type { PaymentHistory } from '~/composables/api/useSubscriptionApi';
+import { useSecurePdf } from '~/composables/useSecurePdf';
 
 interface Props {
     payment: PaymentHistory;
@@ -53,6 +58,18 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     currency: 'KMF',
 });
+
+const { generateSubscriptionReceiptPdf } = useSecurePdf();
+const downloading = ref(false);
+
+const handleDownload = async () => {
+    try {
+        downloading.value = true;
+        await generateSubscriptionReceiptPdf(props.payment.id);
+    } finally {
+        downloading.value = false;
+    }
+};
 
 // Formatters
 const formatCurrency = (value: number): string => {

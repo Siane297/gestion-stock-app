@@ -217,6 +217,59 @@ export class SubscriptionService {
     }));
   }
 
+  async getPaymentWithDetails(paymentId: string) {
+    const payment = await this.prisma.paymentHistory.findUnique({
+      where: { id: paymentId },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            emailOrganisation: true,
+            telephoneOrganisation: true,
+            country: true,
+            logo: true,
+            currency: true,
+          }
+        }
+      }
+    });
+
+    if (!payment) {
+      throw new Error('Paiement non trouvé');
+    }
+
+    // Récupérer les infos de l'entreprise émettrice (ZawadiCom / SuperAdmin info)
+    const issuerInfo = {
+      name: 'ZawadiCom',
+      address: 'Moroni, Comores',
+      phone: '+269 334 56 78',
+      email: 'contact@zawadicom.com',
+      logo: undefined 
+    };
+
+    return {
+      payment: {
+        id: payment.id,
+        numero: `RE-${payment.id.substring(0, 8).toUpperCase()}`,
+        amount: Number(payment.amount),
+        durationMonths: Math.round(payment.durationDays / 30), 
+        date: payment.paymentDate,
+        startDate: payment.subscriptionStartDate,
+        endDate: payment.subscriptionEndDate,
+        currency: payment.company.currency || 'KMF'
+      },
+      organization: {
+        name: payment.company.name,
+        email: payment.company.emailOrganisation || payment.company.email,
+        phone: payment.company.telephoneOrganisation,
+        country: payment.company.country
+      },
+      company: issuerInfo
+    };
+  }
+
   async updateNotes(companyId: string, notes: string) {
     const updatedCompany = await this.prisma.company.update({
       where: { id: companyId },

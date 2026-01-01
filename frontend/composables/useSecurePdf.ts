@@ -336,6 +336,46 @@ export const useSecurePdf = () => {
       }
   };
 
+  /**
+   * Générer un reçu d'abonnement PDF
+   */
+  const generateSubscriptionReceiptPdf = async (paymentId: string): Promise<void> => {
+    try {
+        console.log(`🧾 [PDF] Demande reçu d'abonnement: ${paymentId}`);
+        
+        const { accessToken } = useSecureAuth();
+        const config = useRuntimeConfig();
+        const apiBase = config.public.apiBase || 'http://localhost:3001';
+        
+        const response = await fetch(`${apiBase}/api/subscriptions/payments/${paymentId}/receipt`, {
+            method: 'GET',
+            headers: { 
+                'Authorization': `Bearer ${accessToken.value}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+         if (!response.ok) {
+           throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+         }
+         
+         const blob = await response.blob();
+         let filename = `Recu-Abonnement-${paymentId.substring(0, 8)}.pdf`;
+         
+         const contentDisposition = response.headers.get('Content-Disposition');
+         if (contentDisposition) {
+             const match = contentDisposition.match(/filename="?([^"]+)"?/);
+             if (match && match[1]) filename = match[1];
+         }
+
+         downloadBlob(blob, filename);
+         toast.add({ severity: 'success', summary: 'Succès', detail: `Reçu téléchargé avec succès`, life: 3000 });
+
+    } catch (err: any) {
+        handlePdfError(err);
+    }
+  };
+
   return {
     generatePdf,
     generateEmployeesPdf,
@@ -343,6 +383,7 @@ export const useSecurePdf = () => {
     generateReceiptPdf,
     generateProformaPdf,
     generateInventairePdf,
-    generateSessionPdf
+    generateSessionPdf,
+    generateSubscriptionReceiptPdf
   };
 };
