@@ -108,6 +108,16 @@ const loadLists = async () => {
     categories.value = catsData;
     unites.value = unitesData;
     magasins.value = magasinsData;
+    
+    // Pré-sélectionner le premier magasin par défaut
+    const firstMagasin = magasinsData?.[0];
+    if (firstMagasin && !formState.value.magasin_id) {
+       formState.value.magasin_id = firstMagasin.id;
+       // Mettre à jour manuellement si le formulaire est déjà monté
+       if (formRef.value) {
+         formRef.value.setField('magasin_id', firstMagasin.id);
+       }
+    }
   } catch (error) {
     console.error("Erreur chargement listes:", error);
     toast.add({ severity: "error", summary: "Erreur", detail: "Erreur chargement données", life: 3000 });
@@ -233,6 +243,7 @@ const productGroups = computed(() => [
         options: magasins.value,
         optionLabel: "nom",
         optionValue: "id",
+        value: formState.value.magasin_id
       },
       {
         name: "quantite_initiale",

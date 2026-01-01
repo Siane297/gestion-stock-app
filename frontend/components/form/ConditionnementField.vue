@@ -31,7 +31,6 @@
         </button>
 
         <div class="font-bold text-lg text-[#064654] mb-1">{{ item.nom }}</div>
-        
         <div class="text-sm text-gray-600 space-y-1">
           <div class="flex justify-between">
             <span>Quantité Base:</span>
