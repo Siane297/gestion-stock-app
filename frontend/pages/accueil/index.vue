@@ -15,18 +15,21 @@
           <p class="text-white/70 text-xs md:text-sm">Vue d'ensemble de votre activité</p>
         </div>
 
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-          <!-- Période Selector (PrimeVue) -->
+        <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+          <!-- Période Selector -->
           <Dropdown v-model="selectedPeriod" :options="periodOptions" optionLabel="label" optionValue="value"
-            class="flex-1 sm:w-48 !rounded-xl" @change="fetchDashboardStats" />
-           <AppButton label="Nouvelle vente" icon="pi pi-shopping-cart" variant="primary"
+            class="col-span-1 flex-1 sm:w-48  order-1" @change="fetchDashboardStats" />
+
+          <!-- Bouton Nouvelle Vente -->
+          <AppButton label="Nouvelle vente" icon="pi pi-shopping-cart" variant="primary"
+            class="col-span-2 sm:col-auto w-full sm:w-auto order-3 sm:order-2" 
             @click="navigateTo('/point-vente')" />
-          <button @click="fetchDashboardStats"
-            class="p-3 bg-white hover:bg-gray-100 border border-white/20 rounded-xl text-noir transition-colors shadow-sm flex-shrink-0"
-            title="Rafraîchir">
-            <Icon icon="tabler:refresh" :class="{ 'animate-spin': loading }" />
-          </button>
-         
+
+          <!-- Refresh Button -->
+          <AppButton @click="fetchDashboardStats" variant="secondary"
+            class="col-span-1 order-2 sm:order-3"
+            label="" icon="pi pi-refresh"/>
+          
         </div>
       </div>
 
