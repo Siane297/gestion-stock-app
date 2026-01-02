@@ -79,25 +79,35 @@ export class VenteService {
     const today = new Date();
     const dateStr = (today.toISOString().split('T')[0] || '').replace(/-/g, ''); // YYYYMMDD
     const storePrefix = magasinId.substring(0, 4).toUpperCase();
-    
-    // Compter les ventes du jour pour ce magasin
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-    
-    const countToday = await prisma.vente.count({
+    const prefix = `TC-${storePrefix}-${dateStr}-`;
+
+    // Trouver la dernière vente du jour pour ce magasin pour déterminer la séquence
+    // C'est plus sûr que count() qui peut réutiliser des numéros si des ventes sont supprimées
+    const lastSale = await prisma.vente.findFirst({
       where: {
         magasin_id: magasinId,
-        date_creation: {
-          gte: startOfDay,
-          lte: endOfDay
+        numero_vente: {
+          startsWith: prefix
         }
+      },
+      orderBy: {
+        numero_vente: 'desc'
+      },
+      select: {
+        numero_vente: true
       }
     });
     
-    // Incrémenter pour la nouvelle vente
-    const sequence = (countToday + 1).toString().padStart(3, '0');
+    let sequence = 1;
+    if (lastSale && lastSale.numero_vente) {
+      const parts = lastSale.numero_vente.split('-');
+      const lastSeq = parseInt(parts[parts.length - 1]);
+      if (!isNaN(lastSeq)) {
+        sequence = lastSeq + 1;
+      }
+    }
     
-    return `TC-${storePrefix}-${dateStr}-${sequence}`;
+    return `${prefix}${sequence.toString().padStart(3, '0')}`;
   }
 
   /**
@@ -189,68 +199,91 @@ export class VenteService {
       throw new Error(`Stock insuffisant pour: ${missing}`);
     }
 
-    // 5. Transaction de création
-    return this.prisma.$transaction(async (tx) => {
-      // a. Générer le numéro de ticket (en utilisant tx pour éviter les collisions)
-      const numeroVente = await this.generateReceiptNumber(data.magasin_id, tx);
-      
-      // b. Créer la vente
-      const vente = await tx.vente.create({
-        data: {
-          numero_vente: numeroVente,
-          magasin_id: data.magasin_id,
-          utilisateur_id: data.utilisateur_id,
-          // Relation client optionnelle
-          ...(data.client_id ? { client_id: data.client_id } : {}),
-          montant_total: prixTotalVente,
-          montant_remise: data.montant_remise || 0,
-          montant_paye: data.montant_paye || prixTotalVente,
-          montant_rendu: data.montant_rendu || 0,
-          statut: data.statut || 'PAYEE',
-          methode_paiement: data.methode_paiement,
-          notes: data.notes,
-          session_caisse_id: data.session_caisse_id,
-          details: {
-            create: detailsVente
-          }
-        },
-        include: {
-          magasin: { select: { nom: true } },
-          details: {
+    // 5. Transaction de création avec RETRY (pour gérer les collisions de numero_vente)
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          // a. Générer le numéro de ticket (en utilisant tx pour éviter les collisions si possible, mais surtout findFirst)
+          const numeroVente = await this.generateReceiptNumber(data.magasin_id, tx);
+          
+          // b. Créer la vente
+          const vente = await tx.vente.create({
+            data: {
+              numero_vente: numeroVente,
+              magasin_id: data.magasin_id,
+              utilisateur_id: data.utilisateur_id,
+              // Relation client optionnelle
+              ...(data.client_id ? { client_id: data.client_id } : {}),
+              montant_total: prixTotalVente,
+              montant_remise: data.montant_remise || 0,
+              montant_paye: data.montant_paye || prixTotalVente,
+              montant_rendu: data.montant_rendu || 0,
+              statut: data.statut || 'PAYEE',
+              methode_paiement: data.methode_paiement,
+              notes: data.notes,
+              session_caisse_id: data.session_caisse_id,
+              details: {
+                create: detailsVente
+              }
+            },
             include: {
-              produit: true,
-              conditionnement: true
+              magasin: { select: { nom: true } },
+              details: {
+                include: {
+                  produit: true,
+                  conditionnement: true
+                }
+              }
             }
+          });
+
+          // b. Déstockage
+          // On utilise le StockService mais avec la transaction en cours si possible.
+          // StockService.increment/decrement accepte 'tx' en dernier argument.
+          const stockServiceTx = new StockService(tx as any, this.tenantId); 
+          
+          for (const check of itemsToCheckStock) {
+            await stockServiceTx.decrementStock(
+              data.magasin_id,
+              check.produit_id,
+              check.quantite, // Quantité convertie en unité de base
+              {
+                utilisateur_id: data.utilisateur_id,
+                vente_id: vente.id,
+                raison: 'Vente client'
+              },
+              tx
+            );
           }
+
+          logger.info(`Vente créée: ${vente.id} - Total: ${vente.montant_total}`);
+          
+          // c. Notifications (Hors transaction)
+          // Note: On le fait après le commit implicite du return, mais ici on est DANS la transaction
+          // L'appel réel sera fait après la résolution de la transaction par l'appelant, ou on le lance sans await
+          // Pour être safe, on peut le stocker et l'envoyer après, mais triggerSaleNotifications est async et gère ses erreurs
+          try {
+             this.triggerSaleNotifications(vente, data.utilisateur_id);
+          } catch(e) { logger.error('Error notif async', e); }
+
+          return vente;
+        });
+      } catch (error: any) {
+        // Si erreur de contrainte unique sur numero_vente (code prisma P2002)
+        if (error.code === 'P2002' && (error.meta?.target?.includes('numero_vente') || error.message.includes('numero_vente'))) {
+          attempts++;
+          logger.warn(`Collision detected on numero_vente, retrying... (Attempt ${attempts}/${maxAttempts})`);
+          if (attempts >= maxAttempts) throw new Error("Impossible de générer un numéro de vente unique après plusieurs essais. Veuillez réessayer.");
+          // Wait a random short time to reduce collision probability on next try
+          await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
+          continue;
         }
-      });
-
-      // b. Déstockage
-      // On utilise le StockService mais avec la transaction en cours si possible.
-      // StockService.increment/decrement accepte 'tx' en dernier argument.
-      const stockServiceTx = new StockService(tx as any, this.tenantId); 
-      
-      for (const check of itemsToCheckStock) {
-        await stockServiceTx.decrementStock(
-          data.magasin_id,
-          check.produit_id,
-          check.quantite, // Quantité convertie en unité de base
-          {
-            utilisateur_id: data.utilisateur_id,
-            vente_id: vente.id,
-            raison: 'Vente client'
-          },
-          tx
-        );
+        throw error; // Other errors are fatal
       }
-
-      logger.info(`Vente créée: ${vente.id} - Total: ${vente.montant_total}`);
-      
-      // c. Notifications (Hors transaction)
-      this.triggerSaleNotifications(vente, data.utilisateur_id);
-
-      return vente;
-    });
+    }
   }
 
   /**

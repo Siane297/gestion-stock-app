@@ -53,7 +53,7 @@
     </nav>
 
     <!-- Upgrade Pro Card -->
-    <UpgradeProCard v-if="user?.company?.subscriptionStatus === 'TRIAL'" />
+    <UpgradeProCard v-if="user && user.company && user.company.subscriptionStatus !== 'ACTIVE'" />
 
     <!-- Bouton de fermeture (mobile uniquement) -->
     <button

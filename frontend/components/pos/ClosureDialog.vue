@@ -122,10 +122,20 @@
                     :disabled="loading" @click="isVisible = false" />
                 <AppButton label="Valider la clôture" variant="primary" icon="pi pi-check" 
                     :loading="loading" :disabled="isSubmitDisabled || fetchingDetails"
-                    @click="handleSubmit" />
+                    @click="openConfirmation" />
             </div>
         </template>
     </Dialog>
+
+    <ConfirmationDialog
+        v-model:visible="showConfirmation"
+        header="Confirmer la clôture"
+        message="Êtes-vous sûr de vouloir clôturer cette session ? Cette action est irréversible."
+        acceptLabel="Oui, Clôturer"
+        rejectLabel="Non, Annuler"
+        acceptVariant="danger"
+        @accept="executeClosure"
+    />
 </template>
 
 <script setup lang="ts">
@@ -137,6 +147,7 @@ import InputGroupAddon from 'primevue/inputgroupaddon';
 import Textarea from 'primevue/textarea';
 import ProgressSpinner from 'primevue/progressspinner';
 import AppButton from '~/components/button/AppButton.vue';
+import ConfirmationDialog from '~/components/dialog/ConfirmationDialog.vue';
 import { useCurrency } from '~/composables/useCurrency';
 import { useCaisseApi } from '~/composables/api/useCaisseApi';
 import type { RapportSession, SessionCaisse } from '~/composables/api/useCaisseApi';
@@ -166,6 +177,7 @@ const isVisible = computed({
 const currencyCode = computed(() => currentCurrency.value?.code || 'KMF');
 const loading = ref(false);
 const fetchingDetails = ref(false);
+const showConfirmation = ref(false);
 const sessionDetail = ref<RapportSession | null>(null);
 
 const closureData = ref<{
@@ -232,7 +244,12 @@ const formatDate = (dateString?: string | Date) => {
     });
 };
 
-const handleSubmit = async () => {
+const openConfirmation = () => {
+    if (isSubmitDisabled.value) return;
+    showConfirmation.value = true;
+};
+
+const executeClosure = async () => {
     if (!props.session?.caisse_id) return;
 
     loading.value = true;
