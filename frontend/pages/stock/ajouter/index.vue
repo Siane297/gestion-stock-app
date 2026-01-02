@@ -127,6 +127,7 @@ const stockFields = computed(() => {
             { label: 'Retour client', value: 'ENTREE_RETOUR' },
             { label: 'Vente', value: 'SORTIE_VENTE' },
             { label: 'Périssable', value: 'SORTIE_PERISSABLE' },
+            { label: 'Invendu', value: 'SORTIE_INVENDU' },
             { label: 'Ajustement (+)', value: 'AJUSTEMENT_PLUS' },
             { label: 'Ajustement (-)', value: 'AJUSTEMENT_MOINS' },
             { label: 'Transfert', value: 'TRANSFERT' },
@@ -163,13 +164,13 @@ const stockFields = computed(() => {
     // Only show conditionnement if product is selected
     ...(selectedProduct.value ? [{
         name: 'conditionnement_id',
-        label: "Conditionnement / Format d'achat",
+        label: "Conditionnement",
         type: 'select-packaging' as const, 
         required: true, 
         options: conditionnementOptions.value,
         optionLabel: 'label',
         optionValue: 'value',
-        placeholder: 'Choisir le format',
+        placeholder: 'Choisir le conditionnement',
         value: currentFormState.value.conditionnement_id || 'UNIT', // Use current value or default
         fullWidth: true
     }] : []),

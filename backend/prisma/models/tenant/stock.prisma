@@ -4,6 +4,7 @@ enum TypeMouvementStock {
     ENTREE_RETOUR
     SORTIE_VENTE
     SORTIE_PERISSABLE
+    SORTIE_INVENDU
     AJUSTEMENT
     TRANSFERT
 }

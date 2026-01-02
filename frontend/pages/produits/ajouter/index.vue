@@ -200,7 +200,7 @@ const productGroups = computed(() => [
         label: "Prix d'achat",
         type: "currency" as const,
         placeholder: "0.00",
-        required: true,
+        required: false,
       },
       {
         name: "prix_vente",
@@ -209,25 +209,25 @@ const productGroups = computed(() => [
         placeholder: "0.00",
         required: true,
       },
-      {
-        name: "marge_min_pourcent",
-        label: "Marge minimum (%)",
-        type: "number" as const,
-        placeholder: "Ex: 20",
-        required: false,
-        min: 0,
-        max: 100,
-        helpText: "Seuil d'alerte si la marge descend sous ce pourcentage."
-      },
-      {
-        name: "tva_pourcentage",
-        label: "TVA (%)",
-        type: "number" as const,
-        placeholder: "Ex: 15",
-        required: false,
-        min: 0,
-        max: 100,
-      },
+      // {
+      //   name: "marge_min_pourcent",
+      //   label: "Marge minimum (%)",
+      //   type: "number" as const,
+      //   placeholder: "Ex: 20",
+      //   required: false,
+      //   min: 0,
+      //   max: 100,
+      //   helpText: "Seuil d'alerte si la marge descend sous ce pourcentage."
+      // },
+      // {
+      //   name: "tva_pourcentage",
+      //   label: "TVA (%)",
+      //   type: "number" as const,
+      //   placeholder: "Ex: 15",
+      //   required: false,
+      //   min: 0,
+      //   max: 100,
+      // },
     ]
   },
   {
@@ -305,9 +305,9 @@ const handleSubmit = async (data: Record<string, any>) => {
       code_barre: data.code_barre || undefined,
       categorie_id: data.categorie_id || undefined,
       unite_id: data.unite_id || undefined,
-      prix_achat: data.prix_achat ? Number(data.prix_achat) : undefined,
+      prix_achat: (data.prix_achat !== undefined && data.prix_achat !== null && data.prix_achat !== '') ? Number(data.prix_achat) : undefined,
       prix_vente: Number(data.prix_vente),
-      marge_min_pourcent: data.marge_min_pourcent
+      marge_min_pourcent: (data.marge_min_pourcent !== undefined && data.marge_min_pourcent !== null && data.marge_min_pourcent !== '')
         ? Number(data.marge_min_pourcent)
         : undefined,
       gere_peremption: data.gere_peremption || false,
@@ -326,7 +326,7 @@ const handleSubmit = async (data: Record<string, any>) => {
             nom: c.nom,
             quantite_base: Number(c.quantite_base),
             prix_vente: Number(c.prix_vente),
-            prix_achat: c.prix_achat ? Number(c.prix_achat) : undefined,
+            prix_achat: (c.prix_achat !== undefined && c.prix_achat !== null && c.prix_achat !== '') ? Number(c.prix_achat) : undefined,
             code_barre: c.code_barre || undefined,
           }))
         : undefined,

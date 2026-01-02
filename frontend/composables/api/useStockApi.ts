@@ -1,7 +1,7 @@
 import { useSecureApi } from '~/composables/useSecureApi';
 import type { ApiResponse } from './config';
 
-export type TypeMouvementStock = 'ENTREE_ACHAT' | 'ENTREE_RETOUR' | 'SORTIE_VENTE' | 'SORTIE_PERISSABLE' | 'AJUSTEMENT' | 'TRANSFERT';
+export type TypeMouvementStock = 'ENTREE_ACHAT' | 'ENTREE_RETOUR' | 'SORTIE_VENTE' | 'SORTIE_PERISSABLE' | 'SORTIE_INVENDU' | 'AJUSTEMENT' | 'TRANSFERT';
 
 export interface StockMagasin {
   id: string;

@@ -214,6 +214,7 @@ const formatType = (type: string) => {
         'ENTREE_RETOUR': 'Retour client',
         'SORTIE_VENTE': 'Vente',
         'SORTIE_PERISSABLE': 'Périssable',
+        'SORTIE_INVENDU': 'Invendu',
         'AJUSTEMENT': 'Ajustement',
         'TRANSFERT': 'Transfert'
     };

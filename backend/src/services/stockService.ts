@@ -11,6 +11,7 @@ export type TypeMouvementStock =
   | 'ENTREE_RETOUR'
   | 'SORTIE_VENTE'
   | 'SORTIE_PERISSABLE'
+  | 'SORTIE_INVENDU'
   | 'AJUSTEMENT'
   | 'TRANSFERT';
 
@@ -137,7 +138,7 @@ export class StockService {
       (data.type === 'AJUSTEMENT' && data.isAjoutStock === true);
     
     // TRANSFERT est une sortie pour le magasin source
-    const isDecrement = ['SORTIE_VENTE', 'SORTIE_PERISSABLE', 'TRANSFERT'].includes(data.type) ||
+    const isDecrement = ['SORTIE_VENTE', 'SORTIE_PERISSABLE', 'SORTIE_INVENDU', 'TRANSFERT'].includes(data.type) ||
       (data.type === 'AJUSTEMENT' && data.isAjoutStock === false);
 
     // Vérification du stock actuel
