@@ -212,6 +212,9 @@ const discrepancy = computed(() => {
 });
 
 const isSubmitDisabled = computed(() => {
+    if (closureData.value.fond_final === null) {
+        return true;
+    }
     if (discrepancy.value !== 0 && !closureData.value.notes?.trim()) {
         return true;
     }
