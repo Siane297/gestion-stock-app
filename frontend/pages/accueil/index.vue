@@ -4,8 +4,9 @@
     <div class="flex flex-col relative overflow-hidden bg-side p-5 rounded-lg justify-between gap-4">
       <!-- Background Abstract -->
       <div class="absolute inset-0 z-0">
-         <img src="~/assets/images/dashboard-header-bg.png" alt="Background" class="w-full h-full object-cover opacity-40" />
-         <div class="absolute inset-0 bg-gradient-to-r from-side/50 to-side/40"></div>
+        <img src="~/assets/images/dashboard-header-bg.png" alt="Background"
+          class="w-full h-full object-cover opacity-40" />
+        <div class="absolute inset-0 bg-gradient-to-r from-side/50 to-side/40"></div>
       </div>
 
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between relative z-10 gap-4">
@@ -18,45 +19,45 @@
           <!-- Période Selector (PrimeVue) -->
           <Dropdown v-model="selectedPeriod" :options="periodOptions" optionLabel="label" optionValue="value"
             class="flex-1 sm:w-48 !rounded-xl" @change="fetchDashboardStats" />
-            
+           <AppButton label="Nouvelle vente" icon="pi pi-shopping-cart" variant="primary"
+            @click="navigateTo('/point-vente')" />
           <button @click="fetchDashboardStats"
-              class="p-3 bg-white hover:bg-gray-100 border border-white/20 rounded-xl text-noir transition-colors shadow-sm flex-shrink-0"
-              title="Rafraîchir">
-              <Icon icon="tabler:refresh" :class="{ 'animate-spin': loading }" />
+            class="p-3 bg-white hover:bg-gray-100 border border-white/20 rounded-xl text-noir transition-colors shadow-sm flex-shrink-0"
+            title="Rafraîchir">
+            <Icon icon="tabler:refresh" :class="{ 'animate-spin': loading }" />
           </button>
+         
         </div>
       </div>
-      
+
       <!-- KPI Cards Grid -->
       <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <CardStat label="Total Produits" :value="stats.total_products_count" icon="tabler:package"
-          variant="primary" :loading="loading" />
-        <CardStat :label="`CA (${periodLabel})`" :value="formatPriceCompact(stats.revenue.value)" 
-          icon="tabler:coin" variant="primary" :loading="loading" 
-          :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
-          
-        <CardStat :label="`Ventes (${periodLabel})`" :value="stats.sales_count.value" 
-          icon="tabler:shopping-cart" variant="info" :loading="loading" 
-          :trend="stats.sales_count.trend" :trend-label="trendComparisonLabel" />
+        <CardStat label="Total Produits" :value="stats.total_products_count" icon="tabler:package" variant="primary"
+          :loading="loading" />
+        <CardStat :label="`CA (${periodLabel})`" :value="formatPriceCompact(stats.revenue.value)" icon="tabler:coin"
+          variant="primary" :loading="loading" :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
 
-        <CardStat :label="`Bénéfice (${periodLabel})`" :value="formatPriceCompact(stats.profit?.value || 0)" 
-          icon="tabler:trending-up" variant="success" :loading="loading" 
-          :trend="stats.profit?.trend" :trend-label="trendComparisonLabel" />
-          
-        <CardStat label="Achats en Attente" :value="stats.pending_purchases" icon="tabler:truck-delivery"
+        <CardStat :label="`Ventes (${periodLabel})`" :value="stats.sales_count.value" icon="tabler:shopping-cart"
+          variant="info" :loading="loading" :trend="stats.sales_count.trend" :trend-label="trendComparisonLabel" />
+
+        <CardStat :label="`Bénéfice (${periodLabel})`" :value="formatPriceCompact(stats.profit?.value || 0)"
+          icon="tabler:trending-up" variant="success" :loading="loading" :trend="stats.profit?.trend"
+          :trend-label="trendComparisonLabel" />
+
+        <!-- <CardStat label="Achats en Attente" :value="stats.pending_purchases" icon="tabler:truck-delivery"
           variant="warning" :loading="loading" />
-          
+
         <CardStat label="Stock Faible" :value="stats.low_stock_count" icon="tabler:alert-triangle" variant="warning"
           :loading="loading" />
 
         <CardStat label="Stock en Rupture" :value="stats.out_of_stock_count" icon="tabler:circle-x" variant="danger"
           :loading="loading" />
 
-        <CardStat label="Produits Périmés" :value="stats.expired_products_count" icon="tabler:calendar-cancel" variant="danger"
-          :loading="loading" />
+        <CardStat label="Produits Périmés" :value="stats.expired_products_count" icon="tabler:calendar-cancel"
+          variant="danger" :loading="loading" /> -->
       </div>
     </div>
-    
+
     <!-- Charts & Tables Section -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <!-- Main Chart: Sales Evolution -->
@@ -71,7 +72,8 @@
 
     <!-- Recent Sales Table (Full Width) -->
     <div class="grid grid-cols-1">
-      <RecentSalesList :loading="loading" :sales="recentSales" @action:view="data => navigateTo(`/vente/detail-vente/${data.id}`)" />
+      <RecentSalesList :loading="loading" :sales="recentSales"
+        @action:view="data => navigateTo(`/vente/detail-vente/${data.id}`)" />
     </div>
   </div>
 </template>
@@ -82,6 +84,7 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Icon } from '@iconify/vue';
 import Dropdown from 'primevue/dropdown';
+import AppButton from '~/components/button/AppButton.vue';
 import CardStat from '~/components/card/CardStat.vue';
 import SalesEvolutionChart from '~/components/chart/SalesEvolutionChart.vue';
 import TopProductsList from '~/components/TopProductsList.vue';
@@ -161,12 +164,12 @@ const fetchDashboardStats = async () => {
 
 const router = useRouter();
 const navigateTo = (path: string) => {
-    return router.push(path);
+  return router.push(path);
 };
 
 // Recharger quand le magasin change
 watch(currentMagasinId, () => {
-    fetchDashboardStats();
+  fetchDashboardStats();
 });
 
 onMounted(async () => {
