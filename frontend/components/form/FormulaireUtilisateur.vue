@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-4">
     <!-- Bannière -->
-    <div class="bg-header shadow-sm rounded-xl py-8 px-8">
+    <div class="bg-side2 shadow-sm rounded-xl py-8 px-8">
       <div class="container mx-auto">
         <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">
           {{ isEditMode ? "Modifier un utilisateur" : "Créer un utilisateur" }}
