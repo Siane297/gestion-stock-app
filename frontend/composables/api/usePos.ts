@@ -33,6 +33,7 @@ export interface CartItem {
   isPack: boolean;
   packLabel?: string;
   quantityInBase?: number;
+  image?: string;
   total: number;
 }
 
@@ -215,6 +216,7 @@ export const usePos = defineStore('pos', () => {
         isPack: item.isPack,
         packLabel: item.packLabel,
         quantityInBase: item.quantityInBase,
+        image: item.image,
         total: item.price
       });
     }

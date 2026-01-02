@@ -87,7 +87,7 @@
             icon="pi pi-check"
             fullWidth
             :disabled="amountReceived < localTotal"
-            :loading="processingAction === 'payment'"
+            :loading="loading"
             @click="handlePayment"
          />
       </div>
@@ -154,6 +154,7 @@ import { useCurrency } from '~/composables/useCurrency';
 const props = defineProps<{
   visible: boolean;
   total: number;
+  loading?: boolean;
   successData?: { venteId: string; change: number } | null;
 }>();
 
@@ -189,6 +190,7 @@ watch(() => props.successData, (newData) => {
 // Reset amount when modal opens
 watch(() => props.visible, (newVal) => {
   if (newVal) {
+    processingAction.value = null; // Reset loading state
     // Si on rouvre et qu'il n'y a pas de successData, on est en mode paiement
     if (!props.successData) {
         step.value = 'payment';
@@ -208,8 +210,6 @@ const currencyDecimals = computed(() => {
 
 const handlePayment = () => {
   if (amountReceived.value < localTotal.value) return;
-  
-  processingAction.value = 'payment';
   
   // On émet juste la confirmation. Le parent va traiter et envoyer successData s'il réussit
   emit('confirm', {

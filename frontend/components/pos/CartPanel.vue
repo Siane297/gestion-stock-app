@@ -63,38 +63,57 @@
         <div 
             v-for="item in store.cart" 
             :key="item.uniqueId"
-            class="bg-white border rounded-lg p-2 shadow-sm flex gap-3 relative overflow-hidden group"
+            class="bg-white border z-50 overflow-visible border-gray-100 rounded-xl p-2 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-2.5 relative group"
         >
-            <!-- Qty Control -->
-            <div class="flex flex-col items-center justify-center gap-1 bg-gray-50 rounded-md px-1 w-8">
-                <button @click="store.updateQuantity(item.uniqueId, 1)" class="hover:text-primary transition-colors"><i class="pi pi-plus text-xs"></i></button>
-                <span class="font-bold text-sm">{{ item.quantity }}</span>
-                <button @click="store.updateQuantity(item.uniqueId, -1)" class="hover:text-red-500 transition-colors"><i class="pi pi-minus text-xs"></i></button>
+            <!-- Image (Left) -->
+            <div class="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-100">
+                <img v-if="item.image" :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
+                <i v-else class="pi pi-image text-gray-400 text-lg"></i>
             </div>
 
-            <!-- Detail -->
-            <div class="flex-1 min-w-0 flex flex-col justify-center">
-                <div class="font-medium text-gray-800 truncate text-sm">
+            <!-- Detail (Middle) -->
+            <div class="flex-1 min-w-0 flex flex-col justify-center gap-0.5 pr-6">
+                <div class="font-bold text-gray-800 truncate text-sm leading-tight" :title="item.name">
                     {{ item.name }}
                 </div>
-                <div class="flex items-center gap-2 text-xs">
-                     <span v-if="item.isPack" class="text-orange-600 bg-orange-50 px-1.5 rounded text-[10px] font-bold">{{ item.packLabel }} (x{{ item.quantityInBase }})</span>
-                     <span v-else class="text-orange-600 bg-orange-50 px-1.5 rounded text-[10px] font-bold">Unité</span>
-                     <!-- <span class="text-gray-400">x {{ formatPrice(item.price) }}</span> -->
+                <!-- Badge & Unit Price -->
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-gray-500">
+                     <span v-if="item.isPack" class="text-primary bg-primary/10 px-1 py-0.5 rounded font-bold whitespace-nowrap">{{ item.packLabel }} (x{{ item.quantityInBase }})</span>
+                     <span v-else class="text-orange-600 bg-orange-50 px-1 py-0.5 rounded font-bold whitespace-nowrap">Unité</span>
+                     <span class="text-gray-400 whitespace-nowrap">{{ formatPrice(item.price) }}</span>
                 </div>
             </div>
 
-            <!-- Total Item -->
-            <div class="flex flex-col justify-center items-end min-w-[60px]">
-                <span class="font-bold text-primary">{{ formatPrice(item.total) }}</span>
+            <!-- Total & Qty (Right) -->
+            <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                <span class="font-bold text-primary text-sm whitespace-nowrap">{{ formatPrice(item.total) }}</span>
+                
+                <div class="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200/50">
+                    <button 
+                        @click="store.updateQuantity(item.uniqueId, -1)" 
+                        class="w-5 h-5 flex items-center justify-center text-gray-600 hover:text-red-500 hover:bg-white rounded-md transition-all"
+                    >
+                        <i class="pi pi-minus text-[8px] font-bold"></i>
+                    </button>
+                    
+                    <span class="w-6 text-center font-bold text-[11px] text-gray-800">{{ item.quantity }}</span>
+                    
+                    <button 
+                        @click="store.updateQuantity(item.uniqueId, 1)" 
+                        class="w-5 h-5 flex items-center justify-center text-gray-600 hover:text-primary hover:bg-white rounded-md transition-all"
+                    >
+                        <i class="pi pi-plus text-[8px] font-bold"></i>
+                    </button>
+                </div>
             </div>
 
-            <!-- Remove Button Slide -->
+            <!-- Absolute Delete Button -->
              <button 
                 @click="store.removeFromCart(item.uniqueId)"
-                class="absolute right-0 top-0 bottom-0 w-8 bg-red-50 text-red-500 flex items-center justify-center translate-x-full group-hover:translate-x-0 transition-transform shadow-l"
+                class="absolute -top-3 -right-1 w-6 h-6 bg-red-500 flex items-center  justify-center text-white rounded-md transition-all"
+                title="Retirer du panier"
              >
-                <i class="pi pi-times"></i>
+                <i class="pi pi-times text-xs"></i>
              </button>
         </div>
       </transition-group>
@@ -142,6 +161,7 @@
     <PaymentModal 
         v-model:visible="showPayment"
         :total="store.cartTotal"
+        :loading="isSubmitting"
         :successData="paymentSuccessData"
         @confirm="handlePaymentConfirm"
     />
@@ -167,6 +187,7 @@ const { formatPrice } = useCurrency();
 
 const showPayment = ref(false);
 const showHeldOrders = ref(false);
+const isSubmitting = ref(false);
 const paymentSuccessData = ref<{ venteId: string; change: number } | null>(null);
 
 const handleHold = () => {
@@ -187,6 +208,7 @@ const handleCheckoutClick = () => {
 };
 
 const handlePaymentConfirm = async (paymentData: any) => {
+    isSubmitting.value = true;
     try {
         const result = await store.submitSale(paymentData);
         if (result && result.venteId) {
@@ -196,20 +218,16 @@ const handlePaymentConfirm = async (paymentData: any) => {
                 change: paymentData.change
             };
             
-            // On ne ferme PAS la modale ici via showPayment = false
-            // La modale passera automatiquement à l'étape 'success' grâce au watcher sur successData
-            
             toast.add({ 
                 severity: 'success', 
                 summary: 'Vente terminée', 
                 detail: `Monnaie à rendre : ${formatPrice(paymentData.change)}`, 
                 life: 5000 
             });
-            // Le panier est déjà vidé par store.clearCart() dans submitSale
         }
     } catch (e: any) {
         console.error('Erreur validation vente:', e);
-        // Extraction du message d'erreur spécifique du backend
+        
         let errorMessage = 'Impossible de valider la vente';
         
         if (e.response && e.response._data && e.response._data.message) {
@@ -226,6 +244,8 @@ const handlePaymentConfirm = async (paymentData: any) => {
             detail: errorMessage, 
             life: 5000 
         });
+    } finally {
+        isSubmitting.value = false;
     }
 };
 </script>

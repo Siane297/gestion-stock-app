@@ -139,10 +139,10 @@ watch(() => route.path, () => {
 </script>
 
 <style scoped>
-.animate-swing {
+/* .animate-swing {
   animation: swing 2s ease infinite;
   transform-origin: top center;
-}
+} */
 
 @keyframes swing {
   0%, 100% { transform: rotate(0); }
