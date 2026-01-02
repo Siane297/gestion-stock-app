@@ -188,7 +188,7 @@ const { generateSessionPdf } = useSecurePdf();
 
 const produitColumns: TableColumn[] = [
     { field: 'nom', header: 'Produit', sortable: true },
-    { field: 'code_barre', header: 'Code Barre', sortable: true },
+    // { field: 'code_barre', header: 'Code Barre', sortable: true },
     { field: 'quantite', header: 'Qté', sortable: true },
     { field: 'prix_total', header: 'Total', sortable: true, type: 'price' }
 ];

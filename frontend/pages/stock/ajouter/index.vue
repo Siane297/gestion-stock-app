@@ -123,7 +123,7 @@ const stockFields = computed(() => {
         placeholder: 'Sélectionner un type de mouvement',
         required: true,
         options: [
-            { label: 'Achat', value: 'ENTREE_ACHAT' },
+            { label: 'Entrée', value: 'ENTREE_ACHAT' },
             { label: 'Retour client', value: 'ENTREE_RETOUR' },
             { label: 'Vente', value: 'SORTIE_VENTE' },
             { label: 'Périssable', value: 'SORTIE_PERISSABLE' },

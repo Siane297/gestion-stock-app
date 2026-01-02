@@ -209,7 +209,7 @@ const formatDate = (d: string) => formatDateShort(d);
 
 const formatType = (type: string) => {
     const map: Record<string, string> = {
-        'ENTREE_ACHAT': 'Achat',
+        'ENTREE_ACHAT': 'Entrée',
         'ENTREE_INITIALE': 'Stock Initial',
         'ENTREE_RETOUR': 'Retour client',
         'SORTIE_VENTE': 'Vente',

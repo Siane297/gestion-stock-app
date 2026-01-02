@@ -516,6 +516,23 @@ export class CaisseService {
     const ventesPayees = session.ventes;
     const chiffreAffaires = ventesPayees.reduce((sum, v) => sum + v.montant_total, 0);
 
+    // Calculer les totaux par méthode de paiement dynamiquement
+    const totaux = {
+      ESPECES: 0,
+      CARTE: 0,
+      MOBILE_MONEY: 0,
+      CHEQUE: 0,
+      VIREMENT: 0,
+      AUTRE: 0
+    };
+
+    for (const vente of ventesPayees) {
+      const method = vente.methode_paiement as keyof typeof totaux;
+      if (totaux[method] !== undefined) {
+        totaux[method] += Number(vente.montant_total);
+      }
+    }
+
     // Groupement des produits vendus
     const produitsMap = new Map<string, any>();
 
@@ -554,11 +571,11 @@ export class CaisseService {
       },
       fond_initial: session.fond_initial,
       fond_final: session.fond_final,
-      total_especes: session.total_especes,
-      total_carte: session.total_carte,
-      total_mobile: session.total_mobile,
-      total_cheque: session.total_cheque,
-      total_autre: session.total_autre,
+      total_especes: totaux.ESPECES,
+      total_carte: totaux.CARTE,
+      total_mobile: totaux.MOBILE_MONEY,
+      total_cheque: totaux.CHEQUE,
+      total_autre: totaux.VIREMENT + totaux.AUTRE,
       ecart: session.ecart,
       nombre_ventes: ventesPayees.length,
       chiffre_affaires: chiffreAffaires,

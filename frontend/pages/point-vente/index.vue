@@ -6,7 +6,7 @@
             class="absolute inset-0  z-[30] bg-white flex flex-col items-center justify-center p-4">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-                    <Icon icon="tabler:lock" class="text-3xl text-white" />
+                    <Iconify icon="tabler:lock" class="text-3xl text-white" />
                 </div>
                 <h2 class="text-2xl font-bold text-noir mb-2">Interface Verrouillée</h2>
                 <p class="text-noir/60">Saisissez votre PIN pour continuer</p>
@@ -101,7 +101,7 @@
             <AppButton @click="activeMobileTab = 'cart'" class="flex-1 !overflow-visible"
                 :variant="activeMobileTab === 'cart' ? 'primary' : 'secondary'">
                 <div class="flex items-center justify-center gap-2 relative w-full">
-                    <Icon icon="tabler:shopping-cart" class="text-xl" />
+                    <Iconify icon="tabler:shopping-cart" class="text-xl" />
                     <span>Panier</span>
                     <div v-if="store.cart.length > 0"
                         class="absolute -top-4 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-20">
@@ -111,11 +111,12 @@
             </AppButton>
         </div>
 
-        <!-- Dialogue de Clôture -->
-        <FormPopupDynamique v-model:visible="showClosureDialog" title="Clôture de Session"
-            description="Veuillez compter votre caisse et enregistrer le montant final avant de quitter."
-            headerTitle="Fermer la Session" submitLabel="Clôturer et Quitter" cancelLabel="Annuler"
-            :fields="closureFields" :loading="closureLoading" @submit="handleClosureSubmit" />
+        <!-- Dialogue de Clôture (Nouveau Composant) -->
+        <ClosureDialog 
+            v-model:visible="showClosureDialog"
+            :session="caisseStore.activeSession"
+            @success="onClosureSuccess"
+        />
             
         <!-- Scanner -->
         <BarcodeScanner 
@@ -128,7 +129,7 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue';
-import { Icon } from '@iconify/vue';
+import { Icon as Iconify } from '@iconify/vue';
 import AppButton from '~/components/button/AppButton.vue';
 import { usePos } from '~/composables/api/usePos';
 import { useCaisseApi } from '~/composables/api/useCaisseApi';
@@ -137,10 +138,9 @@ import ProductCard from '~/components/pos/ProductCard.vue';
 import CartPanel from '~/components/pos/CartPanel.vue';
 import PinPad from '~/components/pos/PinPad.vue';
 import ProgressSpinner from 'primevue/progressspinner';
-import FormPopupDynamique from '~/components/form/FormPopupDynamique.vue';
 import BarcodeScanner from '~/components/form/BarcodeScanner.vue';
 import PosUserBanner from '~/components/caisse/PosUserBanner.vue';
-import type { FormField } from '~/components/form/FormulaireDynamique.vue';
+import ClosureDialog from '~/components/pos/ClosureDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import { useSecureAuth } from '~/composables/useSecureAuth';
@@ -156,12 +156,16 @@ definePageMeta({
 
 const store = usePos();
 const caisseStore = useCaisseStore();
-const { fermerSession, ouvrirSessionParPin } = useCaisseApi(); // Ajout de ouvrirSessionParPin
+const { ouvrirSessionParPin } = useCaisseApi(); 
 const router = useRouter();
 const toast = useToast();
 const { startLoading, stopLoading } = useGlobalLoading();
 const { user } = useSecureAuth();
 const { playSuccessBeep, playErrorBeep } = useSound();
+
+// État de clôture de session
+const showClosureDialog = ref(false);
+const activeMobileTab = ref<'catalog' | 'cart'>('catalog');
 
 // Vérifier si l'utilisateur est Admin (peut bypasser le PIN)
 const isAdminUser = computed(() => {
@@ -173,30 +177,6 @@ const isAdminUser = computed(() => {
 const handleAdminUnlock = () => {
     caisseStore.unlock();
 };
-
-// État de clôture de session
-const showClosureDialog = ref(false);
-const closureLoading = ref(false);
-const activeMobileTab = ref<'catalog' | 'cart'>('catalog');
-
-const closureFields: FormField[] = [
-    {
-        name: 'fond_final',
-        label: 'Montant final compté',
-        type: 'currency',
-        required: true,
-        placeholder: 'Entrez le montant en caisse...',
-        min: 0,
-        helpText: 'Comptez l\'argent physiquement présent dans le tiroir-caisse.'
-    },
-    {
-        name: 'notes_fermeture',
-        label: 'Notes de fermeture',
-        type: 'textarea',
-        placeholder: 'Observations éventuelles (écarts, incidents...)',
-        required: false
-    }
-];
 
 // État du verrouillage (PIN overlay)
 const pinError = ref<string | null>(null);
@@ -245,44 +225,19 @@ const handleLogout = () => {
     showClosureDialog.value = true;
 };
 
-const handleClosureSubmit = async (data: any) => {
-    if (!caisseStore.activeSession?.caisse_id) {
-        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Aucune session active identifiée', life: 3000 });
-        return;
-    }
+const onClosureSuccess = (rapport: any) => {
+    toast.add({
+        severity: 'success',
+        summary: 'Session clôturée',
+        detail: 'La session a été fermée avec succès. Redirection...',
+        life: 2000
+    });
 
-    closureLoading.value = true;
-    try {
-        await fermerSession(caisseStore.activeSession.caisse_id, {
-            fond_final: data.fond_final,
-            notes: data.notes_fermeture
-        });
-
-        toast.add({
-            severity: 'success',
-            summary: 'Session clôturée',
-            detail: 'La session a été fermée avec succès. Redirection...',
-            life: 2000
-        });
-
-        // Nettoyer et rediriger
-        setTimeout(() => {
-            caisseStore.reset();
-            router.push('/point-vente/session');
-        }, 1500);
-
-    } catch (err: any) {
-        console.error('Erreur clôture:', err);
-        toast.add({
-            severity: 'error',
-            summary: 'Erreur clôture',
-            detail: err.message || 'Impossible de fermer la session',
-            life: 5000
-        });
-    } finally {
-        closureLoading.value = false;
-        showClosureDialog.value = false;
-    }
+    // Nettoyer et rediriger
+    setTimeout(() => {
+        caisseStore.reset();
+        router.push('/point-vente/session');
+    }, 1500);
 };
 
 onMounted(async () => {
