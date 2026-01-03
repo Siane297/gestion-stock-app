@@ -11,7 +11,6 @@
 
       <!-- Page Content (scrollable) -->
       <main class="flex-1 overflow-y-auto mt-[90px] p-4 lg:px-8 lg:py-6 relative">
-        <GlobalLoader :loading="isLoading" />
         <AppBreadcrumb v-if="showBreadcrumb" />
         <slot />
       </main>
@@ -24,23 +23,6 @@
 import AppSidebar from '~/components/sidebar/AppSidebar.vue';
 import AppHeader from '~/components/header/AppHeader.vue';
 import AppBreadcrumb from '~/components/common/AppBreadcrumb.vue'; // Import Breadcrumb
-import GlobalLoader from '~/components/common/GlobalLoader.vue';
-import { useGlobalLoading } from '~/composables/useGlobalLoading';
-
-const { isLoading, startLoading, stopLoading } = useGlobalLoading();
-const nuxtApp = useNuxtApp();
-
-// Gestion du chargement page
-nuxtApp.hook('page:start', () => {
-  startLoading();
-});
-
-nuxtApp.hook('page:finish', () => {
-  // Petit délai pour éviter le flash trop rapide et assurer une transition fluide
-  setTimeout(() => {
-    stopLoading();
-  }, 500);
-});
 
 // Gérer l'état du sidebar pour mobile
 const isSidebarOpen = ref(false);
