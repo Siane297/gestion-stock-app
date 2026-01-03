@@ -35,7 +35,7 @@
                     <!-- Label -->
                     <div class="flex items-center gap-1">
                         <p class="text-[11px] uppercase text-gray-500 font-semibold leading-none">{{ label }}</p>
-                        <span v-if="trendLabel" class="text-[9px] text-gray-400 font-medium italic">({{ trendLabel }})</span>
+                        <span v-if="trendLabel" class="text-[10px] text-orange-500 font-medium ">({{ trendLabel }})</span>
                     </div>
                 </div>
             </div>

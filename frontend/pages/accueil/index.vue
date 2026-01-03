@@ -1,79 +1,102 @@
 <template>
   <div class="space-y-6">
-    <!-- Header & Filtres -->
-    <div class="flex flex-col relative overflow-hidden bg-side p-5 rounded-lg justify-between gap-4">
-      <!-- Background Abstract -->
-      <div class="absolute inset-0 z-0">
-        <img src="~/assets/images/dashboard-header-bg.png" alt="Background"
-          class="w-full h-full object-cover opacity-40" />
-        <div class="absolute inset-0 bg-gradient-to-r from-side/50 to-side/40"></div>
+    <!-- Mobile Home Component (Only on Mobile & if Stats hidden) -->
+    <MobileHome 
+      v-if="isMobile && !showStats" 
+      :top-products="topProducts"
+      :loading="loading"
+      @open-stats="showStats = true" 
+    />
+
+    <!-- Standard Dashboard (Desktop OR Mobile with Stats visible) -->
+    <div v-else class="space-y-6">
+      
+      <!-- Back Button for Mobile Stats View -->
+      <div v-if="isMobile && showStats" class="flex items-center gap-2">
+        <AppButton 
+          icon="pi pi-arrow-left" 
+          variant="secondary" 
+          size="sm"
+          @click="showStats = false" 
+        />
+        <h2 class="text-lg font-bold text-gray-800">Statistiques</h2>
       </div>
 
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between relative z-10 gap-4">
-        <div class="space-y-1">
-          <h1 class="text-xl md:text-2xl font-bold text-white">Tableau de bord</h1>
-          <p class="text-white/70 text-xs md:text-sm">Vue d'ensemble de votre activité</p>
+      <!-- Header & Filtres -->
+      <div class="flex flex-col relative overflow-hidden bg-side p-5 rounded-lg justify-between gap-4">
+        <!-- Background Abstract -->
+        <div class="absolute inset-0 z-0">
+          <img src="~/assets/images/dashboard-header-bg.png" alt="Background"
+            class="w-full h-full object-cover opacity-40" />
+          <div class="absolute inset-0 bg-gradient-to-r from-side/50 to-side/40"></div>
         </div>
 
-        <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-          <!-- Période Selector -->
-          <Dropdown v-model="selectedPeriod" :options="periodOptions" optionLabel="label" optionValue="value"
-            class="col-span-1 flex-1 sm:w-48  order-1" @change="fetchDashboardStats" />
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between relative z-10 gap-4">
+          <div class="space-y-1">
+            <h1 class="text-xl md:text-2xl font-bold text-white">Statistiques du Jour</h1>
+            <p class="text-white/70 text-xs md:text-sm">Vue d'ensemble de votre activité</p>
+          </div>
 
-          <!-- Bouton Nouvelle Vente -->
-          <AppButton label="Nouvelle vente" icon="pi pi-shopping-cart" variant="primary"
-            class="col-span-2 sm:col-auto w-full sm:w-auto order-3 sm:order-2" 
-            @click="navigateTo('/point-vente')" />
+          <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+            <!-- Période Selector -->
+            <Dropdown v-model="selectedPeriod" :options="periodOptions" optionLabel="label" optionValue="value"
+              class="col-span-1 flex-1 sm:w-48  order-1" @change="fetchDashboardStats" />
 
-          <!-- Refresh Button -->
-          <AppButton @click="fetchDashboardStats" variant="secondary"
-            class="col-span-1 order-2 sm:order-3"
-            label="" icon="pi pi-refresh"/>
-          
+            <!-- Bouton Nouvelle Vente -->
+            <AppButton label="Nouvelle vente" icon="pi pi-shopping-cart" variant="primary"
+              class="col-span-2 sm:col-auto w-full sm:w-auto order-3 sm:order-2" 
+              @click="navigateTo('/point-vente')" />
+
+            <!-- Refresh Button -->
+            <AppButton @click="fetchDashboardStats" variant="secondary"
+              class="col-span-1 order-2 sm:order-3"
+              label="" icon="pi pi-refresh"/>
+            
+          </div>
+        </div>
+
+        <!-- KPI Cards Grid -->
+        <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardStat label="Total Produits" :value="stats.total_products_count" icon="tabler:package" variant="primary"
+            :loading="loading" />
+          <CardStat :label="`Chiffre d'affaire (${periodLabel})`" :value="formatPriceCompact(stats.revenue.value)" icon="tabler:coin"
+            variant="primary" :loading="loading" :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
+
+          <CardStat :label="`Ventes (${periodLabel})`" :value="stats.sales_count.value" icon="tabler:shopping-cart"
+            variant="info" :loading="loading" :trend="stats.sales_count.trend" :trend-label="trendComparisonLabel" />
+
+          <CardStat :label="`Bénéfice (${periodLabel})`" :value="formatPriceCompact(stats.profit?.value || 0)"
+            icon="tabler:trending-up" variant="success" :loading="loading" :trend="stats.profit?.trend"
+            :trend-label="trendComparisonLabel" />
+
+          <!-- <CardStat label="Achats en Attente" :value="stats.pending_purchases" icon="tabler:truck-delivery"
+            variant="warning" :loading="loading" /> -->
         </div>
       </div>
 
-      <!-- KPI Cards Grid -->
-      <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <CardStat label="Total Produits" :value="stats.total_products_count" icon="tabler:package" variant="primary"
-          :loading="loading" />
-        <CardStat :label="`Chiffre d'affaire (${periodLabel})`" :value="formatPriceCompact(stats.revenue.value)" icon="tabler:coin"
-          variant="primary" :loading="loading" :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
+      <!-- Charts & Tables Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Main Chart: Sales Evolution -->
+        <SalesEvolutionChart :loading="loading" :sales-data="salesData" :period="selectedPeriod" class="lg:col-span-4" />
 
-        <CardStat :label="`Ventes (${periodLabel})`" :value="stats.sales_count.value" icon="tabler:shopping-cart"
-          variant="info" :loading="loading" :trend="stats.sales_count.trend" :trend-label="trendComparisonLabel" />
+        <!-- Top Products -->
+        <TopProductsList :loading="loading" :products="topProducts" class="lg:col-span-2" />
 
-        <CardStat :label="`Bénéfice (${periodLabel})`" :value="formatPriceCompact(stats.profit?.value || 0)"
-          icon="tabler:trending-up" variant="success" :loading="loading" :trend="stats.profit?.trend"
-          :trend-label="trendComparisonLabel" />
-
-        <!-- <CardStat label="Achats en Attente" :value="stats.pending_purchases" icon="tabler:truck-delivery"
-          variant="warning" :loading="loading" /> -->
+        <!-- Top Categories Chart -->
+        <TopCategoriesChart :loading="loading" :categories="topCategories" class="lg:col-span-2" />
       </div>
-    </div>
 
-    <!-- Charts & Tables Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      <!-- Main Chart: Sales Evolution -->
-      <SalesEvolutionChart :loading="loading" :sales-data="salesData" :period="selectedPeriod" class="lg:col-span-4" />
-
-      <!-- Top Products -->
-      <TopProductsList :loading="loading" :products="topProducts" class="lg:col-span-2" />
-
-      <!-- Top Categories Chart -->
-      <TopCategoriesChart :loading="loading" :categories="topCategories" class="lg:col-span-2" />
-    </div>
-
-    <!-- Recent Sales Table (Full Width) -->
-    <div class="grid grid-cols-1">
-      <RecentSalesList :loading="loading" :sales="recentSales"
-        @action:view="data => navigateTo(`/vente/detail-vente/${data.id}`)" />
+      <!-- Recent Sales Table (Full Width) -->
+      <div class="grid grid-cols-1">
+        <RecentSalesList :loading="loading" :sales="recentSales"
+          @action:view="data => navigateTo(`/vente/detail-vente/${data.id}`)" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Icon } from '@iconify/vue';
@@ -84,6 +107,7 @@ import SalesEvolutionChart from '~/components/chart/SalesEvolutionChart.vue';
 import TopProductsList from '~/components/TopProductsList.vue';
 import RecentSalesList from '~/components/dashboard/RecentSalesList.vue';
 import TopCategoriesChart from '~/components/chart/TopCategoriesChart.vue';
+import MobileHome from '~/components/mobile/MobileHome.vue';
 import { useMagasinStore } from '~/stores/magasin';
 import { useDashboardApi } from '~/composables/api/useDashboardApi';
 import { useVenteApi, type Vente } from '~/composables/api/useVenteApi';
@@ -128,6 +152,16 @@ const recentSales = ref<any[]>([]);
 const salesData = ref<{ date: string, amount: number, count: number, profit: number }[]>([]);
 const loading = ref(true);
 
+// Mobile logic
+const isMobile = ref(false);
+const showStats = ref(false);
+
+const checkMobile = () => {
+  if (typeof window !== 'undefined') {
+    isMobile.value = window.innerWidth < 1024; // Tailwind lg breakpoint
+  }
+};
+
 const store = useMagasinStore();
 const { currentMagasinId } = storeToRefs(store);
 const { getDashboardStats } = useDashboardApi();
@@ -167,8 +201,17 @@ watch(currentMagasinId, () => {
 });
 
 onMounted(async () => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+  
   await store.initialize();
   await fetchDashboardStats();
+});
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', checkMobile);
+  }
 });
 </script>
 
