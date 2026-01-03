@@ -67,7 +67,7 @@
                     <div class="flex items-center gap-2">
                         <span class="font-bold text-primary bg-primary/10 px-1.5 rounded text-xs">{{ item.quantity }}x</span>
                         <span class="text-gray-700 text-sm truncate max-w-[200px]">
-                            {{ item.name }} <span class="text-primary font-normal">({{ item.isPack ? item.packLabel : 'Unité' }})</span>
+                            {{ item.name }} <span class="text-primary font-normal">({{ item.isPack ? item.packLabel : (item.packLabel || 'Unité') }})</span>
                         </span>
                     </div>
                     <span class="font-medium text-xs">{{ formatPrice(item.total) }}</span>

@@ -79,7 +79,7 @@
                 <!-- Badge & Unit Price -->
                 <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-gray-500">
                      <span v-if="item.isPack" class="text-primary bg-primary/10 px-1 py-0.5 rounded font-bold whitespace-nowrap">{{ item.packLabel }} (x{{ item.quantityInBase }})</span>
-                     <span v-else class="text-orange-600 bg-orange-50 px-1 py-0.5 rounded font-bold whitespace-nowrap">Unité</span>
+                     <span v-else class="text-orange-600 bg-orange-50 px-1 py-0.5 rounded font-bold whitespace-nowrap">{{ item.packLabel || 'Unité' }}</span>
                      <span class="text-gray-400 whitespace-nowrap">{{ formatPrice(item.price) }}</span>
                 </div>
             </div>
