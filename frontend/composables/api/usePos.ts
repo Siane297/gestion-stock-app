@@ -39,6 +39,7 @@ export interface CartItem {
 
 export interface HeldOrder {
   id: string;
+  reference?: string; // Nom/Note temporaire pour identifier la commande
   cart: CartItem[];
   clientId?: string | null;
   total: number;
@@ -247,11 +248,12 @@ export const usePos = defineStore('pos', () => {
   };
 
   // --- Actions "En attente" ---
-  const holdCurrentCart = () => {
+  const holdCurrentCart = (reference?: string) => {
       if (cart.value.length === 0) return;
       
       const newOrder: HeldOrder = {
           id: Math.random().toString(36).substring(2, 9), // Simple ID
+          reference: reference, // Peut être undefined
           cart: [...cart.value],
           clientId: selectedClientId.value,
           total: cartTotal.value,

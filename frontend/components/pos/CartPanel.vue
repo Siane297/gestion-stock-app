@@ -169,6 +169,23 @@
     <HeldOrdersModal 
         v-model:visible="showHeldOrders"
     />
+
+    <!-- Dialog Reference Commande en attente -->
+    <Dialog v-model:visible="showHoldDialog" header="Mettre en attente" modal :style="{ width: '400px' }" class="p-fluid">
+        <div class="flex flex-col gap-4 pt-2">
+            <span class="text-gray-600">Ajouter une référence pour retrouver cette commande facilement (optionnel).</span>
+            <div class="flex flex-col gap-2">
+                <label for="ref" class="font-bold text-sm">Nom / Référence</label>
+                <InputText id="ref" v-model="holdReference" placeholder="Ex: Entrer une référence..." autofocus @keyup.enter="confirmHold" />
+            </div>
+        </div>
+        <template #footer>
+            <div class="flex justify-end gap-2 pt-2">
+                <AppButton label="Annuler" variant="secondary" @click="showHoldDialog = false" />
+                <AppButton label="Confirmer" variant="primary" icon="pi pi-check" @click="confirmHold" />
+            </div>
+        </template>
+    </Dialog>
   </div>
 </template>
 
@@ -180,6 +197,8 @@ import { useCurrency } from '~/composables/useCurrency';
 import AppButton from '~/components/button/AppButton.vue';
 import PaymentModal from './PaymentModal.vue';
 import HeldOrdersModal from './HeldOrdersModal.vue';
+import Dialog from 'primevue/dialog';
+import InputText from 'primevue/inputtext';
 
 const store = usePos();
 const toast = useToast();
@@ -187,17 +206,24 @@ const { formatPrice } = useCurrency();
 
 const showPayment = ref(false);
 const showHeldOrders = ref(false);
+const showHoldDialog = ref(false);
+const holdReference = ref('');
 const isSubmitting = ref(false);
 const paymentSuccessData = ref<{ venteId: string; change: number } | null>(null);
 
 const handleHold = () => {
     if (store.cart.length === 0) return;
-    
-    store.holdCurrentCart();
+    holdReference.value = '';
+    showHoldDialog.value = true;
+};
+
+const confirmHold = () => {
+    store.holdCurrentCart(holdReference.value);
+    showHoldDialog.value = false;
     toast.add({ 
         severity: 'info', 
         summary: 'Mis en attente', 
-        detail: 'La commande a été mise de côté pour plus tard', 
+        detail: 'La commande a été mise de côté avec succès', 
         life: 3000 
     });
 };

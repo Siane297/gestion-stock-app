@@ -6,7 +6,13 @@
     />
 
     <div class="mt-6">
-
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+             <CardStat label="Produits" :value="stats.total_products_count" icon="tabler:package" variant="primary" :loading="loadingStats" />
+             <CardStat label="Faible" :value="stats.low_stock_count" icon="tabler:alert-triangle" variant="warning" :loading="loadingStats" />
+             <CardStat label="Rupture" :value="stats.out_of_stock_count" icon="tabler:circle-x" variant="danger" :loading="loadingStats" />
+             <CardStat label="Périmés" :value="stats.expired_products_count" icon="tabler:calendar-cancel" variant="danger" :loading="loadingStats" />
+        </div>
 
         <TableGeneric
             :columns="columns"
@@ -135,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import TableGeneric, { type TableColumn } from '~/components/table/TableGeneric.vue';
 import MobileCard from '~/components/mobile/MobileCard.vue';
@@ -144,21 +150,37 @@ import { useStockApi, type StockMagasin } from '~/composables/api/useStockApi';
 import { usePermissions } from '~/composables/usePermissions';
 import { useGlobalLoading } from '~/composables/useGlobalLoading';
 import Tag from 'primevue/tag';
-import Toast from 'primevue/toast'; // Duplicate import, removing one
-import Badge from 'primevue/badge'; // Ensure Badge is imported if used
+import Toast from 'primevue/toast'; 
+import Badge from 'primevue/badge'; 
 import Select from 'primevue/select';
 import { Icon } from '@iconify/vue';
 import AppButton from '~/components/button/AppButton.vue';
+import CardStat from '~/components/card/CardStat.vue';
+import { useDashboardApi } from '~/composables/api/useDashboardApi';
+import { useMagasinStore } from '~/stores/magasin';
+import { storeToRefs } from 'pinia';
 
 const { getStocks } = useStockApi();
+const { getDashboardStats } = useDashboardApi();
 const { hasPermission } = usePermissions();
 const toast = useToast();
 const router = useRouter();
 const { startLoading, stopLoading } = useGlobalLoading();
+const magasinStore = useMagasinStore();
+const { currentMagasinId } = storeToRefs(magasinStore);
 
 const stocks = ref<StockMagasin[]>([]);
 const loading = ref(false);
 const selectedStatus = ref('all');
+
+// Stats definition
+const stats = ref({
+  low_stock_count: 0,
+  out_of_stock_count: 0,
+  expired_products_count: 0,
+  total_products_count: 0
+});
+const loadingStats = ref(true);
 
 const columns: TableColumn[] = [
     { field: 'magasin.nom', header: 'Boutique', sortable: true },
@@ -204,6 +226,24 @@ const loadStocks = async () => {
     }
 };
 
+const fetchStats = async () => {
+    loadingStats.value = true;
+    try {
+        // We use getDashboardStats to reuse the backend logic for counts
+        const data = await getDashboardStats(currentMagasinId.value || undefined, 'DAY');
+        if (data && data.stats) {
+            stats.value.low_stock_count = data.stats.low_stock_count;
+            stats.value.out_of_stock_count = data.stats.out_of_stock_count;
+            stats.value.expired_products_count = data.stats.expired_products_count;
+            stats.value.total_products_count = data.stats.total_products_count;
+        }
+    } catch (e) {
+        console.error("Erreur chargement stats stock", e);
+    } finally {
+        loadingStats.value = false;
+    }
+};
+
 const handleView = (s: StockMagasin) => {
     router.push(`/stock/detail-stock/${s.produit_id}`);
 };
@@ -217,15 +257,20 @@ const handleDelete = (s: StockMagasin) => {
      toast.add({ severity: 'warn', summary: 'Attention', detail: `Impossible de supprimer une ligne de stock. Faites un ajustement à 0 si nécessaire.`, life: 5000 });
 };
 
-
-
 const getStockColorClass = (qty: number, min: number) => {
     if (qty <= min) return 'text-red-600';
     if (qty <= min * 1.5) return 'text-orange-500';
     return 'text-primary';
 };
 
+// Watch for store changes
+watch(currentMagasinId, () => {
+    loadStocks();
+    fetchStats();
+});
+
 onMounted(() => {
     loadStocks();
+    fetchStats();
 });
 </script>

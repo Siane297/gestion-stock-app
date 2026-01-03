@@ -48,16 +48,7 @@
           :trend-label="trendComparisonLabel" />
 
         <!-- <CardStat label="Achats en Attente" :value="stats.pending_purchases" icon="tabler:truck-delivery"
-          variant="warning" :loading="loading" />
-
-        <CardStat label="Stock Faible" :value="stats.low_stock_count" icon="tabler:alert-triangle" variant="warning"
-          :loading="loading" />
-
-        <CardStat label="Stock en Rupture" :value="stats.out_of_stock_count" icon="tabler:circle-x" variant="danger"
-          :loading="loading" />
-
-        <CardStat label="Produits Périmés" :value="stats.expired_products_count" icon="tabler:calendar-cancel"
-          variant="danger" :loading="loading" /> -->
+          variant="warning" :loading="loading" /> -->
       </div>
     </div>
 
