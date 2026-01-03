@@ -54,6 +54,13 @@
             :class="['absolute -top-10 -right-10 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-500', action.blobClass]">
           </div>
 
+          <!-- Decorative Curved Line -->
+           <div class="absolute bottom-0 left-10 -rotate-[42deg] w-full h-16 opacity-20 pointer-events-none overflow-hidden rounded-b-4xl">
+              <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="w-full h-full">
+                  <path d="M-10,40 Q50,0 110,40" fill="none" class="stroke-current" :class="action.textClass" stroke-width="20" />
+              </svg>
+           </div>
+
           <!-- Icon Container -->
           <div :class="[
             'w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-3d-icon',
