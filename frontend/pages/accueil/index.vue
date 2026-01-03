@@ -37,7 +37,7 @@
       <div class="grid grid-cols-1 z-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <CardStat label="Total Produits" :value="stats.total_products_count" icon="tabler:package" variant="primary"
           :loading="loading" />
-        <CardStat :label="`CA (${periodLabel})`" :value="formatPriceCompact(stats.revenue.value)" icon="tabler:coin"
+        <CardStat :label="`Chiffre d'affaire (${periodLabel})`" :value="formatPriceCompact(stats.revenue.value)" icon="tabler:coin"
           variant="primary" :loading="loading" :trend="stats.revenue.trend" :trend-label="trendComparisonLabel" />
 
         <CardStat :label="`Ventes (${periodLabel})`" :value="stats.sales_count.value" icon="tabler:shopping-cart"
