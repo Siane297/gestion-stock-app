@@ -305,27 +305,31 @@ export abstract class BasePdfService {
       const browser = await this.getBrowser();
       const page = await browser.newPage();
 
-      // Bloquer toutes les requêtes externes pour la performance
+      // Bloquer toutes les requêtes externes SAUF les images HTTPS (pour Cloudinary et autres)
       await page.setRequestInterception(true);
       page.on('request', (request) => {
         const url = request.url();
-        if (url.startsWith('data:') || url.startsWith('about:blank')) {
+        if (
+          url.startsWith('data:') || 
+          url.startsWith('about:blank') || 
+          url.startsWith('https://') // Autoriser les ressources sécurisées
+        ) {
           request.continue();
         } else {
           request.abort();
         }
       });
 
-      // Charger le HTML dans la page (optimisé)
+      // Charger le HTML dans la page (optimisé pour attendre les ressources)
       console.log('📄 [PDF] Chargement HTML dans la page...');
       await page.setContent(html, {
-        waitUntil: 'domcontentloaded',
-        timeout: 20000 // Réduit pour la vitesse
+        waitUntil: 'load', // Attendre le chargement complet (y compris images)
+        timeout: 30000 
       });
 
-      // Attente minimale pour les styles
-      console.log('🎨 [PDF] Attente chargement des styles...');
-      await new Promise(resolve => setTimeout(resolve, 150)); // Réduit à 150ms
+      // Attente pour s'assurer du rendu complet des ressources externes
+      console.log('🎨 [PDF] Attente rendu final...');
+      await new Promise(resolve => setTimeout(resolve, 800)); 
 
       // Si une largeur personnalisée est définie (ex: ticket de caisse), on calcule la hauteur dynamique
       let dynamicHeight = config.height;
@@ -433,6 +437,28 @@ export abstract class BasePdfService {
       }
       return options.inverse(this);
     });
+  }
+
+  /**
+   * Télécharge une image externe et la convertit en Base64
+   */
+  public static async getExternalImageAsBase64(url: string): Promise<string> {
+    if (!url || !url.startsWith('http')) return url;
+    
+    try {
+      console.log(`🌐 [PDF] Téléchargement image externe pour Base64: ${url}`);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const contentType = response.headers.get('content-type') || 'image/png';
+      
+      return `data:${contentType};base64,${buffer.toString('base64')}`;
+    } catch (error) {
+      console.error(`❌ [PDF] Erreur conversion Base64 pour ${url}:`, error);
+      return url; // Retourne l'URL originale en fallback
+    }
   }
 
   /**

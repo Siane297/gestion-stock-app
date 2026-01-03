@@ -75,6 +75,34 @@ const pdfHeaderStorage = multer.diskStorage({
   }
 });
 
+// Configuration de multer pour l'upload groupé (logo + pdfHeader)
+const companyStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const companyName = (req as any).companyName || 'default';
+    const uploadPath = path.join(__dirname, '../../uploads/images', companyName);
+    
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const prefix = file.fieldname === 'pdfHeader' ? 'pdf-header' : 'logo';
+    const filename = `${prefix}-${Date.now()}${ext}`;
+    cb(null, filename);
+  }
+});
+
+export const uploadCompanyFiles = multer({
+  storage: companyStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  }
+});
+
 export const uploadPdfHeader = multer({
   storage: pdfHeaderStorage,
   fileFilter: fileFilter,

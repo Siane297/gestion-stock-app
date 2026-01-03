@@ -6,7 +6,7 @@ import { TypeNotification } from '../types/notificationTypes.js';
 import { socketService } from './socketService.js';
 
 // Enums (alignés avec Prisma)
-export type StatutVente = 'BROUILLON' | 'EN_ATTENTE' | 'PAYEE' | 'ANNULEE' | 'REMBOURSEE';
+export type StatutVente = 'BROUILLON' | 'EN_ATTENTE' | 'PAYEE' | 'ANNULEE' | 'REMBOURSEE' | 'PARTIELLEMENT_REMBOURSEE';
 export type MethodePaiement = 'ESPECES' | 'MOBILE_MONEY' | 'CARTE' | 'CHEQUE' | 'VIREMENT' | 'AUTRE';
 
 // DTOs
@@ -35,6 +35,7 @@ export interface CreateVenteDto {
 export interface UpdateVenteStatutDto {
   statut: StatutVente;
   utilisateur_id?: string; // Celui qui fait l'action
+  returnedItems?: { venteDetailId: string, quantity: number }[];
 }
 
 export interface VenteFilters {
@@ -445,10 +446,86 @@ export class VenteService {
         }
       }
 
+      // 1b. Si REMBOURSEE, on gère le retour de stock partiel ou total
+      let finalStatut = data.statut;
+      
+      if (data.statut === 'REMBOURSEE' && data.returnedItems && data.returnedItems.length > 0) {
+        const stockServiceTx = new StockService(tx as any, this.tenantId);
+        
+        // Calculer le total vendu et le total à rembourser
+        const totalVendu = existing.details.reduce((acc, d) => acc + d.quantite, 0);
+        let totalRembourse = 0;
+        
+        for (const item of data.returnedItems) {
+           const detail = existing.details.find(d => d.id === item.venteDetailId);
+           if (detail) {
+             const quantiteRetour = Math.min(item.quantity, detail.quantite); // Sécurité
+             if (quantiteRetour > 0) {
+                const quantiteBase = detail.conditionnement?.quantite_base || 1;
+                const quantiteStock = quantiteRetour * quantiteBase;
+
+                await stockServiceTx.incrementStock(
+                  existing.magasin_id,
+                  detail.produit_id,
+                  quantiteStock,
+                  {
+                    utilisateur_id: data.utilisateur_id || existing.utilisateur_id,
+                    vente_id: existing.id,
+                    raison: `Remboursement vente ${existing.numero_vente}`
+                  },
+                  tx
+                );
+
+                // Mise à jour de quantite_remboursee sur le detail
+                await tx.vente_detail.update({
+                  where: { id: detail.id },
+                  data: { quantite_remboursee: quantiteRetour }
+                });
+
+                totalRembourse += quantiteRetour;
+             }
+           }
+        }
+
+        // Déterminer le statut final
+        if (totalRembourse >= totalVendu) {
+          finalStatut = 'REMBOURSEE';
+        } else if (totalRembourse > 0) {
+          finalStatut = 'PARTIELLEMENT_REMBOURSEE';
+        }
+
+      } else if (data.statut === 'REMBOURSEE' && (!data.returnedItems || data.returnedItems.length === 0)) {
+         // Si pas de détail spécifique, on rembourse tout (comportement par défaut identique à ANNULEE)
+          const stockServiceTx = new StockService(tx as any, this.tenantId);
+          for (const detail of existing.details) {
+            const quantiteBase = detail.conditionnement?.quantite_base || 1;
+            const quantiteARendre = detail.quantite * quantiteBase;
+
+            await stockServiceTx.incrementStock(
+              existing.magasin_id,
+              detail.produit_id,
+              quantiteARendre,
+              {
+                utilisateur_id: data.utilisateur_id || existing.utilisateur_id,
+                vente_id: existing.id,
+                raison: `Remboursement total vente ${existing.numero_vente}`
+              },
+              tx
+            );
+
+            // Marquer tout comme remboursé
+            await tx.vente_detail.update({
+              where: { id: detail.id },
+              data: { quantite_remboursee: detail.quantite }
+            });
+          }
+          finalStatut = 'REMBOURSEE';
+      }
+
       // 2. Mise à jour du statut
       const updatedVente = await tx.vente.update({
         where: { id },
-        data: { statut: data.statut },
+        data: { statut: finalStatut },
         include: {
           client: { select: { nom: true } },
           utilisateur: { 
@@ -466,7 +543,7 @@ export class VenteService {
         }
       });
 
-      logger.info(`Statut vente ${id} mis à jour: ${existing.statut} -> ${data.statut}`);
+      logger.info(`Statut vente ${id} mis à jour: ${existing.statut} -> ${finalStatut}`);
       return updatedVente;
     });
   }

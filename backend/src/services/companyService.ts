@@ -77,10 +77,17 @@ export class CompanyService {
     return company;
   }
 
-  async update(id: string, data: any) {
+  async update(id: string, data: any, files?: { logo?: Express.Multer.File; pdfHeader?: Express.Multer.File }) {
     const { name, emailOrganisation, address, country, telephoneOrganisation } = data;
 
-    return await this.prisma.company.update({
+    // 1. Obtenir les infos actuelles pour le nom (utilisé dans l'ID public Cloudinary) et les anciens fichiers
+    const current = await this.prisma.company.findUnique({
+      where: { id },
+      select: { name: true, logo: true, pdfHeader: true }
+    });
+
+    // 2. Mise à jour des données textuelles
+    await this.prisma.company.update({
       where: { id },
       data: {
         name,
@@ -90,17 +97,33 @@ export class CompanyService {
         telephoneOrganisation,
       },
     });
+
+    const companyName = name || current?.name || 'default';
+
+    // 3. Gestion du Logo si fourni
+    if (files?.logo) {
+      await this.processLogoUpload(id, companyName, files.logo, current?.logo);
+    } else if (data.deleteLogo === 'true' || data.deleteLogo === true) {
+      await this.deleteLogo(id);
+    }
+
+    // 4. Gestion de l'en-tête PDF si fourni
+    if (files?.pdfHeader) {
+      await this.processPdfHeaderUpload(id, companyName, files.pdfHeader, current?.pdfHeader);
+    } else if (data.deletePdfHeader === 'true' || data.deletePdfHeader === true) {
+      await this.deletePdfHeader(id);
+    }
+
+    return await this.getById(id);
   }
 
-  async uploadLogo(id: string, file: Express.Multer.File) {
-    const oldCompany = await this.prisma.company.findUnique({
-      where: { id },
-      select: { logo: true, name: true }
-    });
-
-    if (oldCompany?.logo) {
+  /**
+   * Logique partagée pour l'upload du logo
+   */
+  private async processLogoUpload(id: string, companyName: string, file: Express.Multer.File, oldLogoUrl?: string | null) {
+    if (oldLogoUrl) {
       try {
-        const publicId = CloudinaryService.extractPublicId(oldCompany.logo);
+        const publicId = CloudinaryService.extractPublicId(oldLogoUrl);
         await CloudinaryService.deleteImage(publicId);
         await this.deleteLocalFile(publicId);
       } catch (error) {
@@ -108,25 +131,69 @@ export class CompanyService {
       }
     }
 
-    const companyName = oldCompany?.name || 'default';
     const publicId = `${companyName}-logo-${Date.now()}`;
-    
-    const result = await CloudinaryService.uploadImage(
-      file.path,
-      'logos',
-      publicId
-    );
+    const result = await CloudinaryService.uploadImage(file.path, 'logos', publicId);
 
-    const updatedCompany = await this.prisma.company.update({
+    await this.prisma.company.update({
       where: { id },
       data: { logo: result.secure_url },
     });
 
-    console.log(`✅ [Local] Fichier conservé en local: ${file.path}`);
+    // NETTOYAGE : Supprimer le fichier temporaire
+    try {
+      await fs.unlink(file.path);
+      console.log(`🗑️ [PDF] Fichier temporaire supprimé après upload: ${file.path}`);
+    } catch (e) {
+      console.error(`❌ [PDF] Erreur suppression temporaire ${file.path}:`, e);
+    }
+
+    return result.secure_url;
+  }
+
+  /**
+   * Logique partagée pour l'upload de l'en-tête PDF
+   */
+  private async processPdfHeaderUpload(id: string, companyName: string, file: Express.Multer.File, oldHeaderUrl?: string | null) {
+    if (oldHeaderUrl) {
+      try {
+        const publicId = CloudinaryService.extractPublicId(oldHeaderUrl);
+        await CloudinaryService.deleteImage(publicId);
+        await this.deleteLocalFile(publicId);
+      } catch (error) {
+        logger.warn('Impossible de supprimer l\'ancien en-tête:', error);
+      }
+    }
+
+    const publicId = `${companyName}-header-${Date.now()}`;
+    const result = await CloudinaryService.uploadImage(file.path, 'pdf-headers', publicId);
+
+    await this.prisma.company.update({
+      where: { id },
+      data: { pdfHeader: result.secure_url },
+    });
+
+    // NETTOYAGE : Supprimer le fichier temporaire
+    try {
+      await fs.unlink(file.path);
+      console.log(`🗑️ [PDF] Fichier temporaire supprimé après upload: ${file.path}`);
+    } catch (e) {
+      console.error(`❌ [PDF] Erreur suppression temporaire ${file.path}:`, e);
+    }
+
+    return result.secure_url;
+  }
+
+  async uploadLogo(id: string, file: Express.Multer.File) {
+    const company = await this.prisma.company.findUnique({
+      where: { id },
+      select: { logo: true, name: true }
+    });
+
+    const logoUrl = await this.processLogoUpload(id, company?.name || 'default', file, company?.logo);
 
     return {
-      logo: result.secure_url,
-      company: updatedCompany,
+      logo: logoUrl,
+      company: await this.getById(id),
     };
   }
 
@@ -151,40 +218,16 @@ export class CompanyService {
   }
 
   async uploadPdfHeader(id: string, file: Express.Multer.File) {
-    const oldCompany = await this.prisma.company.findUnique({
+    const company = await this.prisma.company.findUnique({
       where: { id },
       select: { pdfHeader: true, name: true }
     });
 
-    if (oldCompany?.pdfHeader) {
-      try {
-        const publicId = CloudinaryService.extractPublicId(oldCompany.pdfHeader);
-        await CloudinaryService.deleteImage(publicId);
-        await this.deleteLocalFile(publicId);
-      } catch (error) {
-        logger.warn('Impossible de supprimer l\'ancien en-tête:', error);
-      }
-    }
-
-    const companyName = oldCompany?.name || 'default';
-    const publicId = `${companyName}-header-${Date.now()}`;
-    
-    const result = await CloudinaryService.uploadImage(
-      file.path,
-      'pdf-headers',
-      publicId
-    );
-
-    const updatedCompany = await this.prisma.company.update({
-      where: { id },
-      data: { pdfHeader: result.secure_url },
-    });
-
-    console.log(`✅ [Local] Fichier conservé en local: ${file.path}`);
+    const headerUrl = await this.processPdfHeaderUpload(id, company?.name || 'default', file, company?.pdfHeader);
 
     return {
-      pdfHeader: result.secure_url,
-      company: updatedCompany,
+      pdfHeader: headerUrl,
+      company: await this.getById(id),
     };
   }
 

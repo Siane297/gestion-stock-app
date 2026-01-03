@@ -2,7 +2,7 @@ import { useSecureApi } from '~/composables/useSecureApi';
 import { useSecureAuth } from '~/composables/useSecureAuth';
 import type { ApiResponse } from './config';
 
-export type StatutVente = 'EN_ATTENTE' | 'PAYEE' | 'ANNULEE' | 'REMBOURSEE';
+export type StatutVente = 'EN_ATTENTE' | 'PAYEE' | 'ANNULEE' | 'REMBOURSEE' | 'PARTIELLEMENT_REMBOURSEE';
 export type MethodePaiement = 'ESPECES' | 'CARTE' | 'VIREMENT' | 'CHEQUE' | 'MOBILE_MONEY' | 'CREDIT';
 
 export interface VenteDetail {
@@ -10,11 +10,12 @@ export interface VenteDetail {
   vente_id: string;
   produit_id: string;
   quantite: number;
+  quantite_remboursee: number;
   prix_unitaire: number;
   remise: number;
   prix_total: number;
   conditionnement_id?: string;
-  produit?: { nom: string };
+  produit?: { nom: string; image_url?: string };
   conditionnement?: { nom: string; quantite_base: number };
 }
 
@@ -138,8 +139,8 @@ export const useVenteApi = () => {
     return response.data || null;
   };
 
-  const updateVenteStatut = async (id: string, statut: StatutVente): Promise<boolean> => {
-    await patch(`/api/ventes/${id}/statut`, { statut });
+  const updateVenteStatut = async (id: string, statut: StatutVente, returnedItems?: { venteDetailId: string, quantity: number }[]): Promise<boolean> => {
+    await patch(`/api/ventes/${id}/statut`, { statut, returnedItems });
     return true;
   };  return {
     getVentes,

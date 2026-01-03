@@ -115,8 +115,6 @@ const tabOptions = computed(() => [
 const { getCurrentCompany, updateCompany } = useCompanyApi();
 const { getPostes, createPoste, updatePoste, deletePoste } = usePosteApi();
 
-const { uploadCompanyLogo, deleteCompanyLogo, uploadCompanyPdfHeader, deleteCompanyPdfHeader } = useCompanyImageApi();
-
 // État Organisation
 const loadingCompany = ref(true);
 const submittingCompany = ref(false);
@@ -228,28 +226,6 @@ const companyFields = computed(() => [
     showLabel: false,
     fixedWidth: true,
     value: getImageUrl(company.value?.logo),
-    onImageUpload: async (file: File) => {
-      try {
-        const response: any = await uploadCompanyLogo(file);
-        if (response.success && response.data?.logo) {
-          company.value.logo = response.data.logo;
-          return getImageUrl(response.data.logo);
-        }
-        throw new Error('Erreur lors de l\'upload');
-      } catch (error) {
-        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'upload du logo', life: 3000 });
-        throw error;
-      }
-    },
-    onImageRemove: async () => {
-      try {
-        await deleteCompanyLogo();
-        company.value.logo = null;
-      } catch (error) {
-        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de la suppression du logo', life: 3000 });
-        throw error;
-      }
-    }
   },
   {
     name: 'pdfHeader',
@@ -260,28 +236,6 @@ const companyFields = computed(() => [
     fixedWidth: true,
     value: getImageUrl(company.value?.pdfHeader),
     helpText: 'L\'en-tête personnalisé remplacera l\'en-tête par défaut dans tous les PDFs générés. Format recommandé: image large (format panoramique).',
-    onImageUpload: async (file: File) => {
-      try {
-        const response: any = await uploadCompanyPdfHeader(file);
-        if (response.success && response.data?.pdfHeader) {
-          company.value.pdfHeader = response.data.pdfHeader;
-          return getImageUrl(response.data.pdfHeader);
-        }
-        throw new Error('Erreur lors de l\'upload');
-      } catch (error) {
-        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'upload de l\'en-tête PDF', life: 3000 });
-        throw error;
-      }
-    },
-    onImageRemove: async () => {
-      try {
-        await deleteCompanyPdfHeader();
-        company.value.pdfHeader = null;
-      } catch (error) {
-        toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de la suppression de l\'en-tête PDF', life: 3000 });
-        throw error;
-      }
-    }
   },
   {
     name: 'name',
@@ -460,17 +414,38 @@ onMounted(async () => {
 const handleCompanySubmit = async (data: any) => {
   submittingCompany.value = true;
   try {
-    // Exclure le logo et pdfHeader car ils ont déjà été uploadés séparément
-    const { logo, pdfHeader, ...companyData } = data;
+    const { $files, ...rest } = data;
     
-    console.log('Données à soumettre (sans logo/pdfHeader):', companyData);
-    console.log('Logo déjà uploadé:', company.value.logo);
-    console.log('En-tête PDF déjà uploadé:', company.value.pdfHeader);
+    // Construction du FormData pour l'upload groupé
+    const formData = new FormData();
     
-    const updated = await updateCompany(companyData);
+    // Champs textuels
+    Object.entries(rest).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, String(value));
+      }
+    });
+
+    // Gestion des fichiers (depuis le FormulaireDynamique)
+    if ($files) {
+      if ($files.logo) formData.append('logo', $files.logo);
+      if ($files.pdfHeader) formData.append('pdfHeader', $files.pdfHeader);
+    }
+
+    // Flag de suppression si le champ est vidé mais pas de nouveau fichier
+    // Note: FormulaireDynamique met la valeur à null si supprimé
+    if (data.logo === null && !$files?.logo) {
+      formData.append('deleteLogo', 'true');
+    }
+    if (data.pdfHeader === null && !$files?.pdfHeader) {
+      formData.append('deletePdfHeader', 'true');
+    }
+    
+    const updated = await updateCompany(formData);
     company.value = updated;
     toast.add({ severity: 'success', summary: 'Succès', detail: 'Informations mises à jour', life: 3000 });
   } catch (error) {
+    console.error('Erreur mise à jour organisation:', error);
     toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de la mise à jour', life: 3000 });
   } finally {
     submittingCompany.value = false;

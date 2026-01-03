@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
 import { getCurrentCompany, updateCompany, uploadCompanyLogo, deleteCompanyLogo, uploadCompanyPdfHeader, deleteCompanyPdfHeader } from '../controllers/companyController.js';
-import { uploadLogo, uploadPdfHeader } from '../config/uploadConfig.js';
+import { uploadLogo, uploadPdfHeader, uploadCompanyFiles } from '../config/uploadConfig.js';
 import { attachCompanyName } from '../middleware/uploadMiddleware.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { requirePermission } from '../middleware/permissionMiddleware.js';
@@ -14,13 +14,21 @@ router.use(authenticate);
 // Préfixe: /api/companies
 
 router.get('/me', requirePermission(Module.PARAMETRES, Action.VOIR), getCurrentCompany);
-router.put('/me', requirePermission(Module.PARAMETRES, Action.MODIFIER), updateCompany);
+router.put('/me', 
+  requirePermission(Module.PARAMETRES, Action.MODIFIER), 
+  attachCompanyName, 
+  uploadCompanyFiles.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'pdfHeader', maxCount: 1 }
+  ]), 
+  updateCompany
+);
 
-// Routes pour le logo
+// Routes pour le logo (Obsolète: Préférer PUT /me)
 router.post('/me/logo', requirePermission(Module.PARAMETRES, Action.MODIFIER), attachCompanyName, uploadLogo.single('logo'), uploadCompanyLogo);
 router.delete('/me/logo', requirePermission(Module.PARAMETRES, Action.MODIFIER), deleteCompanyLogo);
 
-// Routes pour l'en-tête PDF
+// Routes pour l'en-tête PDF (Obsolète: Préférer PUT /me)
 router.post('/me/pdf-header', requirePermission(Module.PARAMETRES, Action.MODIFIER), attachCompanyName, uploadPdfHeader.single('pdfHeader'), uploadCompanyPdfHeader);
 router.delete('/me/pdf-header', requirePermission(Module.PARAMETRES, Action.MODIFIER), deleteCompanyPdfHeader);
 

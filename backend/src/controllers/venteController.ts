@@ -99,7 +99,8 @@ export const updateVenteStatut = async (req: Request, res: Response) => {
 
     const result = await venteService.updateStatut(id, {
       statut: req.body.statut,
-      utilisateur_id: userId
+      utilisateur_id: userId,
+      returnedItems: req.body.returnedItems
     });
 
     res.json(result);

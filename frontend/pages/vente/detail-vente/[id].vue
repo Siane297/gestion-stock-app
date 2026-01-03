@@ -34,7 +34,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-side2 p-6 rounded-3xl">
                 <!-- Bloc Vente -->
                 <div class="space-y-4">
-                    <div class="flex items-center gap-2 text-white/60">
+                    <div class="flex items-center gap-2 text-white">
                         <Icon icon="tabler:info-circle" class="text-xl" />
                         <span class="font-bold uppercase tracking-widest text-[10px]">Informations Vente</span>
                     </div>
@@ -82,21 +82,53 @@
             </div>
 
             <!-- 3.2 Détails et Sidebar -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Colonne Gauche : Liste des Produits -->
-                <div class="lg:col-span-2 space-y-6">
+            <!-- 3.2 Détails et Sidebar (Utilisation du grid order pour le responsive) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                
+                <!-- 1. Gestion du statut (Mobile: 1er | Desktop: Colonne Droite Haut) -->
+                <div class="order-1 lg:order-2 lg:col-start-3 lg:row-start-1 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                    <div class="flex items-center gap-2 text-noir">
+                        <Icon icon="tabler:settings" class="text-xl text-primary" />
+                        <span class="font-bold text-sm">Gestion du statut</span>
+                    </div>
+                    <div class="space-y-3">
+                        <Select v-model="localStatut" :options="statutOptions" optionLabel="label" optionValue="value"
+                            placeholder="Changer le statut" class="w-full !rounded-xl !text-sm !bg-gray-50" />
+                        <AppButton label="Mettre à jour" :loading="updating" :disabled="localStatut === vente.statut"
+                            variant="primary" fullWidth @click="handleStatusUpdate" />
+                    </div>
+                </div>
+
+                <!-- 2. Colonne Gauche : Liste des Produits (Mobile: 2ème | Desktop: Colonne Gauche) -->
+                <div class="order-2 lg:order-1 lg:col-span-2 lg:row-span-2 space-y-6">
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
                         <div class="flex items-center justify-between border-l-4 border-primary pl-3">
                             <h4 class="font-bold text-noir text-sm uppercase tracking-wider">Produits commandés</h4>
                             <span class="text-xs text-gray-500 font-medium">{{ vente.details?.length || 0 }} articles</span>
                         </div>
 
+                        <!-- Vue Table (Desktop) -->
                         <TableSimple :columns="columns" :data="vente.details || []" :showActions="false"
-                            class="!rounded-2xl overflow-visible">
+                            class="hidden md:block !rounded-2xl overflow-visible">
+                            <template #column-produit_info="{ data }">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100 overflow-hidden flex-shrink-0">
+                                        <img v-if="data.produit?.image_url" :src="data.produit.image_url" :alt="data.produit?.nom" class="w-full h-full object-cover" />
+                                        <i v-else class="pi pi-box text-gray-400"></i>
+                                    </div>
+                                    <span class="font-bold text-gray-800 text-sm">{{ data.produit?.nom }}</span>
+                                </div>
+                            </template>
                             <template #column-quantite_display="{ data }">
-                                <div class="flex items-center gap-4">
-                                    <span class="font-bold text-noir">{{ data.quantite }}</span>
-                                    <span class=" text-[13px] text-vert font-medium">{{ data.conditionnement?.nom || 'Unité' }}</span>
+                                <div class="flex flex-col gap-0.5">
+                                    <div class="flex items-center gap-4">
+                                        <span class="font-bold text-noir">{{ data.quantite }}</span>
+                                        <span class=" text-[13px] text-vert font-medium">{{ data.conditionnement?.nom || 'Unité' }}</span>
+                                    </div>
+                                    <div v-if="data.quantite_remboursee > 0" class="flex items-center gap-1.5 text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full w-fit">
+                                        <Icon icon="tabler:arrow-back-up" />
+                                        <span>{{ data.quantite_remboursee }} remboursé(s)</span>
+                                    </div>
                                 </div>
                             </template>
                             <template #column-remise="{ data }">
@@ -107,6 +139,48 @@
                                 <span class="text-primary font-black text-sm">{{ formatPrice(data.prix_total) }}</span>
                             </template>
                         </TableSimple>
+
+                        <!-- Vue Cartes (Mobile) -->
+                        <div class="grid grid-cols-2 gap-3 md:hidden">
+                            <MobileCard v-for="item in vente.details" :key="item.id">
+                                <template #header>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100 overflow-hidden flex-shrink-0">
+                                            <img v-if="item.produit?.image_url" :src="item.produit.image_url" :alt="item.produit?.nom" class="w-full h-full object-cover" />
+                                            <i v-else class="pi pi-box text-gray-400 text-xl"></i>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-noir text-sm">{{ item.produit?.nom }}</span>
+                                            <span class="text-xs text-gray-500">{{ item.conditionnement?.nom || 'Unité' }}</span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-gray-500">Quantité vendue</span>
+                                        <span class="font-bold text-noir">{{ item.quantite }}</span>
+                                    </div>
+                                    <div v-if="item.quantite_remboursee > 0" class="flex justify-between items-center bg-red-50 p-2 rounded-lg border border-red-100">
+                                        <span class="text-[11px] font-bold text-red-600 flex items-center gap-1">
+                                            <Icon icon="tabler:arrow-back-up" />
+                                            Remboursé
+                                        </span>
+                                        <span class="text-xs font-black text-red-600">{{ item.quantite_remboursee }} unités</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm border-t border-gray-50 pt-2">
+                                        <span class="text-gray-500">Prix unitaire</span>
+                                        <span class="text-gray-700 font-medium">{{ formatPrice(item.prix_unitaire) }}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm border-t border-gray-100 pt-2 bg-gray-50/50 -mx-4 -mb-4 p-3 rounded-b-xl">
+                                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total</span>
+                                        <span class="text-primary font-black">
+                                            {{ formatPrice(item.prix_total) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </MobileCard>
+                        </div>
                     </div>
 
                     <!-- Notes -->
@@ -118,59 +192,62 @@
                         <p class="text-sm text-orange-900 leading-relaxed italic">{{ vente.notes }}</p>
                     </div>
                 </div>
-
-                <!-- Colonne Droite : Management et Résumé -->
-                <div class="space-y-6">
-                    <!-- Gestion du statut -->
-                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                        <div class="flex items-center gap-2 text-noir">
-                            <Icon icon="tabler:settings" class="text-xl text-primary" />
-                            <span class="font-bold text-sm">Gestion du statut</span>
-                        </div>
-                        <div class="space-y-3">
-                            <Select v-model="localStatut" :options="statutOptions" optionLabel="label" optionValue="value"
-                                placeholder="Changer le statut" class="w-full !rounded-xl !text-sm !bg-gray-50" />
-                            <AppButton label="Mettre à jour" :loading="updating" :disabled="localStatut === vente.statut"
-                                variant="primary" fullWidth @click="handleStatusUpdate" />
-                        </div>
+                <!-- 3. Résumé Financier (Mobile: 3ème | Desktop: Colonne Droite Bas) -->
+                <div class="order-3 lg:order-3 lg:col-start-3 lg:row-start-2 bg-primary p-6 rounded-[2rem] text-white space-y-6 relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <Icon icon="tabler:calculator" class="text-xl" />
+                        <span class="font-bold uppercase tracking-widest text-[10px]">Résumé de la vente</span>
                     </div>
-
-                    <!-- Résumé Financier -->
-                    <div class="bg-primary p-6 rounded-[2rem] text-white space-y-6 relative overflow-hidden">
-                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
-                        <div class="flex items-center gap-2 mb-4">
-                            <Icon icon="tabler:calculator" class="text-xl" />
-                            <span class="font-bold uppercase tracking-widest text-[10px]">Résumé de la vente</span>
+                    <div class="space-y-4">
+                        <!-- <div class="flex justify-between items-center text-sm opacity-80">
+                            <span>Sous-total</span>
+                            <span class="font-bold">{{ formatPrice(vente.montant_total + (vente.montant_remise || 0)) }}</span>
+                        </div> -->
+                        <div v-if="vente.montant_remise > 0" class="flex justify-between items-center text-sm">
+                            <span class="text-white/70">Remise Globale</span>
+                            <span class="text-red-400 font-black">-{{ formatPrice(vente.montant_remise) }}</span>
                         </div>
-                        <div class="space-y-4">
-                            <!-- <div class="flex justify-between items-center text-sm opacity-80">
-                                <span>Sous-total</span>
-                                <span class="font-bold">{{ formatPrice(vente.montant_total + (vente.montant_remise || 0)) }}</span>
-                            </div> -->
-                            <div v-if="vente.montant_remise > 0" class="flex justify-between items-center text-sm">
-                                <span class="text-red-400 font-medium">Remise Globale</span>
-                                <span class="text-red-400 font-black">-{{ formatPrice(vente.montant_remise) }}</span>
+                        
+                        <div v-if="montantRembourse > 0" class="flex justify-between items-center text-sm">
+                            <span class="text-white font-black uppercase tracking-widest">Total Remboursé</span>
+                            <span class="text-orange-300 text-[17px] font-black">-{{ formatPrice(montantRembourse) }}</span>
+                        </div>
+
+                        <hr class="border-white/30" />
+                        
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] font-black uppercase tracking-widest" :class="montantRembourse > 0 ? 'text-white' : 'text-white/80'">
+                                {{ montantRembourse > 0 ? 'Total Initial' : 'Total Net' }}
+                            </span>
+                            <span class="font-black text-white" :class="montantRembourse > 0 ? 'text-2xl line-through' : 'text-2xl'">
+                                {{ formatPrice(vente.montant_total) }}
+                            </span>
+                        </div>
+
+                        <div v-if="montantRembourse > 0" class="flex flex-col gap-1 pt-2">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-orange-300">Total Net Restant</span>
+                            <span class="text-2xl font-black text-white">{{ formatPrice(vente.montant_total - montantRembourse) }}</span>
+                        </div>
+                        <hr class="border-white/30" />
+                        <div class="grid grid-cols-2 gap-4 pt-2">
+                            <div class="flex flex-col gap-0.5">
+                                <span class="text-[10px] font-bold text-white/80 uppercase">Payé</span>
+                                <span class="text-sm font-bold">{{ formatPrice(vente.montant_paye) }}</span>
                             </div>
-                            <hr class="border-white/30" />
-                            <div class="flex flex-col gap-1">
-                                <span class="text-[10px] font-black uppercase tracking-widest text-white/80">Total Net</span>
-                                <span class="text-3xl font-black text-white">{{ formatPrice(vente.montant_total) }}</span>
-                            </div>
-                            <hr class="border-white/30" />
-                            <div class="grid grid-cols-2 gap-4 pt-2">
-                                <div class="flex flex-col gap-0.5">
-                                    <span class="text-[10px] font-bold text-white/80 uppercase">Payé</span>
-                                    <span class="text-sm font-bold">{{ formatPrice(vente.montant_paye) }}</span>
-                                </div>
-                                <div class="flex flex-col gap-0.5 items-end">
-                                    <span class="text-[10px] font-bold text-white/80 uppercase">Rendu</span>
-                                    <span class="text-sm font-bold text-green-400">{{ formatPrice(vente.montant_rendu) }}</span>
-                                </div>
+                            <div class="flex flex-col gap-0.5 items-end">
+                                <span class="text-[10px] font-bold text-white/80 uppercase">Rendu</span>
+                                <span class="text-sm font-bold text-green-400">{{ formatPrice(vente.montant_rendu) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <RefundItemsModal
+                v-model:visible="showRefundModal"
+                :sale-details="vente?.details || []"
+                @confirm="handleRefundConfirm"
+            />
         </div>
 
         <!-- 4. État Erreur / Non trouvé -->
@@ -186,7 +263,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import Select from 'primevue/select';
@@ -194,6 +271,8 @@ import Badge from 'primevue/badge';
 import { useToast } from 'primevue/usetoast';
 import AppButton from '~/components/button/AppButton.vue';
 import TableSimple from '~/components/table/TableSimple.vue';
+import MobileCard from '~/components/mobile/MobileCard.vue';
+import RefundItemsModal from '~/components/vente/RefundItemsModal.vue';
 import { useVenteApi, type Vente, type StatutVente } from '~/composables/api/useVenteApi';
 import { useCurrency } from '~/composables/useCurrency';
 import { useSecurePdf } from '~/composables/useSecurePdf';
@@ -217,11 +296,35 @@ const updating = ref(false);
 const printingReceipt = ref(false);
 const printingProforma = ref(false);
 const localStatut = ref<StatutVente | null>(null);
+const showRefundModal = ref(false);
+
+const montantRembourse = computed(() => {
+    if (!vente.value?.details) return 0;
+    return vente.value.details.reduce((acc, detail) => acc + (detail.quantite_remboursee * detail.prix_unitaire), 0);
+});
+
+// Watch for status changes to trigger modal automatically
+watch(localStatut, (newStatut) => {
+    if (newStatut === 'REMBOURSEE') {
+        showRefundModal.value = true;
+    }
+});
+
+// Reset status if modal is closed without confirmation
+watch(showRefundModal, (isVisible) => {
+    // If modal is closed and the current displayed status is still not a refund status
+    if (!isVisible && localStatut.value === 'REMBOURSEE') {
+        const currentStatut = vente.value?.statut;
+        if (currentStatut !== 'REMBOURSEE' && currentStatut !== 'PARTIELLEMENT_REMBOURSEE') {
+            localStatut.value = currentStatut || null;
+        }
+    }
+});
 
 // --- Table Configuration ---
 import { type TableColumn } from '~/components/table/TableSimple.vue';
 const columns: TableColumn[] = [
-    { field: 'produit.nom', header: 'Produit' },
+    { field: 'produit_info', header: 'Produit', customRender: true },
     { field: 'quantite_display', header: 'Qté / Cond.', customRender: true },
     { field: 'prix_unitaire', header: 'Unit.', type: 'price' },
     // { field: 'remise', header: 'Remise', customRender: true },
@@ -257,20 +360,37 @@ const fetchVenteDetails = async () => {
 
 // --- Actions ---
 const handleStatusUpdate = async () => {
-    if (!vente.value || !localStatut.value || localStatut.value === vente.value.statut) return;
+    if (!vente.value || !localStatut.value || localStatut.value === vente.value.statut) {
+        return;
+    }
 
+    if (localStatut.value === 'REMBOURSEE') {
+        showRefundModal.value = true;
+        return;
+    }
+
+    await performStatusUpdate(localStatut.value);
+};
+
+const performStatusUpdate = async (statut: StatutVente, returnedItems?: { venteDetailId: string, quantity: number }[]) => {
+    if (!vente.value) return;
+    
     updating.value = true;
     try {
-        const success = await updateVenteStatut(vente.value.id, localStatut.value);
+        const success = await updateVenteStatut(vente.value.id, statut, returnedItems);
         if (success) {
             toast.add({ severity: 'success', summary: 'Succès', detail: 'Statut mis à jour', life: 2000 });
-            vente.value.statut = localStatut.value;
+            await fetchVenteDetails(); // Re-fetch to get updated details (quantite_remboursee)
         }
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Erreur', detail: 'Mise à jour échouée', life: 3000 });
     } finally {
         updating.value = false;
     }
+};
+
+const handleRefundConfirm = (items: { venteDetailId: string; quantity: number }[]) => {
+    performStatusUpdate('REMBOURSEE', items);
 };
 
 const handlePrintReceipt = async () => {
@@ -305,6 +425,7 @@ const getSeverity = (status: string) => {
         case 'EN_ATTENTE': return 'warning';
         case 'ANNULEE': return 'danger';
         case 'REMBOURSEE': return 'info';
+        case 'PARTIELLEMENT_REMBOURSEE': return 'info';
         default: return 'secondary';
     }
 };

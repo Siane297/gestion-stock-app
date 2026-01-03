@@ -34,15 +34,22 @@ export class InventairePdfService extends BasePdfService {
     
     const currencySymbol = currency?.symbol || 'KMF';
 
-    // Charger le logo en Base64 si disponible localement
+    // Charger le logo : Priorité Cloudinary > Local Fallback
     let logoBase64 = companyInfo.logo;
-    try {
-      const logoPath = path.join(process.cwd(), 'templates', 'logo', 'logo-2.png');
-      const logoBuffer = await fs.readFile(logoPath);
-      const extension = path.extname(logoPath).substring(1);
-      logoBase64 = `data:image/${extension};base64,${logoBuffer.toString('base64')}`;
-    } catch (error) {
-      console.log('⚠️ [InventairePDF] Impossible de charger le logo local logo-2.png');
+    const isCloudinary = companyInfo.logo?.includes('res.cloudinary.com');
+
+    if (isCloudinary) {
+      logoBase64 = await BasePdfService.getExternalImageAsBase64(companyInfo.logo!);
+    } else {
+      try {
+        const logoPath = path.join(process.cwd(), 'templates', 'logo', 'logo-2.png');
+        const logoBuffer = await fs.readFile(logoPath);
+        const extension = path.extname(logoPath).substring(1);
+        logoBase64 = `data:image/${extension};base64,${logoBuffer.toString('base64')}`;
+      } catch (error) {
+        console.log('⚠️ [InventairePDF] Logo local non trouvé, utilisation du logo original');
+        logoBase64 = companyInfo.logo;
+      }
     }
 
     // Préparer les données pour le template

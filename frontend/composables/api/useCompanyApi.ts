@@ -41,7 +41,7 @@ export const useCompanyApi = () => {
   };
 
   // Mettre à jour les informations de l'organisation
-  const updateCompany = async (data: UpdateCompanyDto): Promise<Company | null> => {
+  const updateCompany = async (data: UpdateCompanyDto | FormData): Promise<Company | null> => {
     try {
       const response = await put<ApiResponse<Company>>('/api/companies/me', data);
       return response.data || null;

@@ -4,6 +4,7 @@ enum StatutVente {
     PAYEE
     ANNULEE
     REMBOURSEE
+    PARTIELLEMENT_REMBOURSEE
 }
 
 enum MethodePaiement {
@@ -49,14 +50,15 @@ model vente {
 }
 
 model vente_detail {
-    id                 String  @id @default(uuid())
-    vente_id           String
-    produit_id         String
-    quantite           Int
-    prix_unitaire      Float
-    remise             Float   @default(0)
-    prix_total         Float
-    conditionnement_id String?
+    id                  String  @id @default(uuid())
+    vente_id            String
+    produit_id          String
+    quantite            Int
+    quantite_remboursee Int     @default(0) // Quantité remboursée
+    prix_unitaire       Float
+    remise              Float   @default(0)
+    prix_total          Float
+    conditionnement_id  String?
 
     vente           vente                    @relation(fields: [vente_id], references: [id], onDelete: Cascade)
     produit         produit                  @relation(fields: [produit_id], references: [id], onDelete: Restrict)

@@ -42,7 +42,14 @@ export const updateCompany = async (req: Request, res: Response) => {
       });
     }
 
-    const updatedCompany = await companyService.update(tenantId, req.body);
+    // Récupérer les fichiers si présents
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const companyFiles = {
+      logo: files?.logo?.[0],
+      pdfHeader: files?.pdfHeader?.[0]
+    };
+
+    const updatedCompany = await companyService.update(tenantId, req.body, companyFiles);
 
     res.json({
       success: true,
