@@ -141,7 +141,7 @@
                         </TableSimple>
 
                         <!-- Vue Cartes (Mobile) -->
-                        <div class="grid grid-cols-2 gap-3 md:hidden">
+                        <div class="grid grid-cols-1 gap-3 md:hidden">
                             <MobileCard v-for="item in vente.details" :key="item.id">
                                 <template #header>
                                     <div class="flex items-center gap-3">
